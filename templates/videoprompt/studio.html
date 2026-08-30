@@ -27,19 +27,17 @@
         cursor: pointer;
         transition: all 0.2s ease;
     }
-    .pill-tab-btn:hover {
-        color: var(--text-primary);
-    }
+    .pill-tab-btn:hover { color: var(--text-primary); }
     .pill-tab-btn.active {
         background: var(--bg-card);
         color: var(--text-primary);
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
         border: 1px solid var(--border-subtle);
     }
     .prompt-card-shadcn {
         background-color: var(--bg-card);
         border: 1px solid var(--border-subtle);
-        border-radius: 1.25rem;
+        border-radius: 10px;
         padding: 16px;
         transition: all 0.2s ease;
         display: flex;
@@ -52,14 +50,105 @@
     .prompt-card-shadcn:hover {
         border-color: var(--border-highlight);
         transform: translateY(-2px);
-        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 8px 20px -4px rgba(0,0,0,0.12);
     }
     .kpi-mini-card {
         background-color: var(--bg-card);
         border: 1px solid var(--border-subtle);
-        border-radius: 1rem;
+        border-radius: 8px;
         padding: 16px;
     }
+
+    /* ── Markdown Prose Renderer ── */
+    .md-prose {
+        font-size: 0.88rem;
+        line-height: 1.75;
+        color: var(--text-secondary);
+        font-family: inherit;
+    }
+    .md-prose h1, .md-prose h2, .md-prose h3, .md-prose h4 {
+        color: var(--text-primary);
+        font-weight: 700;
+        margin: 1.25em 0 0.5em;
+        line-height: 1.3;
+    }
+    .md-prose h1 { font-size: 1.25rem; border-bottom: 1px solid var(--border-subtle); padding-bottom: 8px; }
+    .md-prose h2 { font-size: 1.05rem; border-bottom: 1px solid var(--border-subtle); padding-bottom: 6px; }
+    .md-prose h3 { font-size: 0.95rem; }
+    .md-prose h4 { font-size: 0.88rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+    .md-prose p { margin: 0.65em 0; }
+    .md-prose strong { color: var(--text-primary); font-weight: 700; }
+    .md-prose em { font-style: italic; }
+    .md-prose ul, .md-prose ol {
+        margin: 0.6em 0 0.6em 1.4em;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+    .md-prose li { margin: 0; }
+    .md-prose code {
+        background: var(--bg-muted);
+        border: 1px solid var(--border-subtle);
+        border-radius: 4px;
+        padding: 1px 6px;
+        font-family: 'JetBrains Mono', 'Fira Code', monospace;
+        font-size: 0.83em;
+        color: #ef4444;
+    }
+    .md-prose pre {
+        background: var(--bg-muted);
+        border: 1px solid var(--border-subtle);
+        border-radius: 8px;
+        padding: 14px 18px;
+        overflow-x: auto;
+        margin: 0.8em 0;
+    }
+    .md-prose pre code {
+        background: none;
+        border: none;
+        padding: 0;
+        color: var(--text-primary);
+        font-size: 0.82rem;
+    }
+    .md-prose blockquote {
+        border-left: 3px solid #ef4444;
+        margin: 0.8em 0;
+        padding: 8px 16px;
+        background: rgba(239,68,68,0.05);
+        border-radius: 0 6px 6px 0;
+        color: var(--text-secondary);
+    }
+    .md-prose table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.83rem;
+        margin: 0.8em 0;
+    }
+    .md-prose th {
+        background: var(--bg-muted);
+        border: 1px solid var(--border-subtle);
+        padding: 8px 12px;
+        text-align: left;
+        font-weight: 700;
+        color: var(--text-primary);
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+    .md-prose td {
+        border: 1px solid var(--border-subtle);
+        padding: 8px 12px;
+        vertical-align: top;
+    }
+    .md-prose tr:nth-child(even) td { background: rgba(0,0,0,0.02); }
+    .md-prose hr {
+        border: none;
+        border-top: 1px solid var(--border-subtle);
+        margin: 1.4em 0;
+    }
+    .md-prose a { color: #3b82f6; text-decoration: none; }
+    .md-prose a:hover { text-decoration: underline; }
 </style>
 {% endblock %}
 
@@ -151,7 +240,7 @@
                     <label style="display:block; font-size:0.75rem; font-weight:700; color:var(--text-muted); margin-bottom:8px; text-transform:uppercase; letter-spacing:0.05em;">
                         Archivo de Video (Máx 50MB, 2 min)
                     </label>
-                    <div id="dropZone" style="border:2px dashed var(--border-subtle); border-radius:1rem; padding:24px 16px; text-align:center; background:var(--bg-muted); {% if quota.can_generate %}cursor:pointer;{% else %}cursor:not-allowed; opacity:0.6;{% endif %} transition:all 0.2s;" {% if quota.can_generate %}onclick="document.getElementById('videoFileInput').click()"{% endif %}>
+                    <div id="dropZone" style="border:2px dashed var(--border-subtle); border-radius:8px; padding:24px 16px; text-align:center; background:var(--bg-muted); {% if quota.can_generate %}cursor:pointer;{% else %}cursor:not-allowed; opacity:0.6;{% endif %} transition:all 0.2s;" {% if quota.can_generate %}onclick="document.getElementById('videoFileInput').click()"{% endif %}>
                         <i data-lucide="film" style="width:32px; height:32px; color:var(--text-muted); margin:0 auto 8px; display:block;"></i>
                         <p id="fileLabel" style="font-size:0.85rem; color:var(--text-primary); margin:0 0 4px; font-weight:600;">
                             Arrastra o haz clic para seleccionar video
@@ -192,7 +281,7 @@
         </form>
 
         <!-- Estado de Procesamiento / Loading -->
-        <div id="processingCard" style="display:none; margin-top:20px; padding:18px; border-radius:1rem; background:rgba(239,68,68,0.06); border:1px solid rgba(239,68,68,0.25);">
+        <div id="processingCard" style="display:none; margin-top:20px; padding:18px; border-radius:8px; background:rgba(239,68,68,0.06); border:1px solid rgba(239,68,68,0.25);">
             <div style="display:flex; align-items:center; gap:12px; margin-bottom:10px;">
                 <div style="width:22px; height:22px; border-radius:50%; border:2px solid #ef4444; border-top-color:transparent; animation:spin 1s linear infinite; flex-shrink:0;"></div>
                 <div style="flex:1; min-width:0;">
@@ -239,7 +328,7 @@
                 <div class="prompt-card-shadcn" id="history-item-{{ item.id }}" onclick="openPromptModal({{ item.id }})">
                     <div>
                         <!-- Miniatura de Video -->
-                        <div style="width:100%; height:140px; border-radius:0.875rem; background:var(--bg-muted); border:1px solid var(--border-subtle); overflow:hidden; position:relative; margin-bottom:12px; display:flex; align-items:center; justify-content:center;">
+                        <div style="width:100%; height:140px; border-radius:8px; background:var(--bg-muted); border:1px solid var(--border-subtle); overflow:hidden; position:relative; margin-bottom:12px; display:flex; align-items:center; justify-content:center;">
                             {% if item.thumbnail %}
                                 <img src="{{ item.thumbnail.url }}" style="width:100%; height:100%; object-fit:cover;">
                             {% else %}
@@ -299,7 +388,7 @@
                 <div class="prompt-card-shadcn" id="history-item-{{ item.id }}" onclick="openPromptModal({{ item.id }})">
                     <div>
                         <!-- Miniatura con Badge Autor -->
-                        <div style="width:100%; height:140px; border-radius:0.875rem; background:var(--bg-muted); border:1px solid var(--border-subtle); overflow:hidden; position:relative; margin-bottom:12px; display:flex; align-items:center; justify-content:center;">
+                        <div style="width:100%; height:140px; border-radius:8px; background:var(--bg-muted); border:1px solid var(--border-subtle); overflow:hidden; position:relative; margin-bottom:12px; display:flex; align-items:center; justify-content:center;">
                             {% if item.thumbnail %}
                                 <img src="{{ item.thumbnail.url }}" style="width:100%; height:100%; object-fit:cover;">
                             {% else %}
@@ -437,7 +526,7 @@
                 <!-- Fichas de Estilo y Cinematografía -->
                 <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:16px; margin-bottom:24px;">
                     <!-- Estilo -->
-                    <div style="background:var(--bg-muted); border:1px solid var(--border-subtle); border-radius:1rem; padding:18px;">
+                    <div style="background:var(--bg-muted); border:1px solid var(--border-subtle); border-radius:8px; padding:18px;">
                         <h4 style="font-size:0.85rem; font-weight:700; color:#ef4444; margin:0 0 12px; display:flex; align-items:center; gap:6px;">
                             <i data-lucide="palette" style="width:15px; height:15px;"></i>
                             Estilo Visual
@@ -446,7 +535,7 @@
                     </div>
 
                     <!-- Cinematografía -->
-                    <div style="background:var(--bg-muted); border:1px solid var(--border-subtle); border-radius:1rem; padding:18px;">
+                    <div style="background:var(--bg-muted); border:1px solid var(--border-subtle); border-radius:8px; padding:18px;">
                         <h4 style="font-size:0.85rem; font-weight:700; color:#3b82f6; margin:0 0 12px; display:flex; align-items:center; gap:6px;">
                             <i data-lucide="camera" style="width:15px; height:15px;"></i>
                             Cinematografía
@@ -506,7 +595,7 @@
                 </div>
 
                 <!-- Detalles adicionales -->
-                <div style="background:var(--bg-muted); border:1px solid var(--border-subtle); border-radius:1rem; padding:20px; display:flex; flex-direction:column; gap:12px;">
+                <div style="background:var(--bg-muted); border:1px solid var(--border-subtle); border-radius:8px; padding:20px; display:flex; flex-direction:column; gap:12px;">
                     <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-subtle); padding-bottom:10px;">
                         <span style="color:var(--text-muted); font-size:0.85rem; display:flex; align-items:center; gap:6px;">
                             <i data-lucide="calendar" style="width:15px; height:15px; color:#ef4444;"></i>
@@ -533,11 +622,37 @@
                 </div>
             </div>
 
-            <!-- Vista 3: Raw Markdown -->
+            <!-- Vista 3: Raw Markdown (rendered) -->
             <div id="rawView" style="display:none;">
-                <textarea id="rawMarkdownContent" readonly class="shadcn-input" style="width:100%; height:460px; padding:18px; font-family:monospace; font-size:0.85rem; border-radius:1rem; line-height:1.6;"></textarea>
+                <!-- Toolbar: copy + toggle raw -->
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; gap:10px; flex-wrap:wrap;">
+                    <div style="display:flex; align-items:center; gap:6px;">
+                        <i data-lucide="file-text" style="width:15px; height:15px; color:#ef4444;"></i>
+                        <span style="font-size:0.8rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em;">Markdown Renderizado</span>
+                    </div>
+                    <div style="display:flex; gap:8px;">
+                        <button type="button" id="toggleRawSourceBtn" class="btn-ghost" style="font-size:0.75rem; padding:5px 12px;" onclick="toggleRawSource()">
+                            <i data-lucide="code-2" style="width:13px; height:13px;"></i>
+                            Ver código fuente
+                        </button>
+                        <button type="button" class="btn-ghost" style="font-size:0.75rem; padding:5px 12px;" onclick="copyFullPrompt()">
+                            <i data-lucide="copy" style="width:13px; height:13px;"></i>
+                            Copiar
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Rendered prose view -->
+                <div id="markdownRendered" class="md-prose" style="min-height:200px; padding:4px 2px;"></div>
+
+                <!-- Raw source (hidden by default) -->
+                <div id="rawSourceBlock" style="display:none; margin-top:16px;">
+                    <div style="font-size:0.72rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:8px;">Fuente</div>
+                    <textarea id="rawMarkdownContent" readonly class="shadcn-input" style="width:100%; height:320px; padding:14px 16px; font-family:'JetBrains Mono','Fira Code',monospace; font-size:0.78rem; border-radius:8px; line-height:1.65; resize:vertical;"></textarea>
+                </div>
             </div>
         </div>
+
 
     </div>
 </div>
@@ -568,9 +683,33 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/marked@12/marked.min.js"></script>
 <script>
 let currentRawMarkdown = '';
 let promptIdToDelete = null;
+let rawSourceVisible = false;
+
+function renderMarkdown(md) {
+    const rendered = document.getElementById('markdownRendered');
+    if (!rendered) return;
+    if (typeof marked !== 'undefined' && md) {
+        marked.setOptions({ breaks: true, gfm: true });
+        rendered.innerHTML = marked.parse(md);
+    } else {
+        rendered.innerHTML = '<p style="color:var(--text-muted); font-style:italic;">Sin contenido markdown disponible.</p>';
+    }
+}
+
+function toggleRawSource() {
+    rawSourceVisible = !rawSourceVisible;
+    const block = document.getElementById('rawSourceBlock');
+    const btn = document.getElementById('toggleRawSourceBtn');
+    block.style.display = rawSourceVisible ? 'block' : 'none';
+    btn.innerHTML = rawSourceVisible
+        ? '<i data-lucide="eye-off" style="width:13px; height:13px;"></i> Ocultar fuente'
+        : '<i data-lucide="code-2" style="width:13px; height:13px;"></i> Ver código fuente';
+    lucide.createIcons({ root: btn.parentElement });
+}
 
 function switchTab(type) {
     const isUpload = type === 'upload';
@@ -684,7 +823,7 @@ function startPolling(promptId) {
                         const newCardHtml = `
                         <div class="prompt-card-shadcn" id="history-item-${data.id}" onclick="openPromptModal(${data.id})">
                             <div>
-                                <div style="width:100%; height:140px; border-radius:0.875rem; background:var(--bg-muted); border:1px solid var(--border-subtle); overflow:hidden; position:relative; margin-bottom:12px; display:flex; align-items:center; justify-content:center;">
+                                <div style="width:100%; height:140px; border-radius:8px; background:var(--bg-muted); border:1px solid var(--border-subtle); overflow:hidden; position:relative; margin-bottom:12px; display:flex; align-items:center; justify-content:center;">
                                     ${thumbImg}
                                     <div style="position:absolute; bottom:8px; left:8px;">
                                         <span class="badge-pill badge-admin" style="font-size:0.65rem;">
@@ -801,6 +940,16 @@ function openPromptModalData(data) {
     currentRawMarkdown = data.prompt_data.full_prompt_markdown || JSON.stringify(data.prompt_data, null, 2);
     document.getElementById('rawMarkdownContent').value = currentRawMarkdown;
 
+    // Reset raw source toggle state and render markdown
+    rawSourceVisible = false;
+    const rawSourceBlock = document.getElementById('rawSourceBlock');
+    if (rawSourceBlock) rawSourceBlock.style.display = 'none';
+    const toggleBtn = document.getElementById('toggleRawSourceBtn');
+    if (toggleBtn) {
+        toggleBtn.innerHTML = '<i data-lucide="code-2" style="width:13px; height:13px;"></i> Ver código fuente';
+    }
+    renderMarkdown(currentRawMarkdown);
+
     const styleList = document.getElementById('styleList');
     styleList.innerHTML = '';
     if (data.prompt_data.style) {
@@ -842,7 +991,7 @@ function openPromptModalData(data) {
             }
 
             const card = document.createElement('div');
-            card.style.cssText = 'background:var(--bg-muted); border:1px solid var(--border-subtle); border-radius:1rem; padding:18px;';
+            card.style.cssText = 'background:var(--bg-muted); border:1px solid var(--border-subtle); border-radius:8px; padding:18px;';
             card.innerHTML = `
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
                     <span style="font-weight:700; color:var(--text-primary); font-size:0.9rem;">Escena ${idx + 1}</span>
