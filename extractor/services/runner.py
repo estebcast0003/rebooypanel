@@ -6,6 +6,7 @@ import threading
 from typing import Generator
 
 from asgiref.sync import sync_to_async
+from django.conf import settings
 from django.db import connection, transaction
 from django.utils import timezone
 
