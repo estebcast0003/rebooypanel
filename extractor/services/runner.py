@@ -55,11 +55,18 @@ class JobEventManager:
 event_manager = JobEventManager()
 
 
+from extractor.services.alerts import check_and_trigger_growth_alerts
+
 @sync_to_async
 def _save_item_to_db(job_id: str, result: ExtractionResult):
     """Synchronous database persistence wrapped for async execution."""
     with transaction.atomic():
         job = ExtractionJob.objects.select_for_update().get(id=job_id)
+        
+        # Check previous followers before update
+        existing_page = FacebookPage.objects.filter(user=job.user, url=result.url).first()
+        prev_followers = existing_page.followers if existing_page else 0
+
         page, _ = FacebookPage.objects.update_or_create(
             user=job.user,
             url=result.url,
@@ -75,6 +82,8 @@ def _save_item_to_db(job_id: str, result: ExtractionResult):
                 page=page,
                 followers=result.followers,
             )
+            if prev_followers > 0 and result.followers > prev_followers:
+                check_and_trigger_growth_alerts(page, prev_followers, result.followers)
 
         item = ExtractionItem.objects.create(
             job=job,
