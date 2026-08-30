@@ -92,6 +92,10 @@
                 <i data-lucide="plus"></i>
                 Extraer Nuevas URLs
             </button>
+            <button type="button" class="btn-ghost" onclick="openAlertsModal()" title="Configurar Alertas & Webhooks de Crecimiento">
+                <i data-lucide="bell" style="width:14px; height:14px; color:#facc15;"></i>
+                Alertas
+            </button>
             <a href="{% url 'extractor:export_excel' %}" class="btn-ghost" title="Descargar reporte Excel">
                 <i data-lucide="sheet" style="width:14px; height:14px; color:#22c55e;"></i>
                 Excel
@@ -562,6 +566,74 @@
         <!-- Modal Footer -->
         <div style="padding:14px 24px; border-top:1px solid var(--border-glass); display:flex; justify-content:flex-end;">
             <button type="button" class="btn-ghost" onclick="closeGrowthModal()">Cerrar</button>
+        </div>
+    </div>
+</div>
+
+<!-- ═════════ MODAL GLASSMORPHISM: CONFIGURACIÓN DE ALERTAS & WEBHOOKS ═════════ -->
+<div id="alertsConfigModal" style="display:none; position:fixed; inset:0; z-index:10000; background:rgba(2, 6, 23, 0.85); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); align-items:center; justify-content:center; padding:16px;">
+    <div class="glass-card" style="width:100%; max-width:540px; padding:28px; border:1px solid rgba(250,204,21,0.25); box-shadow:0 25px 50px -12px rgba(0,0,0,0.8); animation:modalIn 0.22s ease-out; position:relative; overflow:hidden;">
+        <div style="position:absolute; top:-30px; left:50%; transform:translateX(-50%); width:120px; height:120px; background:rgba(250,204,21,0.08); border-radius:50%; pointer-events:none; filter:blur(20px);"></div>
+
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:18px;">
+            <div style="display:flex; align-items:center; gap:12px;">
+                <div style="width:42px; height:42px; border-radius:12px; background:rgba(250,204,21,0.12); border:1px solid rgba(250,204,21,0.3); display:flex; align-items:center; justify-content:center; color:#facc15;">
+                    <i data-lucide="bell-ring" style="width:22px; height:22px;"></i>
+                </div>
+                <div>
+                    <h3 style="font-size:1.15rem; font-weight:700; color:var(--text-primary); margin:0;">Sistema de Alertas & Webhooks</h3>
+                    <span style="font-size:0.78rem; color:var(--text-muted);">Notificaciones en Discord o Endpoint HTTP ante hitos de crecimiento</span>
+                </div>
+            </div>
+            <button type="button" class="action-btn" onclick="closeAlertsModal()">
+                <i data-lucide="x"></i>
+            </button>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:16px; margin-bottom:24px;">
+            <!-- Webhook URL Input -->
+            <div>
+                <label style="display:block; font-size:0.8rem; font-weight:600; color:var(--text-secondary); margin-bottom:6px;">
+                    URL del Webhook (Discord / Endpoint HTTP)
+                </label>
+                <input 
+                    type="url" 
+                    id="alertWebhookUrlInput" 
+                    placeholder="https://discord.com/api/webhooks/..." 
+                    class="glass-input" 
+                    style="width:100%; padding:10px 14px; border-radius:10px; font-size:0.85rem; font-family:monospace;"
+                >
+                <span style="font-size:0.72rem; color:var(--text-muted); display:block; margin-top:4px;">
+                    Pegá la URL del Webhook de tu canal de Discord o tu servicio receptor.
+                </span>
+            </div>
+
+            <!-- Options Box -->
+            <div style="background:rgba(255,255,255,0.03); border:1px solid var(--border-glass); border-radius:10px; padding:14px; display:flex; flex-direction:column; gap:10px;">
+                <label style="display:flex; align-items:center; gap:10px; cursor:pointer; font-size:0.82rem; color:var(--text-primary);">
+                    <input type="checkbox" id="alertsEnabledCheckbox" checked style="accent-color:#facc15; width:16px; height:16px;">
+                    <span>Activar alertas automáticas de hitos (<code>10K</code>, <code>50K</code>, <code>100K</code>, <code>1M</code>)</span>
+                </label>
+                <label style="display:flex; align-items:center; gap:10px; cursor:pointer; font-size:0.82rem; color:var(--text-primary);">
+                    <input type="checkbox" id="alertsGrowthSpikeCheckbox" checked style="accent-color:#facc15; width:16px; height:16px;">
+                    <span>Notificar ante incrementos mayores al 5% o +1.000 seguidores</span>
+                </label>
+            </div>
+        </div>
+
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+            <button type="button" id="btnTestWebhookAlert" class="btn-ghost" style="font-size:0.8rem;" onclick="testWebhookAlert()">
+                <i data-lucide="send" id="btnTestWebhookIcon" style="width:13px; height:13px; color:#38bdf8;"></i>
+                <span id="btnTestWebhookText">Probar Webhook</span>
+            </button>
+
+            <div style="display:flex; gap:10px;">
+                <button type="button" class="btn-ghost" onclick="closeAlertsModal()">Cancelar</button>
+                <button type="button" id="btnSaveAlertsConfig" class="btn-brand" style="background:#facc15; color:#0f172a; font-weight:700;" onclick="saveAlertsConfig()">
+                    <i data-lucide="check" style="width:14px; height:14px;"></i>
+                    Guardar
+                </button>
+            </div>
         </div>
     </div>
 </div>

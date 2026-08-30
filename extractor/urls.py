@@ -17,6 +17,9 @@ urlpatterns = [
     path("api/page/<int:page_id>/history/", views.page_growth_history_api_view, name="page_growth_history"),
     path("api/pages/clear/", views.clear_all_pages_view, name="clear_pages"),
     path("api/stats/", views.get_stats_api_view, name="stats"),
+    path("api/alerts/config/", views.get_alerts_config_api_view, name="alerts_config"),
+    path("api/alerts/save/", views.save_alerts_config_api_view, name="alerts_save"),
+    path("api/alerts/test/", views.test_alert_webhook_api_view, name="alerts_test"),
     path("export/csv/", views.export_csv_view, name="export_csv"),
     path("export/excel/", views.export_excel_view, name="export_excel"),
 ]

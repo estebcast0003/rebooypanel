@@ -1075,3 +1075,125 @@ function escapeHtml(str) {
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#039;');
 }
+
+// ----------------------------------------------------
+// Alerts & Webhooks Modal
+// ----------------------------------------------------
+async function openAlertsModal() {
+    const modal = document.getElementById('alertsConfigModal');
+    if (modal) {
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+        lucide.createIcons({ root: modal });
+    }
+    await loadAlertsConfig();
+}
+
+function closeAlertsModal() {
+    const modal = document.getElementById('alertsConfigModal');
+    if (modal) {
+        modal.style.display = 'none';
+        document.body.style.overflow = 'auto';
+    }
+}
+
+async function loadAlertsConfig() {
+    try {
+        const res = await fetch(`${API_BASE}/api/alerts/config/`);
+        if (res.ok) {
+            const data = await res.json();
+            const input = document.getElementById('alertWebhookUrlInput');
+            const checkbox = document.getElementById('alertsEnabledCheckbox');
+            if (input) input.value = data.webhook_url || '';
+            if (checkbox) checkbox.checked = data.enabled !== false;
+        }
+    } catch (e) {
+        console.error('Error loading alerts config:', e);
+    }
+}
+
+async function saveAlertsConfig() {
+    const input = document.getElementById('alertWebhookUrlInput');
+    const checkbox = document.getElementById('alertsEnabledCheckbox');
+    const btn = document.getElementById('btnSaveAlertsConfig');
+
+    const webhookUrl = input ? input.value.trim() : '';
+    const enabled = checkbox ? checkbox.checked : true;
+
+    if (btn) btn.disabled = true;
+
+    try {
+        const res = await fetch(`${API_BASE}/api/alerts/save/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken(),
+            },
+            body: JSON.stringify({
+                webhook_url: webhookUrl,
+                enabled: enabled,
+            })
+        });
+        const data = await res.json();
+        if (data.status === 'ok') {
+            showToast('Configuración de alertas guardada exitosamente', 'success');
+            closeAlertsModal();
+        } else {
+            showToast(data.message || 'Error al guardar configuración', 'error');
+        }
+    } catch (err) {
+        console.error('Error saving alerts config:', err);
+        showToast('Error de conexión con el servidor', 'error');
+    } finally {
+        if (btn) btn.disabled = false;
+    }
+}
+
+async function testWebhookAlert() {
+    const input = document.getElementById('alertWebhookUrlInput');
+    const btn = document.getElementById('btnTestWebhookAlert');
+    const text = document.getElementById('btnTestWebhookText');
+    const icon = document.getElementById('btnTestWebhookIcon');
+
+    const webhookUrl = input ? input.value.trim() : '';
+    if (!webhookUrl) {
+        showToast('Ingresá una URL de webhook antes de probar', 'warning');
+        return;
+    }
+
+    if (btn) btn.disabled = true;
+    if (text) text.textContent = 'Enviando...';
+    if (icon) {
+        icon.setAttribute('data-lucide', 'loader-2');
+        icon.classList.add('animate-spin');
+        lucide.createIcons({ root: btn });
+    }
+
+    try {
+        const res = await fetch(`${API_BASE}/api/alerts/test/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken(),
+            },
+            body: JSON.stringify({ webhook_url: webhookUrl })
+        });
+        const data = await res.json();
+        if (data.status === 'ok') {
+            showToast('¡Notificación de prueba enviada con éxito!', 'success');
+        } else {
+            showToast(data.message || 'Error al enviar prueba', 'error');
+        }
+    } catch (err) {
+        console.error('Error testing webhook:', err);
+        showToast('Error de conexión al enviar prueba', 'error');
+    } finally {
+        if (btn) btn.disabled = false;
+        if (text) text.textContent = 'Probar Webhook';
+        if (icon) {
+            icon.setAttribute('data-lucide', 'send');
+            icon.classList.remove('animate-spin');
+            lucide.createIcons({ root: btn });
+        }
+    }
+}

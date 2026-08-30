@@ -99,3 +99,40 @@ def check_and_trigger_growth_alerts(page, old_followers: int, new_followers: int
     crossed_milestone = any(old_followers < m <= new_followers for m in MILESTONES)
     if crossed_milestone or pct >= 5.0 or delta >= 1_000:
         dispatch_growth_alert(page, old_followers, new_followers, delta, pct)
+
+def send_test_alert(webhook_url: str) -> tuple[bool, str]:
+    if not webhook_url:
+        return False, "La URL del webhook no puede estar vacía."
+
+    is_discord = "discord.com/api/webhooks" in webhook_url
+    if is_discord:
+        payload = {
+            "username": "Rebooy Fan Growth Bot",
+            "avatar_url": "https://i.imgur.com/7bWW6eP.png",
+            "embeds": [{
+                "title": "✅ Notificación de Prueba Exitosa",
+                "description": "El sistema de alertas de **Rebooy Panel** está conectado y funcionando correctamente.",
+                "color": 0x3B82F6,
+                "fields": [
+                    {"name": "Estado", "value": "🟢 Conectado", "inline": True},
+                    {"name": "Módulo", "value": "Fan Extractor", "inline": True},
+                ],
+                "footer": {"text": "Rebooy Panel · Sistema de Alertas"}
+            }]
+        }
+    else:
+        payload = {
+            "event": "test_notification",
+            "message": "Notificación de prueba de Rebooy Panel",
+            "status": "connected"
+        }
+
+    try:
+        with httpx.Client(timeout=8.0) as client:
+            resp = client.post(webhook_url, json=payload)
+            if resp.is_success:
+                return True, "Notificación de prueba enviada con éxito."
+            else:
+                return False, f"El servidor webhook respondió con error HTTP {resp.status_code}"
+    except Exception as e:
+        return False, f"Error al conectar con el webhook: {str(e)[:60]}"

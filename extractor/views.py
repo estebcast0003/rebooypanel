@@ -1,5 +1,6 @@
 import json
 
+from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.db.models import Sum
@@ -467,4 +468,89 @@ def get_stats_api_view(request):
             "formatted_avg_followers": formatted_avg_followers,
         }
     )
+
+
+# ----------------------------------------------------
+# Alerts & Webhooks API Endpoints
+# ----------------------------------------------------
+from extractor.services.alerts import send_test_alert
+
+
+@login_required
+@require_http_methods(["GET"])
+def get_alerts_config_api_view(request):
+    """Returns current webhook alert settings."""
+    if not _has_extractor_access(request.user):
+        return JsonResponse({"status": "error", "message": "Acceso denegado."}, status=403)
+
+    webhook_setting = ExtractorSetting.objects.filter(key="alert_webhook_url").first()
+    enabled_setting = ExtractorSetting.objects.filter(key="alerts_enabled").first()
+
+    webhook_url = webhook_setting.value if webhook_setting else getattr(settings, "EXTRACTOR_WEBHOOK_URL", "")
+    enabled = enabled_setting.value.lower() == "true" if enabled_setting else bool(webhook_url)
+
+    return JsonResponse({
+        "status": "ok",
+        "webhook_url": webhook_url or "",
+        "enabled": enabled,
+    })
+
+
+@login_required
+@require_http_methods(["POST"])
+def save_alerts_config_api_view(request):
+    """Saves webhook alert settings."""
+    if not _has_extractor_access(request.user):
+        return JsonResponse({"status": "error", "message": "Acceso denegado."}, status=403)
+
+    try:
+        data = json.loads(request.body.decode("utf-8"))
+    except Exception:
+        return JsonResponse({"status": "error", "message": "JSON inválido."}, status=400)
+
+    webhook_url = data.get("webhook_url", "").strip()
+    enabled = bool(data.get("enabled", True))
+
+    ExtractorSetting.objects.update_or_create(
+        key="alert_webhook_url",
+        defaults={"value": webhook_url}
+    )
+    ExtractorSetting.objects.update_or_create(
+        key="alerts_enabled",
+        defaults={"value": str(enabled)}
+    )
+
+    return JsonResponse({
+        "status": "ok",
+        "message": "Configuración de alertas guardada exitosamente.",
+        "webhook_url": webhook_url,
+        "enabled": enabled,
+    })
+
+
+@login_required
+@require_http_methods(["POST"])
+def test_alert_webhook_api_view(request):
+    """Sends a live test notification to the webhook URL."""
+    if not _has_extractor_access(request.user):
+        return JsonResponse({"status": "error", "message": "Acceso denegado."}, status=403)
+
+    try:
+        data = json.loads(request.body.decode("utf-8"))
+    except Exception:
+        data = {}
+
+    webhook_url = data.get("webhook_url", "").strip()
+    if not webhook_url:
+        webhook_setting = ExtractorSetting.objects.filter(key="alert_webhook_url").first()
+        webhook_url = webhook_setting.value if webhook_setting else getattr(settings, "EXTRACTOR_WEBHOOK_URL", "")
+
+    if not webhook_url:
+        return JsonResponse({"status": "error", "message": "Ingresá una URL de webhook para probar."}, status=400)
+
+    success, message = send_test_alert(webhook_url)
+    if success:
+        return JsonResponse({"status": "ok", "message": message})
+    else:
+        return JsonResponse({"status": "error", "message": message}, status=400)
 
