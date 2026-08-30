@@ -1,0 +1,509 @@
+{% extends 'panel_base.html' %}
+{% load static %}
+
+{% block title %}Métricas por Usuario — Rebooy Panel{% endblock %}
+{% block breadcrumb %}Administración / Métricas por Usuario{% endblock %}
+
+{% block extra_css %}
+<style>
+    @keyframes modalIn {
+        from { opacity: 0; transform: scale(0.96); }
+        to { opacity: 1; transform: scale(1); }
+    }
+    .metric-value {
+        font-size: 1.75rem;
+        font-weight: 800;
+        line-height: 1.1;
+        letter-spacing: -0.02em;
+    }
+    .growth-badge-up {
+        background: rgba(34, 197, 94, 0.12);
+        color: #4ade80;
+        border: 1px solid rgba(34, 197, 94, 0.25);
+        padding: 3px 8px;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-family: monospace;
+    }
+    .growth-badge-neutral {
+        background: rgba(148, 163, 184, 0.08);
+        color: #94a3b8;
+        border: 1px solid rgba(148, 163, 184, 0.15);
+        padding: 3px 8px;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-family: monospace;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="display:flex; flex-direction:column; gap:24px;">
+
+    <!-- ═════════ HEADER PRINCIPAL ═════════ -->
+    <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px;">
+        <div>
+            <h1 style="font-size:1.5rem; font-weight:700; color:var(--text-primary); margin:0 0 4px; display:flex; align-items:center; gap:10px;">
+                <div style="width:36px; height:36px; border-radius:10px; background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.25); display:flex; align-items:center; justify-content:center; color:#ef4444;">
+                    <i data-lucide="bar-chart-3" style="width:20px; height:20px;"></i>
+                </div>
+                {% if selected_user %}
+                    Métricas de {{ selected_user.username }}
+                {% else %}
+                    Estadísticas & Métricas por Usuario
+                {% endif %}
+            </h1>
+            <p style="font-size:0.875rem; color:var(--text-muted); margin:0;">
+                {% if selected_user %}
+                    Inspección individual de fanpages, crecimiento de seguidores y actividad de la cuenta.
+                {% else %}
+                    Resumen comparativo de fanpages monitoreadas, volumen de seguidores y actividad de cada usuario.
+                {% endif %}
+            </p>
+        </div>
+
+        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+            {% if selected_user %}
+                <a href="{% url 'user_statistics' %}" class="btn-ghost">
+                    <i data-lucide="arrow-left" style="width:14px; height:14px;"></i>
+                    Todos los Usuarios
+                </a>
+            {% endif %}
+            <a href="{% url 'user_list' %}" class="btn-ghost">
+                <i data-lucide="users" style="width:14px; height:14px;"></i>
+                Gestionar Cuentas
+            </a>
+        </div>
+    </div>
+
+    {% if not selected_user %}
+    <!-- ═════════ VISTA GENERAL: TABLA COMPARATIVA DE USUARIOS ═════════ -->
+    
+    <!-- Buscador -->
+    <form method="get" style="display:flex; gap:10px; max-width:380px;">
+        <div style="position:relative; width:100%;">
+            <i data-lucide="search" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); width:14px; height:14px; color:var(--text-muted);"></i>
+            <input type="text" name="q" value="{{ query }}" placeholder="Filtrar usuario por nombre..." class="glass-input" style="width:100%; padding:8px 12px 8px 36px; border-radius:10px; font-size:0.85rem;">
+        </div>
+        {% if query %}
+            <a href="{% url 'user_statistics' %}" class="btn-ghost" style="padding:8px 12px; font-size:0.85rem;">Limpiar</a>
+        {% endif %}
+    </form>
+
+    <div class="glass-card" style="padding:0; overflow:hidden;">
+        <div style="overflow-x:auto;">
+            <table class="panel-table">
+                <thead>
+                    <tr>
+                        <th>Usuario</th>
+                        <th>Rol</th>
+                        <th style="text-align:center;">Fanpages Monitoreadas</th>
+                        <th style="text-align:right;">Seguidores Acumulados</th>
+                        <th style="text-align:center;">Prompts IA</th>
+                        <th style="text-align:center;">Fanpages IA</th>
+                        <th style="text-align:center; width:140px;">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in user_stats %}
+                    <tr>
+                        <td>
+                            <div style="display:flex; align-items:center; gap:10px;">
+                                <div class="avatar" style="width:32px; height:32px; font-size:0.75rem;">
+                                    {{ item.user.username|make_list|first|upper }}
+                                </div>
+                                <div>
+                                    <div style="font-weight:600; color:var(--text-primary); font-size:0.9rem;">{{ item.user.username }}</div>
+                                    <div style="font-size:0.72rem; color:var(--text-muted);">Registrado: {{ item.user.date_joined|date:"d/m/Y" }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            {% if item.user.role == 'superadmin' %}
+                                <span class="badge-superadmin">Super Admin</span>
+                            {% elif item.user.role == 'admin' %}
+                                <span class="badge-admin">Admin</span>
+                            {% else %}
+                                <span class="badge-user">User</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align:center;">
+                            <span class="badge-active" style="font-family:monospace; font-size:0.85rem; font-weight:700; padding:4px 10px; border-radius:6px; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.2); color:#f87171;">
+                                {{ item.pages_count }}
+                            </span>
+                        </td>
+                        <td style="text-align:right;">
+                            <span class="badge-active" title="{{ item.total_followers|floatformat:0 }} seguidores" style="font-family:monospace; font-size:0.88rem; font-weight:700; padding:4px 10px; border-radius:6px; background:rgba(34,197,94,0.12); border:1px solid rgba(34,197,94,0.25); cursor:help;">
+                                {{ item.formatted_followers }}
+                            </span>
+                        </td>
+                        <td style="text-align:center; font-family:monospace; font-size:0.85rem; color:var(--text-primary);">
+                            {{ item.prompts_count }}
+                        </td>
+                        <td style="text-align:center; font-family:monospace; font-size:0.85rem; color:var(--text-primary);">
+                            {{ item.fanpages_count }}
+                        </td>
+                        <td style="text-align:center;">
+                            <a href="{% url 'user_statistics' %}?user_id={{ item.user.id }}" class="btn-brand" style="padding:5px 12px; font-size:0.78rem; text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
+                                <i data-lucide="eye" style="width:13px; height:13px;"></i>
+                                Inspeccionar
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" style="padding:48px 20px; text-align:center; color:var(--text-muted);">
+                            No se encontraron usuarios coincidentes con la búsqueda.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {% else %}
+    <!-- ═════════ VISTA DETALLADA: USUARIO SELECCIONADO ═════════ -->
+
+    <!-- Tarjetas KPI del Usuario -->
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:16px;">
+        
+        <!-- Total Fanpages -->
+        <div class="glass-card" style="padding:20px; position:relative; overflow:hidden;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                <span style="font-size:0.75rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-secondary);">Fanpages Monitoreadas</span>
+                <div style="width:34px; height:34px; border-radius:8px; background:rgba(239,68,68,0.12); display:flex; align-items:center; justify-content:center;">
+                    <i data-lucide="layers" style="width:16px; height:16px; color:#ef4444;"></i>
+                </div>
+            </div>
+            <div style="display:flex; align-items:baseline; gap:8px;">
+                <span class="metric-value" style="color:var(--text-primary);">{{ selected_user_metrics.total_pages }}</span>
+                <span style="font-size:0.78rem; color:var(--text-muted);">páginas activas</span>
+            </div>
+        </div>
+
+        <!-- Total Seguidores -->
+        <div class="glass-card" style="padding:20px; position:relative; overflow:hidden;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                <span style="font-size:0.75rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-secondary);">Seguidores Acumulados</span>
+                <div style="width:34px; height:34px; border-radius:8px; background:rgba(34,197,94,0.12); display:flex; align-items:center; justify-content:center;">
+                    <i data-lucide="users" style="width:16px; height:16px; color:#22c55e;"></i>
+                </div>
+            </div>
+            <div style="display:flex; align-items:baseline; gap:8px;">
+                <span class="metric-value" style="color:#22c55e;" title="{{ selected_user_metrics.total_followers|floatformat:0 }} seguidores">{{ selected_user_metrics.formatted_followers }}</span>
+                <span style="font-size:0.78rem; color:var(--text-muted);">seguidores</span>
+            </div>
+        </div>
+
+        <!-- Prompts IA -->
+        <div class="glass-card" style="padding:20px; position:relative; overflow:hidden;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                <span style="font-size:0.75rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-secondary);">Prompts IA Creados</span>
+                <div style="width:34px; height:34px; border-radius:8px; background:rgba(59,130,246,0.12); display:flex; align-items:center; justify-content:center;">
+                    <i data-lucide="clapperboard" style="width:16px; height:16px; color:#60a5fa;"></i>
+                </div>
+            </div>
+            <div style="display:flex; align-items:baseline; gap:8px;">
+                <span class="metric-value" style="color:var(--text-primary);">{{ selected_user_metrics.total_prompts }}</span>
+                <span style="font-size:0.78rem; color:var(--text-muted);">completados</span>
+            </div>
+        </div>
+
+        <!-- Fanpages IA -->
+        <div class="glass-card" style="padding:20px; position:relative; overflow:hidden;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                <span style="font-size:0.75rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-secondary);">Fanpages IA Creadas</span>
+                <div style="width:34px; height:34px; border-radius:8px; background:rgba(234,179,8,0.12); display:flex; align-items:center; justify-content:center;">
+                    <i data-lucide="sparkles" style="width:16px; height:16px; color:#facc15;"></i>
+                </div>
+            </div>
+            <div style="display:flex; align-items:baseline; gap:8px;">
+                <span class="metric-value" style="color:var(--text-primary);">{{ selected_user_metrics.total_fanpages }}</span>
+                <span style="font-size:0.78rem; color:var(--text-muted);">perfiles</span>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Tabla de Fanpages del Usuario Seleccionado con Historial de Crecimiento -->
+    <div class="glass-card" style="padding:0; overflow:hidden;">
+        <div style="padding:18px 24px; border-bottom:1px solid var(--border-glass); display:flex; justify-content:space-between; align-items:center;">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <i data-lucide="activity" style="width:18px; height:18px; color:#ef4444;"></i>
+                <h2 style="font-size:1.05rem; font-weight:600; color:var(--text-primary); margin:0;">
+                    Fanpages Monitoreadas de {{ selected_user.username }}
+                </h2>
+                <span class="badge-admin" style="font-family:monospace; font-size:0.78rem;">{{ selected_user_pages.count }}</span>
+            </div>
+        </div>
+
+        <div style="overflow-x:auto;">
+            <table class="panel-table">
+                <thead>
+                    <tr>
+                        <th style="width:50px; text-align:center;">#</th>
+                        <th>Fanpage</th>
+                        <th style="text-align:right;">Seguidores</th>
+                        <th style="text-align:center;">Crecimiento</th>
+                        <th style="text-align:center;">Estado</th>
+                        <th style="text-align:center; width:130px;">Seguimiento</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for page in selected_user_pages %}
+                    <tr>
+                        <td style="text-align:center; font-family:monospace; color:var(--text-muted);">{{ page.id }}</td>
+                        <td>
+                            <div style="font-weight:600; color:var(--text-primary); font-size:0.9rem;">{{ page.name }}</div>
+                            <a href="{{ page.url }}" target="_blank" rel="noopener noreferrer" style="font-size:0.76rem; color:var(--text-muted); font-family:monospace; text-decoration:none;" onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='var(--text-muted)'">
+                                {{ page.url }}
+                            </a>
+                        </td>
+                        <td style="text-align:right;">
+                            <span class="badge-active" title="{{ page.followers|floatformat:0 }} seguidores" style="font-family:monospace; font-weight:700; font-size:0.88rem; background:rgba(34,197,94,0.12); padding:4px 10px; border-radius:6px; border:1px solid rgba(34,197,94,0.25); cursor:help;">
+                                {{ page.formatted_followers }}
+                            </span>
+                        </td>
+                        <td style="text-align:center;">
+                            {% with growth=page.growth_data %}
+                                {% if growth.is_positive %}
+                                    <span class="growth-badge-up" title="Crecimiento desde el primer registro: {{ growth.delta|floatformat:0 }} seguidores">
+                                        <i data-lucide="trending-up" style="width:12px; height:12px;"></i>
+                                        {{ growth.formatted_delta }} ({{ growth.formatted_pct }})
+                                    </span>
+                                {% else %}
+                                    <span class="growth-badge-neutral" title="Sin variación registrada">
+                                        <i data-lucide="minus" style="width:12px; height:12px;"></i>
+                                        0 (0%)
+                                    </span>
+                                {% endif %}
+                            {% endwith %}
+                        </td>
+                        <td style="text-align:center;">
+                            {% if page.followers > 0 %}
+                            <span class="badge-active" style="font-size:0.75rem; padding:4px 10px; border-radius:999px; background:rgba(34,197,94,0.1); border:1px solid rgba(34,197,94,0.2);">
+                                <i data-lucide="check" style="width:12px; height:12px;"></i> Éxito
+                            </span>
+                            {% else %}
+                            <span class="badge-inactive" style="font-size:0.75rem; padding:4px 10px; border-radius:999px; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.2); color:#f87171;" title="{{ page.status }}">
+                                <i data-lucide="alert-triangle" style="width:12px; height:12px;"></i> {{ page.status|truncatechars:18 }}
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align:center;">
+                            <div style="display:flex; align-items:center; justify-content:center; gap:6px;">
+                                <button type="button" class="btn-ghost" style="padding:4px 10px; font-size:0.75rem;" onclick="openGrowthModal({{ page.id }})" title="Ver tabla de evolución histórica">
+                                    <i data-lucide="line-chart" style="width:13px; height:13px; color:#22c55e;"></i>
+                                    Historial
+                                </button>
+                                <a href="{{ page.url }}" target="_blank" rel="noopener noreferrer" class="action-btn action-btn-edit" title="Abrir en Facebook">
+                                    <i data-lucide="external-link"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" style="padding:48px 20px; text-align:center; color:var(--text-muted);">
+                            Este usuario no tiene fanpages registradas en este momento.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {% endif %}
+
+</div>
+
+<!-- ═════════ MODAL GLASSMORPHISM: HISTORIAL DE CRECIMIENTO ═════════ -->
+<div id="growthHistoryModal" style="display:none; position:fixed; inset:0; z-index:10000; background:rgba(2, 6, 23, 0.85); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); align-items:center; justify-content:center; padding:16px;">
+    <div class="glass-card" style="width:100%; max-width:680px; max-height:85vh; display:flex; flex-direction:column; border:1px solid var(--border-glass); box-shadow:0 25px 50px -12px rgba(0,0,0,0.8); animation:modalIn 0.22s ease-out; overflow:hidden;">
+        
+        <!-- Modal Header -->
+        <div style="padding:18px 24px; border-bottom:1px solid var(--border-glass); display:flex; justify-content:space-between; align-items:center;">
+            <div style="display:flex; align-items:center; gap:12px;">
+                <div style="width:38px; height:38px; border-radius:10px; background:rgba(34,197,94,0.12); border:1px solid rgba(34,197,94,0.25); display:flex; align-items:center; justify-content:center; color:#22c55e;">
+                    <i data-lucide="trending-up" style="width:20px; height:20px;"></i>
+                </div>
+                <div>
+                    <h3 id="growthModalTitle" style="font-size:1.1rem; font-weight:700; color:var(--text-primary); margin:0;">Historial de Crecimiento</h3>
+                    <span id="growthModalUrl" style="font-size:0.75rem; color:var(--text-muted); font-family:monospace;"></span>
+                </div>
+            </div>
+            <button type="button" class="action-btn" onclick="closeGrowthModal()" style="width:32px; height:32px;">
+                <i data-lucide="x"></i>
+            </button>
+        </div>
+
+        <!-- Growth Summary Highlights -->
+        <div style="padding:16px 24px; background:var(--bg-glass-input); border-bottom:1px solid var(--border-glass); display:grid; grid-template-columns:repeat(3, 1fr); gap:12px;">
+            <div style="text-align:center; padding:8px; background:rgba(255,255,255,0.02); border-radius:8px;">
+                <div style="font-size:0.7rem; color:var(--text-secondary); text-transform:uppercase;">Seguidores Iniciales</div>
+                <div id="growthModalInitial" style="font-size:1.1rem; font-weight:700; color:var(--text-primary); font-family:monospace;">-</div>
+            </div>
+            <div style="text-align:center; padding:8px; background:rgba(255,255,255,0.02); border-radius:8px;">
+                <div style="font-size:0.7rem; color:var(--text-secondary); text-transform:uppercase;">Seguidores Actuales</div>
+                <div id="growthModalCurrent" style="font-size:1.1rem; font-weight:700; color:#22c55e; font-family:monospace;">-</div>
+            </div>
+            <div style="text-align:center; padding:8px; background:rgba(255,255,255,0.02); border-radius:8px;">
+                <div style="font-size:0.7rem; color:var(--text-secondary); text-transform:uppercase;">Crecimiento Total</div>
+                <div id="growthModalTotalDelta" style="font-size:1.1rem; font-weight:700; color:#22c55e; font-family:monospace;">-</div>
+            </div>
+        </div>
+
+        <!-- Snapshots Table with Scroll -->
+        <div style="overflow-y:auto; flex:1; padding:0;">
+            <table class="panel-table" style="margin:0;">
+                <thead>
+                    <tr>
+                        <th>Fecha / Hora</th>
+                        <th style="text-align:right;">Seguidores</th>
+                        <th style="text-align:right;">Variación</th>
+                    </tr>
+                </thead>
+                <tbody id="growthSnapshotsBody">
+                    <tr>
+                        <td colspan="3" style="text-align:center; padding:30px; color:var(--text-muted);">
+                            Cargando registros históricos...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Modal Footer -->
+        <div style="padding:14px 24px; border-top:1px solid var(--border-glass); display:flex; justify-content:flex-end;">
+            <button type="button" class="btn-ghost" onclick="closeGrowthModal()">Cerrar</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    async function openGrowthModal(pageId) {
+        const modal = document.getElementById('growthHistoryModal');
+        const tbody = document.getElementById('growthSnapshotsBody');
+        if (modal) {
+            modal.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+            lucide.createIcons({ root: modal });
+        }
+
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="3" style="text-align:center; padding:30px; color:var(--text-muted);">
+                    <div style="display:flex; align-items:center; justify-content:center; gap:8px;">
+                        <i data-lucide="loader-2" class="animate-spin" style="width:16px; height:16px;"></i>
+                        <span>Cargando historial de seguidores...</span>
+                    </div>
+                </td>
+            </tr>
+        `;
+        lucide.createIcons({ root: tbody });
+
+        try {
+            const res = await fetch(`/extractor/api/page/${pageId}/history/`);
+            const data = await res.json();
+
+            if (data.status === 'ok') {
+                document.getElementById('growthModalTitle').textContent = data.page_name || 'Historial de Fanpage';
+                document.getElementById('growthModalUrl').textContent = data.page_url || '';
+
+                const initialFmt = Number(data.growth?.initial || data.current_followers).toLocaleString();
+                const currentFmt = Number(data.current_followers).toLocaleString();
+                const deltaFmt = data.growth?.formatted_delta || '0';
+                const pctFmt = data.growth?.formatted_pct || '0%';
+
+                document.getElementById('growthModalInitial').textContent = initialFmt;
+                document.getElementById('growthModalCurrent').textContent = currentFmt;
+                document.getElementById('growthModalTotalDelta').textContent = `${deltaFmt} (${pctFmt})`;
+
+                if (data.history && data.history.length > 0) {
+                    tbody.innerHTML = data.history.map(item => `
+                        <tr>
+                            <td style="font-family:monospace; font-size:0.82rem; color:var(--text-muted);">${item.date}</td>
+                            <td style="text-align:right; font-family:monospace; font-weight:700; color:var(--text-primary);">
+                                ${Number(item.followers).toLocaleString()}
+                            </td>
+                            <td style="text-align:right;">
+                                ${item.is_positive ? `
+                                    <span class="growth-badge-up">
+                                        <i data-lucide="trending-up" style="width:11px; height:11px;"></i>
+                                        ${item.formatted_delta}
+                                    </span>
+                                ` : item.is_negative ? `
+                                    <span style="background:rgba(239,68,68,0.12); color:#f87171; border:1px solid rgba(239,68,68,0.25); padding:3px 8px; border-radius:6px; font-size:0.75rem; font-weight:600; display:inline-flex; align-items:center; gap:4px; font-family:monospace;">
+                                        <i data-lucide="trending-down" style="width:11px; height:11px;"></i>
+                                        ${item.formatted_delta}
+                                    </span>
+                                ` : `
+                                    <span class="growth-badge-neutral">
+                                        <i data-lucide="minus" style="width:11px; height:11px;"></i>
+                                        0
+                                    </span>
+                                `}
+                            </td>
+                        </tr>
+                    `).join('');
+                } else {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="3" style="text-align:center; padding:24px; color:var(--text-muted);">
+                                No hay registros adicionales aún.
+                            </td>
+                        </tr>
+                    `;
+                }
+            } else {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="3" style="text-align:center; padding:24px; color:#f87171;">
+                            Error al cargar el historial.
+                        </td>
+                    </tr>
+                `;
+            }
+            lucide.createIcons({ root: modal });
+        } catch (err) {
+            console.error('Error fetching growth history:', err);
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="3" style="text-align:center; padding:24px; color:#f87171;">
+                        Error de conexión al cargar el historial.
+                    </td>
+                </tr>
+            `;
+            lucide.createIcons({ root: tbody });
+        }
+    }
+
+    function closeGrowthModal() {
+        const modal = document.getElementById('growthHistoryModal');
+        if (modal) {
+            modal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+    }
+
+    window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeGrowthModal();
+    });
+
+    document.getElementById('growthHistoryModal')?.addEventListener('click', (e) => {
+        if (e.target.id === 'growthHistoryModal') closeGrowthModal();
+    });
+</script>
+{% endblock %}

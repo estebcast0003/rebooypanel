@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Login - Rebooy Panel{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        background-image: url('{% static "img/id.jpg" %}');
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+    }
+    .overlay {
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(circle at center, rgba(15, 23, 42, 0.4) 0%, rgba(15, 23, 42, 0.9) 100%);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="overlay z-0"></div>
+
+<div class="z-10 flex-grow flex items-center justify-center p-4">
+    <div class="glass-panel-dark p-8 md:p-12 rounded-3xl w-full max-w-md shadow-2xl relative overflow-hidden group">
+        <!-- Decoration -->
+        <div class="absolute -top-10 -right-10 w-32 h-32 bg-brand-500 rounded-full blur-3xl opacity-20 group-hover:opacity-40 transition duration-500"></div>
+        <div class="absolute -bottom-10 -left-10 w-32 h-32 bg-slate-500 rounded-full blur-3xl opacity-20 group-hover:opacity-40 transition duration-500"></div>
+
+        <div class="relative z-10 text-center mb-8">
+            <h1 class="text-3xl font-bold text-white tracking-tight mb-2">Rebooy<span class="text-brand-500">Panel</span></h1>
+            <p class="text-slate-400 text-sm">Acceso al sistema central</p>
+        </div>
+
+        <form method="post" action="{% url 'login' %}" class="relative z-10 space-y-6">
+            {% csrf_token %}
+            
+            {% if form.errors %}
+            <div class="bg-red-500/20 border border-red-500/50 text-red-200 px-4 py-3 rounded-xl text-sm text-center">
+                Credenciales incorrectas. Verificalas.
+            </div>
+            {% endif %}
+
+            <div>
+                <label for="id_username" class="block text-sm font-medium text-slate-300 mb-2">Username</label>
+                <div class="relative">
+                    <input type="text" name="username" id="id_username" required
+                        class="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all"
+                        placeholder="Ingresá tu usuario">
+                </div>
+            </div>
+
+            <div>
+                <label for="id_password" class="block text-sm font-medium text-slate-300 mb-2">Password</label>
+                <div class="relative">
+                    <input type="password" name="password" id="id_password" required
+                        class="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all"
+                        placeholder="••••••••">
+                </div>
+            </div>
+
+            <button type="submit"
+                class="w-full bg-brand-600 hover:bg-brand-500 text-white font-semibold py-3 px-4 rounded-xl shadow-lg shadow-brand-500/30 transform transition-all hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 focus:ring-offset-slate-900 mt-4">
+                Ingresar al Sistema
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}

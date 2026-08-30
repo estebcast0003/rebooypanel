@@ -1,0 +1,248 @@
+{% extends 'panel_base.html' %}
+
+{% block title %}Pool de API Keys IA — Rebooy Panel{% endblock %}
+{% block breadcrumb %}
+    <a href="{% url 'videoprompt:studio' %}" style="color:#475569; text-decoration:none;">Herramientas IA</a>
+    <span style="margin:0 6px; color:#334155;">/</span>
+    <span style="color:#94a3b8;">Claves de IA</span>
+{% endblock %}
+
+{% block content %}
+<!-- Header con Botón de Acción Principal -->
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; flex-wrap:wrap; gap:16px;">
+    <div>
+        <h1 style="font-size:1.6rem; font-weight:700; color:#f1f5f9; margin:0 0 4px; display:flex; align-items:center; gap:8px;">
+            <i data-lucide="key" style="color:#ef4444; width:26px; height:26px;"></i>
+            Pool de API Keys de Gemini
+        </h1>
+        <p style="font-size:0.875rem; color:#64748b; margin:0;">
+            Administra las claves de Google AI Studio con rotación inteligente por cuota.
+        </p>
+    </div>
+    
+    <div style="display:flex; align-items:center; gap:10px;">
+        <button type="button" class="btn-brand" onclick="openNewKeyModal()">
+            <i data-lucide="plus"></i>
+            Nueva API Key
+        </button>
+        <a href="{% url 'videoprompt:studio' %}" class="btn-ghost">
+            <i data-lucide="arrow-left" style="width:14px; height:14px;"></i>
+            Volver al Estudio
+        </a>
+    </div>
+</div>
+
+<!-- Flash Messages -->
+{% if messages %}
+<div style="margin-bottom:20px; display:flex; flex-direction:column; gap:8px;">
+    {% for message in messages %}
+    <div class="{% if message.tags == 'error' %}alert-error{% else %}alert-success{% endif %}">
+        <i data-lucide="{% if message.tags == 'error' %}alert-circle{% else %}check-circle{% endif %}" style="width:16px; height:16px; flex-shrink:0;"></i>
+        {{ message }}
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<!-- Tabla Completa a Ancho Completo -->
+<div class="glass-card" style="overflow:hidden;">
+    <div style="padding:18px 24px; border-bottom:1px solid rgba(255,255,255,0.05); display:flex; justify-content:space-between; align-items:center;">
+        <h3 style="font-size:1rem; font-weight:600; color:#e2e8f0; margin:0;">
+            Claves Configuradas ({{ keys.count }})
+        </h3>
+        <span style="font-size:0.75rem; color:#64748b;">Rotación automática activa en caso de error 429</span>
+    </div>
+
+    <div style="overflow-x:auto;">
+        <table class="panel-table">
+            <thead>
+                <tr>
+                    <th>Clave de API</th>
+                    <th>Estado</th>
+                    <th>Salud / Reporte</th>
+                    <th>Último Uso</th>
+                    <th style="text-align:right;">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for k in keys %}
+                <tr>
+                    <td>
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <div style="width:28px; height:28px; border-radius:7px; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.2); display:flex; align-items:center; justify-content:center;">
+                                <i data-lucide="key" style="width:13px; height:13px; color:#f87171;"></i>
+                            </div>
+                            <code style="background:rgba(0,0,0,0.3); padding:4px 8px; border-radius:6px; font-size:0.82rem; color:#f87171; font-family:monospace;">
+                                ...{{ k.api_key|slice:"-8:" }}
+                            </code>
+                        </div>
+                    </td>
+                    <td>
+                        {% if k.is_active %}
+                            <span class="badge-active">
+                                <span class="status-dot" style="background:#4ade80;"></span>Activa
+                            </span>
+                        {% else %}
+                            <span class="badge-inactive">
+                                <span class="status-dot" style="background:#ef4444;"></span>Inactiva
+                            </span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span style="font-size:0.82rem; color:#cbd5e1;">{{ k.status_message }}</span>
+                    </td>
+                    <td style="font-size:0.8rem; color:#64748b;">
+                        {{ k.last_used_at|date:"d M Y, H:i"|default:"Nunca" }}
+                    </td>
+                    <td>
+                        <div style="display:flex; align-items:center; justify-content:flex-end; gap:6px;">
+                            <!-- Toggle Activa/Inactiva -->
+                            <form method="post" action="{% url 'videoprompt:api_key_toggle' k.pk %}" style="display:inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="action-btn action-btn-toggle" title="{% if k.is_active %}Desactivar temporalmente{% else %}Activar clave{% endif %}">
+                                    <i data-lucide="{% if k.is_active %}pause-circle{% else %}play-circle{% endif %}"></i>
+                                </button>
+                            </form>
+                            <!-- Eliminar con Modal Glassmorphism -->
+                            <button type="button" class="action-btn action-btn-delete" title="Eliminar clave" onclick="openDeleteKeyModal({{ k.pk }}, '...{{ k.api_key|slice:'-8:' }}')">
+                                <i data-lucide="trash-2"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" style="text-align:center; padding:48px 20px; color:#64748b;">
+                        <i data-lucide="key" style="width:40px; height:40px; margin:0 auto 12px; opacity:0.3;"></i>
+                        <p style="font-size:0.9rem; margin:0 0 12px;">No hay claves de API registradas en la base de datos.</p>
+                        <button type="button" class="btn-brand" style="padding:8px 16px; font-size:0.8rem;" onclick="openNewKeyModal()">
+                            <i data-lucide="plus"></i> Agregar Primera Clave
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ═════════ MODAL GLASSMORPHISM: AGREGAR API KEY ═════════ -->
+<div id="newKeyModal" style="display:none; position:fixed; inset:0; z-index:9999; background:rgba(2, 6, 23, 0.85); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); align-items:center; justify-content:center; padding:16px;">
+    <div class="glass-card" style="width:100%; max-width:480px; padding:28px 32px; border:1px solid rgba(255,255,255,0.12); box-shadow:0 25px 50px -12px rgba(0,0,0,0.7); animation:modalIn 0.25s ease-out; position:relative; overflow:hidden;">
+        <div style="position:absolute; top:-30px; right:-30px; width:100px; height:100px; background:rgba(239,68,68,0.06); border-radius:50%; pointer-events:none;"></div>
+
+        <!-- Modal Header -->
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <h3 style="font-size:1.15rem; font-weight:700; color:#f1f5f9; margin:0; display:flex; align-items:center; gap:8px;">
+                <i data-lucide="key" style="width:18px; height:18px; color:#ef4444;"></i>
+                Agregar Nueva API Key
+            </h3>
+            <button type="button" class="action-btn" style="width:32px; height:32px; background:rgba(255,255,255,0.06); border-radius:8px;" onclick="closeNewKeyModal()">
+                <i data-lucide="x" style="width:16px; height:16px; color:#cbd5e1;"></i>
+            </button>
+        </div>
+
+        <form method="post">
+            {% csrf_token %}
+            <div style="margin-bottom:20px;">
+                <label style="display:block; font-size:0.78rem; font-weight:600; color:#94a3b8; margin-bottom:8px; text-transform:uppercase; letter-spacing:0.05em;">
+                    API Key (Google AI Studio)
+                </label>
+                <input type="text" name="api_key" placeholder="AIzaSy..." required autofocus class="glass-input" style="width:100%; padding:11px 14px; border-radius:10px; font-size:0.875rem; font-family:monospace;">
+                <p style="font-size:0.75rem; color:#64748b; margin:8px 0 0; line-height:1.4;">
+                    Esta clave se integrará al pool de rotación automática para evitar saturación de cuota o límites 429.
+                </p>
+            </div>
+
+            <div style="display:flex; gap:10px; justify-content:flex-end;">
+                <button type="button" class="btn-ghost" onclick="closeNewKeyModal()">Cancelar</button>
+                <button type="submit" class="btn-brand">
+                    <i data-lucide="save"></i>
+                    Guardar Clave
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ═════════ MODAL GLASSMORPHISM: CONFIRMAR ELIMINACIÓN DE CLAVE ═════════ -->
+<div id="deleteKeyModal" style="display:none; position:fixed; inset:0; z-index:10000; background:rgba(2, 6, 23, 0.85); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); align-items:center; justify-content:center; padding:16px;">
+    <div class="glass-card" style="width:100%; max-width:440px; padding:28px; border:1px solid rgba(239,68,68,0.25); box-shadow:0 25px 50px -12px rgba(0,0,0,0.8); animation:modalIn 0.22s ease-out; text-align:center; position:relative; overflow:hidden;">
+        <div style="position:absolute; top:-30px; left:50%; transform:translateX(-50%); width:120px; height:120px; background:rgba(239,68,68,0.12); border-radius:50%; pointer-events:none; filter:blur(20px);"></div>
+
+        <div style="width:52px; height:52px; border-radius:14px; background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.3); display:flex; align-items:center; justify-content:center; margin:0 auto 16px;">
+            <i data-lucide="trash-2" style="width:24px; height:24px; color:#f87171;"></i>
+        </div>
+
+        <h3 style="font-size:1.15rem; font-weight:700; color:#f1f5f9; margin:0 0 8px;">¿Eliminar API Key?</h3>
+        <p style="font-size:0.85rem; color:#94a3b8; margin:0 0 6px; line-height:1.5;">
+            Estás a punto de retirar la clave del pool de Gemini:
+        </p>
+        <div style="margin-bottom:22px;">
+            <code id="deleteKeyLabel" style="background:rgba(0,0,0,0.4); padding:4px 10px; border-radius:6px; font-size:0.85rem; color:#f87171; font-family:monospace;"></code>
+        </div>
+
+        <form id="deleteKeyForm" method="post" action="">
+            {% csrf_token %}
+            <div style="display:flex; gap:10px; justify-content:center;">
+                <button type="button" class="btn-ghost" style="flex:1; justify-content:center;" onclick="closeDeleteKeyModal()">
+                    Cancelar
+                </button>
+                <button type="submit" class="btn-danger" style="flex:1; justify-content:center;">
+                    <i data-lucide="trash-2"></i>
+                    Eliminar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+@keyframes modalIn {
+    from { opacity: 0; transform: scale(0.96); }
+    to { opacity: 1; transform: scale(1); }
+}
+</style>
+
+<script>
+function openNewKeyModal() {
+    document.getElementById('newKeyModal').style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    lucide.createIcons();
+}
+
+function closeNewKeyModal() {
+    document.getElementById('newKeyModal').style.display = 'none';
+    document.body.style.overflow = 'auto';
+}
+
+function openDeleteKeyModal(keyId, keyLabel) {
+    const form = document.getElementById('deleteKeyForm');
+    form.action = `/video-prompt/api-keys/${keyId}/delete/`;
+    document.getElementById('deleteKeyLabel').innerText = keyLabel;
+    
+    const modal = document.getElementById('deleteKeyModal');
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    lucide.createIcons();
+}
+
+function closeDeleteKeyModal() {
+    document.getElementById('deleteKeyModal').style.display = 'none';
+    document.body.style.overflow = 'auto';
+}
+
+window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        closeNewKeyModal();
+        closeDeleteKeyModal();
+    }
+});
+document.getElementById('newKeyModal').addEventListener('click', (e) => {
+    if (e.target.id === 'newKeyModal') closeNewKeyModal();
+});
+document.getElementById('deleteKeyModal').addEventListener('click', (e) => {
+    if (e.target.id === 'deleteKeyModal') closeDeleteKeyModal();
+});
+</script>
+{% endblock %}

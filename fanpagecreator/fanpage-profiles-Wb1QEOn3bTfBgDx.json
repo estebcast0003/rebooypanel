@@ -1,0 +1,264 @@
+{
+  "name": "fanpage-profiles",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "cd833a1f-86f6-4532-b3f6-133278ece026",
+      "name": "Iniciar",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [0, 304]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "system_prompt",
+              "name": "system_prompt",
+              "value": "Eres un creativo especialista en branding de fanpages de Facebook sobre peliculas y series. Tu tarea es generar la identidad completa para UNA nueva fanpage.\n\nREGLAS CRITICAS:\n- Cada fanpage debe ser VISUALMENTE UNICA - varia estilos artisticos radicalmente\n- NO repitas nombres, descripciones ni conceptos de fanpages anteriores\n- El contenido textual (nombre, descripcion) debe estar en ESPANOL\n- Los prompts para imagenes deben ser en INGLES (las IAs de imagen funcionan mejor) y muy detallados\n\nESTILOS VISUALES (rota entre estos, nunca repitas el mismo estilo consecutivo):\n- Fotografia cinematografica con luces y sombras dramaticas\n- Ilustracion digital con colores vibrantes y trazos definidos\n- Acuarela con texturas organicas y degradados suaves\n- Arte pop con colores saturados y contornos marcados\n- Minimalismo con espacios limpios y paleta reducida\n- Retro/vintage con grain, tonos calidos y estetica analogica\n- Cyberpunk con neones, oscuridad y lluvia\n- Steampunk con engranajes, bronce y vapor\n- Arte urbano/graffiti con texturas de pared y spray\n- Fotorrealismo hiperdetallado con profundidad de campo\n- Collage mixto con recortes y capas superpuestas\n- Arte 3D render con iluminacion global y materiales PBR\n- Pixel art con paleta limitada y estetica retro\n- Anime/manga con lineas dinamicas y cel shading\n- Comic book style con halftone y onomatopeyas\n- Art nouveau con lineas fluidas y motivos naturales\n- Bauhaus con geometria pura y colores primarios\n- Surrealismo con elementos oniricos y yuxtaposiciones\n- Low poly con facetas geometricas y colores planos\n- Vaporwave con estetica retro-digital y tonos pastel\n\nGenera un JSON con esta estructura exacta:\n{\n  \"nombre\": \"Nombre creativo y memorable (corto, en espanol)\",\n  \"descripcion\": \"Descripcion atractiva de 2-3 oraciones (en espanol)\",\n  \"prompt_foto_perfil\": \"Prompt en INGLES para imagen de perfil cuadrada. Estilo, paleta, composicion, elementos, atmosfera, iluminacion. Min 60 palabras.\",\n  \"prompt_foto_portada\": \"Prompt en INGLES para imagen de portada panoramica 16:5. Escena DIFERENTE al perfil pero complementaria. Estilo, paleta, escena, fondo, atmosfera. Min 100 palabras.\",\n  \"estilo_visual\": \"Estilo artistico principal (en espanol)\",\n  \"subtema\": \"Subtema o nicho especifico (en espanol)\"\n}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "db711fd9-f187-4b0d-a0b4-de22a3782d9a",
+      "name": "Configuracion",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [224, 304]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "fanpages_registradas"
+        },
+        "limit": 15,
+        "orderBy": true
+      },
+      "id": "bea8d8da-c7b5-4c3e-9cfe-13bca2bca9d1",
+      "name": "Fanpages Recientes",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [448, 304],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const config = $('Configuracion').item.json;\nconst tableItems = $input.all();\nlet contexto = '';\nconst fanpages = tableItems.filter(function(i) { return i.json.nombre; });\nif (fanpages.length > 0) {\n  contexto = fanpages.map(function(i) { return '- ' + i.json.nombre + ' | Estilo: ' + i.json.estilo_visual + ' | Tema: ' + i.json.subtema; }).join('\\n');\n} else {\n  contexto = 'Aun no hay fanpages creadas. Genera la primera.';\n}\nvar finalPrompt = config.system_prompt + '\\n\\nFANPAGES YA CREADAS (NO repitas conceptos, nombres ni estilos similares):\\n' + contexto;\nreturn [{ json: { prompt_completo: finalPrompt } }];",
+        "mode": "runOnceForAllItems"
+      },
+      "id": "e7652431-25fe-4618-9b0d-89f8b9c1ec5a",
+      "name": "Construir Prompt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [672, 304]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.prompt_completo }}\n\nGenera una nueva fanpage unica y diferente a las existentes.",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "={{ $(\"Configuracion\").item.json.system_prompt }}",
+          "maxIterations": 1,
+          "enableStreaming": false
+        }
+      },
+      "id": "747158c2-a6f5-41f6-930c-b4c7a2288778",
+      "name": "Generar Fanpage",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [880, 304]
+    },
+    {
+      "parameters": {
+        "model": "google/gemini-2.5-flash",
+        "options": {
+          "maxTokens": 2000,
+          "responseFormat": "json_object",
+          "temperature": 0.9
+        }
+      },
+      "id": "62dfec09-b53f-4aa5-bce6-a3d031308947",
+      "name": "OpenRouter Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [880, 512],
+      "credentials": {
+        "openRouterApi": {
+          "id": "DJ2PuCMBdQJ1IlNv",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\"nombre\":\"Cine Retro 80s\",\"descripcion\":\"Fanpage dedicada a las mejores peliculas de accion y ciencia ficcion de los anos 80. Revive la era dorada del cine clasico.\",\"prompt_foto_perfil\":\"A retro 80s movie theater marquee with neon lights in pink and blue, vintage film reels, grain texture, warm analog aesthetic, square composition, dramatic lighting, nostalgic atmosphere, cinematic style\",\"prompt_foto_portada\":\"A panoramic view of a 1980s video rental store interior with VHS tapes on shelves, neon signs glowing, movie posters on walls, warm lighting, retro furniture, detailed background with classic movie memorabilia, cinematic composition, 16:5 aspect ratio, nostalgic and inviting atmosphere\",\"estilo_visual\":\"Retro/vintage con estetica analogica\",\"subtema\":\"Peliculas de accion y sci-fi de los 80\"}",
+        "autoFix": true
+      },
+      "id": "97d3b45d-2d15-4db0-b5e3-fbc40210668e",
+      "name": "Structured Output Parser",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [1024, 528]
+    },
+    {
+      "parameters": {
+        "model": "google/gemini-2.0-flash-exp:free",
+        "options": {
+          "maxTokens": 500,
+          "temperature": 0
+        }
+      },
+      "id": "9cc95b01-c3ed-468f-8eb0-597a054c1220",
+      "name": "Parser Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [1024, 736],
+      "credentials": {
+        "openRouterApi": {
+          "id": "DJ2PuCMBdQJ1IlNv",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "nombre",
+              "name": "nombre",
+              "value": "={{ $json.output.nombre }}",
+              "type": "string"
+            },
+            {
+              "id": "descripcion",
+              "name": "descripcion",
+              "value": "={{ $json.output.descripcion }}",
+              "type": "string"
+            },
+            {
+              "id": "prompt_foto_perfil",
+              "name": "prompt_foto_perfil",
+              "value": "={{ $json.output.prompt_foto_perfil }}",
+              "type": "string"
+            },
+            {
+              "id": "prompt_foto_portada",
+              "name": "prompt_foto_portada",
+              "value": "={{ $json.output.prompt_foto_portada }}",
+              "type": "string"
+            },
+            {
+              "id": "estilo_visual",
+              "name": "estilo_visual",
+              "value": "={{ $json.output.estilo_visual }}",
+              "type": "string"
+            },
+            {
+              "id": "subtema",
+              "name": "subtema",
+              "value": "={{ $json.output.subtema }}",
+              "type": "string"
+            },
+            {
+              "id": "modelo_usado",
+              "name": "modelo_usado",
+              "value": "google/gemini-2.0-flash-exp:free",
+              "type": "string"
+            },
+            {
+              "id": "fecha_creacion",
+              "name": "fecha_creacion",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "4e4c1b09-8817-4bf9-a827-c320b074a9a4",
+      "name": "Preparar Guardado",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1168, 304]
+    },
+    {
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "fanpages_registradas"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "nombre": "={{ $json.nombre }}",
+            "descripcion": "={{ $json.descripcion }}",
+            "prompt_foto_perfil": "={{ $json.prompt_foto_perfil }}",
+            "prompt_foto_portada": "={{ $json.prompt_foto_portada }}",
+            "estilo_visual": "={{ $json.estilo_visual }}",
+            "subtema": "={{ $json.subtema }}",
+            "modelo_usado": "={{ $json.modelo_usado }}",
+            "fecha_creacion": "={{ $json.fecha_creacion }}"
+          },
+          "schema": [
+            { "id": "nombre", "displayName": "nombre", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "descripcion", "displayName": "descripcion", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "prompt_foto_perfil", "displayName": "prompt_foto_perfil", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "prompt_foto_portada", "displayName": "prompt_foto_portada", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "estilo_visual", "displayName": "estilo_visual", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "subtema", "displayName": "subtema", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "modelo_usado", "displayName": "modelo_usado", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "fecha_creacion", "displayName": "fecha_creacion", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true }
+          ]
+        },
+        "options": {}
+      },
+      "id": "919331b4-c3f9-4d2e-befb-327a737f45c1",
+      "name": "Guardar Fanpage",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [1328, 304]
+    },
+    {
+      "parameters": {
+        "content": "## Configuracion Rapida\n\n1. **Modelo**: cambia el modelo en el nodo \"OpenRouter Chat Model\" (ej: `google/gemini-2.0-flash-exp:free`, `anthropic/claude-3.5-sonnet`, etc.)\n2. **Ejecuta**: click en \"Execute workflow\" para generar una nueva fanpage\n\nLos resultados se guardan automaticamente en la tabla \"fanpages_registradas\" para evitar repeticiones.",
+        "height": 244,
+        "width": 668,
+        "color": 4
+      },
+      "id": "badcbc32-9a0e-48bd-9b85-a4ad693605a3",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [48, 544]
+    }
+  ],
+  "connections": {
+    "Iniciar": { "main": [[{ "node": "Configuracion", "type": "main", "index": 0 }]] },
+    "Configuracion": { "main": [[{ "node": "Fanpages Recientes", "type": "main", "index": 0 }]] },
+    "Fanpages Recientes": { "main": [[{ "node": "Construir Prompt", "type": "main", "index": 0 }]] },
+    "Construir Prompt": { "main": [[{ "node": "Generar Fanpage", "type": "main", "index": 0 }]] },
+    "Generar Fanpage": { "main": [[{ "node": "Preparar Guardado", "type": "main", "index": 0 }]] },
+    "OpenRouter Chat Model": { "ai_languageModel": [[{ "node": "Generar Fanpage", "type": "ai_languageModel", "index": 0 }]] },
+    "Structured Output Parser": { "ai_outputParser": [[{ "node": "Generar Fanpage", "type": "ai_outputParser", "index": 0 }]] },
+    "Parser Model": { "ai_languageModel": [[{ "node": "Structured Output Parser", "type": "ai_languageModel", "index": 0 }]] },
+    "Preparar Guardado": { "main": [[{ "node": "Guardar Fanpage", "type": "main", "index": 0 }]] }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "description": "Genera identidad completa para fanpages de Facebook sobre peliculas y series usando OpenRouter oficial con modelo configurable. Usa structured output para JSON garantizado y guarda registro en data table para evitar repeticiones.",
+  "meta": {
+    "workflow_id": "Wb1QEOn3bTfBgDxX",
+    "exported_at": "2026-07-28T02:12:00.000Z",
+    "version": "v3"
+  }
+}

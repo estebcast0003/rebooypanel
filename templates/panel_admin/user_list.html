@@ -1,0 +1,429 @@
+{% extends 'panel_base.html' %}
+
+{% block title %}Usuarios — Rebooy Panel{% endblock %}
+{% block breadcrumb %}Administración / Usuarios{% endblock %}
+
+{% block content %}
+
+<!-- Header -->
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:16px;">
+    <div>
+        <h1 style="font-size:1.5rem;font-weight:700;color:#f1f5f9;margin:0 0 4px;display:flex;align-items:center;gap:8px;">
+            <i data-lucide="users" style="color:#ef4444;width:24px;height:24px;"></i>
+            Gestión de Usuarios
+        </h1>
+        <p style="font-size:0.875rem;color:#64748b;margin:0;">{{ users.paginator.count }} usuario{{ users.paginator.count|pluralize }} registrado{{ users.paginator.count|pluralize }}.</p>
+    </div>
+    <a href="{% url 'user_create' %}" class="btn-brand">
+        <i data-lucide="user-plus"></i>
+        Nuevo Usuario
+    </a>
+</div>
+
+<!-- Flash messages -->
+{% if messages %}
+<div style="margin-bottom:16px;display:flex;flex-direction:column;gap:8px;">
+    {% for message in messages %}
+    <div class="{% if message.tags == 'error' %}alert-error{% else %}alert-success{% endif %}">
+        <i data-lucide="{% if message.tags == 'error' %}alert-circle{% else %}check-circle{% endif %}" style="width:15px;height:15px;flex-shrink:0;"></i>
+        {{ message }}
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<!-- Search -->
+<form method="get" style="margin-bottom:16px;">
+    <div style="position:relative;max-width:360px;">
+        <i data-lucide="search" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);width:14px;height:14px;color:#64748b;pointer-events:none;"></i>
+        <input type="text" name="q" value="{{ query }}" placeholder="Buscar por username..."
+            class="glass-input"
+            style="width:100%;padding:9px 14px 9px 36px;border-radius:10px;font-size:0.875rem;">
+    </div>
+</form>
+
+<!-- Table card -->
+<div class="glass-card" style="overflow:hidden;">
+    <div style="overflow-x:auto;">
+        <table class="panel-table">
+            <thead>
+                <tr>
+                    <th>Usuario</th>
+                    <th>Rol</th>
+                    <th>Estado</th>
+                    <th>Cuota Diaria</th>
+                    <th>Creado por</th>
+                    <th>Fecha</th>
+                    <th style="text-align:right;">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in users %}
+                <tr id="user-row-{{ u.pk }}">
+                    <td>
+                        <div style="display:flex;align-items:center;gap:10px;">
+                            <div class="avatar">{{ u.username|make_list|first|upper }}</div>
+                            <span style="font-weight:600;color:#e2e8f0;">{{ u.username }}</span>
+                        </div>
+                    </td>
+                    <td>
+                        {% if u.role == 'superadmin' %}
+                            <span class="badge-superadmin">Super Admin</span>
+                        {% elif u.role == 'admin' %}
+                            <span class="badge-admin">Admin</span>
+                        {% else %}
+                            <span class="badge-user">User</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if u.is_active %}
+                            <span class="badge-active">
+                                <span class="status-dot" style="background:#4ade80;"></span>Activo
+                            </span>
+                        {% else %}
+                            <span class="badge-inactive">
+                                <span class="status-dot" style="background:#ef4444;"></span>Inactivo
+                            </span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div id="quota-cell-{{ u.pk }}" style="display:inline-flex; align-items:center; gap:6px; cursor:pointer;" onclick="openQuotaModal({{ u.pk }}, '{{ u.username }}', {{ u.daily_prompt_limit }}, {% if u.role == 'superadmin' or u.is_unlimited_prompts %}true{% else %}false{% endif %})" title="Clic para ajustar cuota">
+                            {% if u.role == 'superadmin' or u.is_unlimited_prompts %}
+                                <span class="badge-admin" style="font-size:0.75rem; padding:3px 8px; display:inline-flex; align-items:center; gap:4px;">
+                                    <i data-lucide="infinity" style="width:12px; height:12px; color:#60a5fa;"></i>
+                                    Ilimitada
+                                </span>
+                            {% else %}
+                                <span class="badge-user" style="font-size:0.75rem; padding:3px 8px; display:inline-flex; align-items:center; gap:4px;">
+                                    <i data-lucide="zap" style="width:12px; height:12px; color:#f87171;"></i>
+                                    {{ u.daily_prompt_limit }} / día
+                                </span>
+                            {% endif %}
+                            <i data-lucide="sliders" style="width:12px; height:12px; color:#64748b; opacity:0.6;"></i>
+                        </div>
+                    </td>
+                    <td style="color:#64748b;font-size:0.82rem;">{{ u.created_by.username|default:"—" }}</td>
+                    <td style="color:#64748b;font-size:0.82rem;">{{ u.date_joined|date:"d M Y" }}</td>
+                    <td>
+                        <div style="display:flex;align-items:center;justify-content:flex-end;gap:4px;">
+                            <!-- Ajustar Cuota Rápido -->
+                            <button type="button" class="action-btn" style="background:rgba(255,255,255,0.05);" title="Ajustar Cuota Diaria" onclick="openQuotaModal({{ u.pk }}, '{{ u.username }}', {{ u.daily_prompt_limit }}, {% if u.role == 'superadmin' or u.is_unlimited_prompts %}true{% else %}false{% endif %})">
+                                <i data-lucide="zap" style="width:14px; height:14px; color:#f87171;"></i>
+                            </button>
+                            <!-- Editar -->
+                            <a href="{% url 'user_edit' u.pk %}" class="action-btn action-btn-edit" title="Editar">
+                                <i data-lucide="pencil"></i>
+                            </a>
+                            <!-- Toggle -->
+                            <form method="post" action="{% url 'user_toggle' u.pk %}" style="display:inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="action-btn action-btn-toggle"
+                                    title="{% if u.is_active %}Desactivar{% else %}Activar{% endif %}">
+                                    {% if u.is_active %}
+                                        <i data-lucide="pause-circle"></i>
+                                    {% else %}
+                                        <i data-lucide="play-circle"></i>
+                                    {% endif %}
+                                </button>
+                            </form>
+                            <!-- Eliminar con Modal Glassmorphism -->
+                            <button type="button" class="action-btn action-btn-delete" title="Eliminar" onclick="openDeleteUserModal({{ u.pk }}, '{{ u.username }}')">
+                                <i data-lucide="trash-2"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" style="text-align:center;padding:48px;color:#64748b;">
+                        No se encontraron usuarios{% if query %} para "{{ query }}"{% endif %}.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if users.has_other_pages %}
+    <div style="padding:14px 20px;border-top:1px solid rgba(255,255,255,0.05);display:flex;align-items:center;justify-content:space-between;">
+        <span style="font-size:0.8rem;color:#64748b;">Página {{ users.number }} de {{ users.paginator.num_pages }}</span>
+        <div style="display:flex;gap:8px;">
+            {% if users.has_previous %}
+                <a href="?page={{ users.previous_page_number }}{% if query %}&q={{ query }}{% endif %}" class="btn-ghost" style="padding:6px 14px;font-size:0.8rem;">
+                    <i data-lucide="chevron-left" style="width:14px;height:14px;"></i> Anterior
+                </a>
+            {% endif %}
+            {% if users.has_next %}
+                <a href="?page={{ users.next_page_number }}{% if query %}&q={{ query }}{% endif %}" class="btn-ghost" style="padding:6px 14px;font-size:0.8rem;">
+                    Siguiente <i data-lucide="chevron-right" style="width:14px;height:14px;"></i>
+                </a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- ═════════ MODAL GLASSMORPHISM: AJUSTE RÁPIDO DE CUOTA ═════════ -->
+<div id="quotaModal" style="display:none; position:fixed; inset:0; z-index:9999; background:rgba(2, 6, 23, 0.85); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); align-items:center; justify-content:center; padding:16px;">
+    <div class="glass-card" style="width:100%; max-width:460px; padding:28px 30px; border:1px solid rgba(255,255,255,0.12); box-shadow:0 25px 50px -12px rgba(0,0,0,0.7); animation:modalIn 0.25s ease-out; position:relative; overflow:hidden;">
+        <div style="position:absolute; top:-30px; right:-30px; width:120px; height:120px; background:rgba(239,68,68,0.06); border-radius:50%; pointer-events:none;"></div>
+
+        <!-- Header -->
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:18px;">
+            <div style="display:flex; align-items:center; gap:12px;">
+                <div style="width:38px; height:38px; border-radius:10px; background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.25); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                    <i data-lucide="zap" style="width:18px; height:18px; color:#f87171;"></i>
+                </div>
+                <div>
+                    <h3 style="font-size:1.15rem; font-weight:700; color:#f1f5f9; margin:0 0 2px;">
+                        Ajustar Cuota Diaria
+                    </h3>
+                    <div style="font-size:0.78rem; color:#94a3b8; display:flex; align-items:center; gap:4px;">
+                        Usuario: <strong id="quotaUsernameText" style="color:#f1f5f9;"></strong>
+                    </div>
+                </div>
+            </div>
+            <button type="button" class="action-btn" style="width:32px; height:32px; background:rgba(255,255,255,0.06); border-radius:8px;" onclick="closeQuotaModal()">
+                <i data-lucide="x" style="width:16px; height:16px; color:#cbd5e1;"></i>
+            </button>
+        </div>
+
+        <form id="quotaForm" onsubmit="submitQuotaChange(event)">
+            {% csrf_token %}
+            <input type="hidden" id="quotaUserId" value="">
+
+            <div id="stepperSection" style="margin-bottom:18px;">
+                <label style="display:block; text-align:center; font-size:0.75rem; font-weight:600; color:#94a3b8; margin-bottom:10px; text-transform:uppercase; letter-spacing:0.05em;">
+                    Prompts Permitidos por Día
+                </label>
+                
+                <!-- Stepper Principal -->
+                <div style="display:flex; align-items:center; justify-content:center; gap:12px; margin-bottom:12px;">
+                    <button type="button" class="btn-ghost" style="width:44px; height:44px; border-radius:10px; padding:0; display:flex; align-items:center; justify-content:center;" onclick="adjustQuotaInput(-1)" title="Restar 1">
+                        <i data-lucide="minus" style="width:18px; height:18px;"></i>
+                    </button>
+                    
+                    <input type="number" id="quotaLimitInput" min="0" max="9999" required class="glass-input" style="width:120px; height:46px; font-size:1.5rem; font-weight:800; text-align:center; border-radius:10px; color:#f1f5f9;">
+                    
+                    <button type="button" class="btn-ghost" style="width:44px; height:44px; border-radius:10px; padding:0; display:flex; align-items:center; justify-content:center;" onclick="adjustQuotaInput(+1)" title="Sumar 1">
+                        <i data-lucide="plus" style="width:18px; height:18px;"></i>
+                    </button>
+                </div>
+
+                <!-- Chips de Acceso Rápido -->
+                <div style="display:flex; justify-content:center; gap:6px; flex-wrap:wrap;">
+                    <button type="button" class="btn-ghost" style="padding:4px 10px; font-size:0.75rem; border-radius:6px;" onclick="adjustQuotaInput(+5)">+5</button>
+                    <button type="button" class="btn-ghost" style="padding:4px 10px; font-size:0.75rem; border-radius:6px;" onclick="adjustQuotaInput(+10)">+10</button>
+                    <button type="button" class="btn-ghost" style="padding:4px 10px; font-size:0.75rem; border-radius:6px;" onclick="setExactQuota(20)">20</button>
+                    <button type="button" class="btn-ghost" style="padding:4px 10px; font-size:0.75rem; border-radius:6px;" onclick="setExactQuota(50)">50</button>
+                    <button type="button" class="btn-ghost" style="padding:4px 10px; font-size:0.75rem; border-radius:6px;" onclick="setExactQuota(100)">100</button>
+                </div>
+            </div>
+
+            <!-- Opción Cuota Ilimitada -->
+            <label id="unlimitedQuotaCard" style="display:flex; align-items:center; justify-content:space-between; padding:12px 16px; background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.06); border-radius:10px; cursor:pointer; margin-bottom:24px; transition:all 0.2s;">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <i data-lucide="infinity" style="width:18px; height:18px; color:#60a5fa;"></i>
+                    <div>
+                        <div style="font-size:0.85rem; font-weight:600; color:#f1f5f9;">Modo Ilimitado</div>
+                        <div style="font-size:0.72rem; color:#64748b;">Sin límite diario de generaciones</div>
+                    </div>
+                </div>
+                <input type="checkbox" id="quotaUnlimitedCheckbox" style="width:18px; height:18px; accent-color:#ef4444; cursor:pointer;" onchange="toggleUnlimitedQuota(this.checked)">
+            </label>
+
+            <!-- Acciones -->
+            <div style="display:flex; gap:10px; justify-content:flex-end;">
+                <button type="button" class="btn-ghost" onclick="closeQuotaModal()">Cancelar</button>
+                <button type="submit" id="saveQuotaBtn" class="btn-brand">
+                    <i data-lucide="save"></i>
+                    Guardar Cuota
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ═════════ MODAL GLASSMORPHISM: CONFIRMAR ELIMINACIÓN DE USUARIO ═════════ -->
+<div id="deleteUserModal" style="display:none; position:fixed; inset:0; z-index:10000; background:rgba(2, 6, 23, 0.85); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); align-items:center; justify-content:center; padding:16px;">
+    <div class="glass-card" style="width:100%; max-width:440px; padding:28px; border:1px solid rgba(239,68,68,0.25); box-shadow:0 25px 50px -12px rgba(0,0,0,0.8); animation:modalIn 0.22s ease-out; text-align:center; position:relative; overflow:hidden;">
+        <div style="position:absolute; top:-30px; left:50%; transform:translateX(-50%); width:120px; height:120px; background:rgba(239,68,68,0.12); border-radius:50%; pointer-events:none; filter:blur(20px);"></div>
+
+        <div style="width:52px; height:52px; border-radius:14px; background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.3); display:flex; align-items:center; justify-content:center; margin:0 auto 16px;">
+            <i data-lucide="trash-2" style="width:24px; height:24px; color:#f87171;"></i>
+        </div>
+
+        <h3 style="font-size:1.15rem; font-weight:700; color:#f1f5f9; margin:0 0 8px;">¿Eliminar este usuario?</h3>
+        <p style="font-size:0.85rem; color:#94a3b8; margin:0 0 6px; line-height:1.5;">
+            Estás a punto de eliminar definitivamente al usuario:
+        </p>
+        <div style="margin-bottom:22px;">
+            <strong id="deleteUserUsernameText" style="background:rgba(0,0,0,0.4); padding:4px 12px; border-radius:6px; font-size:0.95rem; color:#f87171;"></strong>
+        </div>
+
+        <form id="deleteUserForm" method="post" action="">
+            {% csrf_token %}
+            <div style="display:flex; gap:10px; justify-content:center;">
+                <button type="button" class="btn-ghost" style="flex:1; justify-content:center;" onclick="closeDeleteUserModal()">
+                    Cancelar
+                </button>
+                <button type="submit" class="btn-danger" style="flex:1; justify-content:center;">
+                    <i data-lucide="trash-2"></i>
+                    Eliminar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+@keyframes modalIn {
+    from { opacity: 0; transform: scale(0.96); }
+    to { opacity: 1; transform: scale(1); }
+}
+</style>
+
+<script>
+function openQuotaModal(userId, username, currentLimit, isUnlimited) {
+    document.getElementById('quotaUserId').value = userId;
+    document.getElementById('quotaUsernameText').innerText = username;
+    document.getElementById('quotaLimitInput').value = currentLimit || 10;
+    
+    const unlCheck = document.getElementById('quotaUnlimitedCheckbox');
+    unlCheck.checked = isUnlimited;
+    toggleUnlimitedQuota(isUnlimited);
+    
+    document.getElementById('quotaModal').style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    lucide.createIcons();
+}
+
+function closeQuotaModal() {
+    document.getElementById('quotaModal').style.display = 'none';
+    document.body.style.overflow = 'auto';
+}
+
+function toggleUnlimitedQuota(isUnlimited) {
+    const stepper = document.getElementById('stepperSection');
+    const input = document.getElementById('quotaLimitInput');
+    const card = document.getElementById('unlimitedQuotaCard');
+    
+    input.disabled = isUnlimited;
+    if (isUnlimited) {
+        stepper.style.opacity = '0.35';
+        stepper.style.pointerEvents = 'none';
+        card.style.borderColor = 'rgba(96, 165, 250, 0.4)';
+        card.style.background = 'rgba(96, 165, 250, 0.08)';
+    } else {
+        stepper.style.opacity = '1';
+        stepper.style.pointerEvents = 'auto';
+        card.style.borderColor = 'rgba(255, 255, 255, 0.06)';
+        card.style.background = 'rgba(0, 0, 0, 0.25)';
+    }
+}
+
+function adjustQuotaInput(amount) {
+    const input = document.getElementById('quotaLimitInput');
+    if (input.disabled) return;
+    let val = parseInt(input.value) || 0;
+    val = Math.max(0, val + amount);
+    input.value = val;
+}
+
+function setExactQuota(amount) {
+    const input = document.getElementById('quotaLimitInput');
+    if (input.disabled) return;
+    input.value = amount;
+}
+
+async function submitQuotaChange(e) {
+    e.preventDefault();
+    const userId = document.getElementById('quotaUserId').value;
+    const isUnlimited = document.getElementById('quotaUnlimitedCheckbox').checked;
+    const limit = document.getElementById('quotaLimitInput').value;
+    const saveBtn = document.getElementById('saveQuotaBtn');
+    
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = '<div style="width:14px; height:14px; border:2px solid white; border-top-color:transparent; border-radius:50%; animation:spin 1s linear infinite;"></div> Guardando...';
+
+    const formData = new FormData();
+    formData.append('is_unlimited', isUnlimited ? 'true' : 'false');
+    formData.append('daily_limit', limit);
+
+    try {
+        const res = await fetch(`/panel/usuarios/${userId}/cuota/`, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+        const data = await res.json();
+        if (res.ok && data.status === 'success') {
+            // Actualizar celda en la tabla en caliente
+            const cell = document.getElementById(`quota-cell-${userId}`);
+            if (cell) {
+                if (data.is_unlimited) {
+                    cell.innerHTML = `
+                        <span class="badge-admin" style="font-size:0.75rem; padding:3px 8px; display:inline-flex; align-items:center; gap:4px;">
+                            <i data-lucide="infinity" style="width:12px; height:12px; color:#60a5fa;"></i>
+                            Ilimitada
+                        </span>
+                        <i data-lucide="sliders" style="width:12px; height:12px; color:#64748b; opacity:0.6;"></i>
+                    `;
+                } else {
+                    cell.innerHTML = `
+                        <span class="badge-user" style="font-size:0.75rem; padding:3px 8px; display:inline-flex; align-items:center; gap:4px;">
+                            <i data-lucide="zap" style="width:12px; height:12px; color:#f87171;"></i>
+                            ${data.daily_limit} / día
+                        </span>
+                        <i data-lucide="sliders" style="width:12px; height:12px; color:#64748b; opacity:0.6;"></i>
+                    `;
+                }
+            }
+            closeQuotaModal();
+            lucide.createIcons();
+        } else {
+            alert(data.message || 'Error al actualizar cuota.');
+        }
+    } catch (err) {
+        alert('Error de conexión con el servidor.');
+    } finally {
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = '<i data-lucide="save"></i> Guardar Cuota';
+        lucide.createIcons();
+    }
+}
+
+function openDeleteUserModal(userId, username) {
+    const form = document.getElementById('deleteUserForm');
+    form.action = `/panel/usuarios/${userId}/eliminar/`;
+    document.getElementById('deleteUserUsernameText').innerText = username;
+    
+    const modal = document.getElementById('deleteUserModal');
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    lucide.createIcons();
+}
+
+function closeDeleteUserModal() {
+    document.getElementById('deleteUserModal').style.display = 'none';
+    document.body.style.overflow = 'auto';
+}
+
+window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        closeQuotaModal();
+        closeDeleteUserModal();
+    }
+});
+document.getElementById('quotaModal').addEventListener('click', (e) => {
+    if (e.target.id === 'quotaModal') closeQuotaModal();
+});
+document.getElementById('deleteUserModal').addEventListener('click', (e) => {
+    if (e.target.id === 'deleteUserModal') closeDeleteUserModal();
+});
+</script>
+{% endblock %}

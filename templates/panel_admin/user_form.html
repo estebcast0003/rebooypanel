@@ -1,0 +1,466 @@
+{% extends 'panel_base.html' %}
+
+{% block title %}{{ action }} Usuario — Rebooy Panel{% endblock %}
+{% block breadcrumb %}
+    <a href="{% url 'user_list' %}" style="color:#475569;text-decoration:none;">Usuarios</a>
+    <span style="margin:0 6px;color:#334155;">/</span>
+    <span style="color:#94a3b8;">{{ action }}</span>
+{% endblock %}
+
+{% block content %}
+<div style="max-width:920px; margin:0 auto; padding-bottom:40px;">
+    
+    <!-- Encabezado de Página -->
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; flex-wrap:wrap; gap:16px;">
+        <div style="display:flex; align-items:center; gap:14px;">
+            <a href="{% url 'user_list' %}" class="action-btn action-btn-edit" style="background:rgba(255,255,255,0.05); width:42px; height:42px; border-radius:12px; display:flex; align-items:center; justify-content:center;">
+                <i data-lucide="arrow-left" style="width:20px; height:20px; color:#cbd5e1;"></i>
+            </a>
+            <div>
+                <h1 style="font-size:1.6rem; font-weight:700; color:#f1f5f9; margin:0 0 2px; display:flex; align-items:center; gap:8px;">
+                    <i data-lucide="{% if action == 'Crear' %}user-plus{% else %}user-check{% endif %}" style="color:#ef4444; width:24px; height:24px;"></i>
+                    {{ action }} Usuario
+                </h1>
+                <p style="font-size:0.875rem; color:#64748b; margin:0;">
+                    {% if action == 'Editar' %}
+                        Configura permisos granulares, visibilidad de módulos y cuotas para <strong style="color:#e2e8f0;">{{ target.username }}</strong>.
+                    {% else %}
+                        Define credenciales, rol, pestañas accesibles y cuotas diarias de IA.
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tarjeta Principal Glassmorphism -->
+    <div class="glass-card" style="padding:32px; position:relative; overflow:hidden; border:1px solid rgba(255,255,255,0.1); box-shadow:0 25px 50px -12px rgba(0,0,0,0.5);">
+        <div style="position:absolute; top:-40px; right:-40px; width:160px; height:160px; background:rgba(239,68,68,0.06); border-radius:50%; pointer-events:none;"></div>
+        
+        <form method="post" id="userForm">
+            {% csrf_token %}
+
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(360px, 1fr)); gap:32px; position:relative; z-index:1;">
+                
+                <!-- ═════════ COLUMNA 1: PERFIL, CREDENCIALES Y ROL ═════════ -->
+                <div style="display:flex; flex-direction:column; gap:20px;">
+                    <h3 style="font-size:0.95rem; font-weight:700; color:#f1f5f9; margin:0; display:flex; align-items:center; gap:8px; border-bottom:1px solid rgba(255,255,255,0.06); padding-bottom:10px;">
+                        <i data-lucide="shield" style="width:16px; height:16px; color:#ef4444;"></i>
+                        Credenciales y Rol
+                    </h3>
+
+                    <!-- Username con Avatar Dinámico -->
+                    <div>
+                        <label style="display:flex; align-items:center; gap:6px; font-size:0.78rem; font-weight:600; color:#94a3b8; margin-bottom:8px; text-transform:uppercase; letter-spacing:0.05em;">
+                            Nombre de Usuario
+                        </label>
+                        <div style="position:relative;">
+                            <i data-lucide="user" style="position:absolute; left:14px; top:50%; transform:translateY(-50%); width:16px; height:16px; color:#64748b;"></i>
+                            <input type="text" name="username" id="id_username" value="{{ form.username.value|default:'' }}" required placeholder="ej: usuario_pro" class="glass-input" style="width:100%; padding:12px 14px 12px 40px; border-radius:10px; font-size:0.9rem;">
+                        </div>
+                        {% if form.username.errors %}
+                            <div style="margin-top:6px; font-size:0.78rem; color:#f87171;">{{ form.username.errors|join:", " }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Password (Solo en Crear) -->
+                    {% if action == 'Crear' %}
+                    <div>
+                        <label style="display:flex; align-items:center; gap:6px; font-size:0.78rem; font-weight:600; color:#94a3b8; margin-bottom:8px; text-transform:uppercase; letter-spacing:0.05em;">
+                            Contraseña
+                        </label>
+                        <div style="position:relative;">
+                            <i data-lucide="lock" style="position:absolute; left:14px; top:50%; transform:translateY(-50%); width:16px; height:16px; color:#64748b;"></i>
+                            <input type="password" name="password" id="id_password" required placeholder="••••••••" class="glass-input" style="width:100%; padding:12px 14px 12px 40px; border-radius:10px; font-size:0.9rem;">
+                        </div>
+                        {% if form.password.errors %}
+                            <div style="margin-top:6px; font-size:0.78rem; color:#f87171;">{{ form.password.errors|join:", " }}</div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+
+                    <!-- Selector de Rol Visual con Cards -->
+                    <div>
+                        <label style="display:block; font-size:0.78rem; font-weight:600; color:#94a3b8; margin-bottom:10px; text-transform:uppercase; letter-spacing:0.05em;">
+                            Rol en el Sistema
+                        </label>
+                        <div style="display:none;">{{ form.role }}</div>
+                        
+                        <div style="display:grid; grid-template-columns:1fr; gap:10px;" id="roleCardsContainer">
+                            <!-- Superadmin -->
+                            <div class="role-card" data-role="superadmin" onclick="selectRole('superadmin')" style="padding:14px; border-radius:10px; background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.06); cursor:pointer; display:flex; align-items:center; gap:12px; transition:all 0.2s;">
+                                <div style="width:34px; height:34px; border-radius:8px; background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.3); display:flex; align-items:center; justify-content:center;">
+                                    <i data-lucide="crown" style="width:16px; height:16px; color:#f87171;"></i>
+                                </div>
+                                <div style="flex:1;">
+                                    <div style="font-size:0.88rem; font-weight:600; color:#f1f5f9;">Super Admin</div>
+                                    <div style="font-size:0.72rem; color:#64748b;">Acceso total a todo el panel y control de usuarios</div>
+                                </div>
+                            </div>
+
+                            <!-- Admin -->
+                            <div class="role-card" data-role="admin" onclick="selectRole('admin')" style="padding:14px; border-radius:10px; background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.06); cursor:pointer; display:flex; align-items:center; gap:12px; transition:all 0.2s;">
+                                <div style="width:34px; height:34px; border-radius:8px; background:rgba(59,130,246,0.15); border:1px solid rgba(59,130,246,0.3); display:flex; align-items:center; justify-content:center;">
+                                    <i data-lucide="shield-check" style="width:16px; height:16px; color:#60a5fa;"></i>
+                                </div>
+                                <div style="flex:1;">
+                                    <div style="font-size:0.88rem; font-weight:600; color:#f1f5f9;">Admin</div>
+                                    <div style="font-size:0.72rem; color:#64748b;">Administración delegada y métricas</div>
+                                </div>
+                            </div>
+
+                            <!-- Usuario Estándar -->
+                            <div class="role-card" data-role="user" onclick="selectRole('user')" style="padding:14px; border-radius:10px; background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.06); cursor:pointer; display:flex; align-items:center; gap:12px; transition:all 0.2s;">
+                                <div style="width:34px; height:34px; border-radius:8px; background:rgba(148,163,184,0.15); border:1px solid rgba(148,163,184,0.3); display:flex; align-items:center; justify-content:center;">
+                                    <i data-lucide="user" style="width:16px; height:16px; color:#cbd5e1;"></i>
+                                </div>
+                                <div style="flex:1;">
+                                    <div style="font-size:0.88rem; font-weight:600; color:#f1f5f9;">Usuario Estándar</div>
+                                    <div style="font-size:0.72rem; color:#64748b;">Generación de prompts según cuota y permisos</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Estado de la Cuenta (Switch Activo / Inactivo) -->
+                    <div style="background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.06); border-radius:12px; padding:16px; display:flex; align-items:center; justify-content:space-between; cursor:pointer;" onclick="toggleActiveSwitch()">
+                        <div style="display:flex; align-items:center; gap:12px;">
+                            <div style="width:32px; height:32px; border-radius:8px; background:rgba(74,222,128,0.12); border:1px solid rgba(74,222,128,0.25); display:flex; align-items:center; justify-content:center;">
+                                <i data-lucide="power" style="width:16px; height:16px; color:#4ade80;"></i>
+                            </div>
+                            <div>
+                                <div style="font-size:0.88rem; font-weight:600; color:#f1f5f9;">Estado de la Cuenta</div>
+                                <div id="activeStateLabel" style="font-size:0.72rem; color:#4ade80;">Usuario habilitado para ingresar</div>
+                            </div>
+                        </div>
+                        <input type="checkbox" name="is_active" id="id_is_active" {% if form.is_active.value|default:True %}checked{% endif %} style="display:none;">
+                        <div id="activeToggleVisual" style="width:44px; height:24px; border-radius:12px; background:#16a34a; position:relative; transition:all 0.2s;">
+                            <div id="activeToggleCircle" style="width:18px; height:18px; border-radius:50%; background:#ffffff; position:absolute; top:3px; right:3px; transition:all 0.2s;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ═════════ COLUMNA 2: CUOTAS DE IA Y MATRIZ DE PESTAÑAS ═════════ -->
+                <div style="display:flex; flex-direction:column; gap:20px;">
+                    
+                    <!-- Sección A: Cuota Diaria de Prompts -->
+                    <div style="background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.06); border-radius:14px; padding:20px;">
+                        <h3 style="font-size:0.92rem; font-weight:700; color:#f1f5f9; margin:0 0 14px; display:flex; align-items:center; justify-content:space-between;">
+                            <span style="display:flex; align-items:center; gap:8px;">
+                                <i data-lucide="zap" style="width:16px; height:16px; color:#ef4444;"></i>
+                                Cuota Diaria de Prompts
+                            </span>
+                            <span id="quotaHeaderBadge" class="badge-admin" style="font-size:0.72rem;">10 / día</span>
+                        </h3>
+
+                        <div id="quotaControls">
+                            <div style="display:flex; align-items:center; justify-content:center; gap:12px; margin-bottom:12px;">
+                                <button type="button" class="btn-ghost" style="width:42px; height:42px; border-radius:10px; padding:0; display:flex; align-items:center; justify-content:center;" onclick="adjustFormQuota(-1)">
+                                    <i data-lucide="minus" style="width:16px; height:16px;"></i>
+                                </button>
+                                <input type="number" name="daily_prompt_limit" id="id_daily_prompt_limit" value="{{ form.daily_prompt_limit.value|default:10 }}" min="0" max="9999" class="glass-input" style="width:110px; height:44px; font-size:1.4rem; font-weight:800; text-align:center; border-radius:10px; color:#f1f5f9;">
+                                <button type="button" class="btn-ghost" style="width:42px; height:42px; border-radius:10px; padding:0; display:flex; align-items:center; justify-content:center;" onclick="adjustFormQuota(+1)">
+                                    <i data-lucide="plus" style="width:16px; height:16px;"></i>
+                                </button>
+                            </div>
+
+                            <!-- Chips de selección rápida -->
+                            <div style="display:flex; justify-content:center; gap:6px; flex-wrap:wrap; margin-bottom:14px;">
+                                <button type="button" class="btn-ghost" style="padding:4px 10px; font-size:0.75rem; border-radius:6px;" onclick="setFormQuota(5)">5</button>
+                                <button type="button" class="btn-ghost" style="padding:4px 10px; font-size:0.75rem; border-radius:6px;" onclick="setFormQuota(10)">10</button>
+                                <button type="button" class="btn-ghost" style="padding:4px 10px; font-size:0.75rem; border-radius:6px;" onclick="setFormQuota(25)">25</button>
+                                <button type="button" class="btn-ghost" style="padding:4px 10px; font-size:0.75rem; border-radius:6px;" onclick="setFormQuota(50)">50</button>
+                                <button type="button" class="btn-ghost" style="padding:4px 10px; font-size:0.75rem; border-radius:6px;" onclick="setFormQuota(100)">100</button>
+                            </div>
+                        </div>
+
+                        <!-- Opción Cuota Ilimitada -->
+                        <label id="formUnlimitedCard" style="display:flex; align-items:center; justify-content:space-between; padding:10px 14px; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.06); border-radius:8px; cursor:pointer; transition:all 0.2s;">
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <i data-lucide="infinity" style="width:16px; height:16px; color:#60a5fa;"></i>
+                                <span style="font-size:0.82rem; color:#cbd5e1; font-weight:500;">Generación Ilimitada (Sin tope diario)</span>
+                            </div>
+                            <input type="checkbox" name="is_unlimited_prompts" id="id_is_unlimited_prompts" {% if form.is_unlimited_prompts.value %}checked{% endif %} style="width:16px; height:16px; accent-color:#ef4444;" onchange="toggleFormUnlimited(this.checked)">
+                        </label>
+                    </div>
+
+                    <!-- Sección B: Permisos de Visibilidad de Pestañas y Módulos -->
+                    <div>
+                        <h3 style="font-size:0.95rem; font-weight:700; color:#f1f5f9; margin:0 0 4px; display:flex; align-items:center; gap:8px; border-bottom:1px solid rgba(255,255,255,0.06); padding-bottom:10px;">
+                            <i data-lucide="layers" style="width:16px; height:16px; color:#ef4444;"></i>
+                            Visibilidad de Pestañas y Módulos
+                        </h3>
+                        <p style="font-size:0.75rem; color:#64748b; margin:0 0 12px;">
+                            Elige qué secciones y funciones estarán activas para este usuario:
+                        </p>
+
+                        <div style="display:flex; flex-direction:column; gap:8px;">
+                            
+                            <!-- 1. Video to Prompt Studio -->
+                            <label class="perm-row" for="id_can_view_videoprompt">
+                                <div style="display:flex; align-items:center; gap:10px;">
+                                    <div class="perm-icon-box" style="background:rgba(239,68,68,0.12); color:#f87171;">
+                                        <i data-lucide="clapperboard" style="width:16px; height:16px;"></i>
+                                    </div>
+                                    <div>
+                                        <div style="font-size:0.85rem; font-weight:600; color:#f1f5f9;">Video to Prompt Studio</div>
+                                        <div style="font-size:0.7rem; color:#64748b;">Creación y análisis de prompts con IA</div>
+                                    </div>
+                                </div>
+                                <input type="checkbox" name="can_view_videoprompt" id="id_can_view_videoprompt" {% if form.can_view_videoprompt.value %}checked{% endif %} style="width:18px; height:18px; accent-color:#ef4444; cursor:pointer;">
+                            </label>
+
+                            <!-- 2. Fanpage Creator Studio -->
+                            <label class="perm-row" for="id_can_view_fanpages">
+                                <div style="display:flex; align-items:center; gap:10px;">
+                                    <div class="perm-icon-box" style="background:rgba(239,68,68,0.12); color:#f87171;">
+                                        <i data-lucide="sparkles" style="width:16px; height:16px;"></i>
+                                    </div>
+                                    <div>
+                                        <div style="font-size:0.85rem; font-weight:600; color:#f1f5f9;">Fanpage Creator Studio</div>
+                                        <div style="font-size:0.7rem; color:#64748b;">Generación de identidades y prompts para Fanpages</div>
+                                    </div>
+                                </div>
+                                <input type="checkbox" name="can_view_fanpages" id="id_can_view_fanpages" {% if form.can_view_fanpages.value %}checked{% endif %} style="width:18px; height:18px; accent-color:#ef4444; cursor:pointer;">
+                            </label>
+
+                            <!-- 3. Fan Extractor -->
+                            <label class="perm-row" for="id_can_view_extractor">
+                                <div style="display:flex; align-items:center; gap:10px;">
+                                    <div class="perm-icon-box" style="background:rgba(239,68,68,0.12); color:#f87171;">
+                                        <i data-lucide="activity" style="width:16px; height:16px;"></i>
+                                    </div>
+                                    <div>
+                                        <div style="font-size:0.85rem; font-weight:600; color:#f1f5f9;">Facebook Fan Extractor</div>
+                                        <div style="font-size:0.7rem; color:#64748b;">Extracción de seguidores y métricas de Facebook</div>
+                                    </div>
+                                </div>
+                                <input type="checkbox" name="can_view_extractor" id="id_can_view_extractor" {% if form.can_view_extractor.value %}checked{% endif %} style="width:18px; height:18px; accent-color:#ef4444; cursor:pointer;">
+                            </label>
+
+                            <!-- 4. Pestaña Stats del Reel -->
+                            <label class="perm-row" for="id_can_view_stats">
+                                <div style="display:flex; align-items:center; gap:10px;">
+                                    <div class="perm-icon-box" style="background:rgba(96,165,250,0.12); color:#60a5fa;">
+                                        <i data-lucide="bar-chart-2" style="width:16px; height:16px;"></i>
+                                    </div>
+                                    <div>
+                                        <div style="font-size:0.85rem; font-weight:600; color:#f1f5f9;">Pestaña "Stats del Reel"</div>
+                                        <div style="font-size:0.7rem; color:#64748b;">Métricas de likes, comentarios, views y fecha</div>
+                                    </div>
+                                </div>
+                                <input type="checkbox" name="can_view_stats" id="id_can_view_stats" {% if form.can_view_stats.value %}checked{% endif %} style="width:18px; height:18px; accent-color:#ef4444; cursor:pointer;">
+                            </label>
+
+                            <!-- 3. Dashboard General -->
+                            <label class="perm-row" for="id_can_view_dashboard">
+                                <div style="display:flex; align-items:center; gap:10px;">
+                                    <div class="perm-icon-box" style="background:rgba(168,85,247,0.12); color:#c084fc;">
+                                        <i data-lucide="layout-dashboard" style="width:16px; height:16px;"></i>
+                                    </div>
+                                    <div>
+                                        <div style="font-size:0.85rem; font-weight:600; color:#f1f5f9;">Dashboard General</div>
+                                        <div style="font-size:0.7rem; color:#64748b;">Visualización de analítica y métricas de panel</div>
+                                    </div>
+                                </div>
+                                <input type="checkbox" name="can_view_dashboard" id="id_can_view_dashboard" {% if form.can_view_dashboard.value %}checked{% endif %} style="width:18px; height:18px; accent-color:#ef4444; cursor:pointer;">
+                            </label>
+
+                            <!-- 4. Gestión de Claves de IA -->
+                            <label class="perm-row" for="id_can_manage_api_keys">
+                                <div style="display:flex; align-items:center; gap:10px;">
+                                    <div class="perm-icon-box" style="background:rgba(250,204,21,0.12); color:#facc15;">
+                                        <i data-lucide="key" style="width:16px; height:16px;"></i>
+                                    </div>
+                                    <div>
+                                        <div style="font-size:0.85rem; font-weight:600; color:#f1f5f9;">Pool de Claves de IA</div>
+                                        <div style="font-size:0.7rem; color:#64748b;">Agregar y administrar claves de Google Gemini</div>
+                                    </div>
+                                </div>
+                                <input type="checkbox" name="can_manage_api_keys" id="id_can_manage_api_keys" {% if form.can_manage_api_keys.value %}checked{% endif %} style="width:18px; height:18px; accent-color:#ef4444; cursor:pointer;">
+                            </label>
+
+                            <!-- 5. Administrar Usuarios -->
+                            <label class="perm-row" for="id_can_manage_users">
+                                <div style="display:flex; align-items:center; gap:10px;">
+                                    <div class="perm-icon-box" style="background:rgba(52,211,153,0.12); color:#34d399;">
+                                        <i data-lucide="users" style="width:16px; height:16px;"></i>
+                                    </div>
+                                    <div>
+                                        <div style="font-size:0.85rem; font-weight:600; color:#f1f5f9;">Administrar Usuarios</div>
+                                        <div style="font-size:0.7rem; color:#64748b;">Crear, editar o suspender cuentas de usuario</div>
+                                    </div>
+                                </div>
+                                <input type="checkbox" name="can_manage_users" id="id_can_manage_users" {% if form.can_manage_users.value %}checked{% endif %} style="width:18px; height:18px; accent-color:#ef4444; cursor:pointer;">
+                            </label>
+
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- Botones de Acción Principales -->
+            <div style="display:flex; justify-content:flex-end; align-items:center; gap:12px; margin-top:32px; border-top:1px solid rgba(255,255,255,0.06); padding-top:20px;">
+                <a href="{% url 'user_list' %}" class="btn-ghost" style="padding:11px 22px;">Cancelar</a>
+                <button type="submit" class="btn-brand" style="padding:11px 28px; font-size:0.92rem;">
+                    <i data-lucide="{% if action == 'Crear' %}plus{% else %}save{% endif %}"></i>
+                    {{ action }} Usuario
+                </button>
+            </div>
+
+        </form>
+    </div>
+</div>
+
+<style>
+.role-card:hover {
+    background: rgba(255, 255, 255, 0.04) !important;
+    border-color: rgba(255, 255, 255, 0.15) !important;
+}
+.role-card.selected {
+    background: rgba(239, 68, 68, 0.12) !important;
+    border-color: rgba(239, 68, 68, 0.4) !important;
+    box-shadow: 0 0 15px rgba(239, 68, 68, 0.15);
+}
+.perm-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.18s ease;
+}
+.perm-row:hover {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+.perm-icon-box {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+</style>
+
+<script>
+function selectRole(role, isUserAction = true) {
+    const roleSelect = document.getElementById('id_role');
+    if (roleSelect) roleSelect.value = role;
+    
+    document.querySelectorAll('.role-card').forEach(card => {
+        const isMatch = card.getAttribute('data-role') === role;
+        card.classList.toggle('selected', isMatch);
+    });
+
+    // Solo aplicar defaults si el superadmin hace clic manualmente al cambiar de rol en la UI
+    if (isUserAction && role === 'superadmin') {
+        setUnlimited(true);
+        setAllPerms(true);
+    }
+}
+
+function setAllPerms(val) {
+    ['id_can_view_videoprompt', 'id_can_view_fanpages', 'id_can_view_extractor', 'id_can_view_stats', 'id_can_view_dashboard', 'id_can_manage_api_keys', 'id_can_manage_users'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.checked = val;
+    });
+}
+
+function toggleActiveSwitch() {
+    const chk = document.getElementById('id_is_active');
+    chk.checked = !chk.checked;
+    updateActiveVisual();
+}
+
+function updateActiveVisual() {
+    const chk = document.getElementById('id_is_active');
+    const visual = document.getElementById('activeToggleVisual');
+    const circle = document.getElementById('activeToggleCircle');
+    const label = document.getElementById('activeStateLabel');
+    
+    if (chk.checked) {
+        visual.style.background = '#16a34a';
+        circle.style.right = '3px';
+        circle.style.left = 'auto';
+        label.innerText = 'Usuario habilitado para ingresar';
+        label.style.color = '#4ade80';
+    } else {
+        visual.style.background = '#475569';
+        circle.style.left = '3px';
+        circle.style.right = 'auto';
+        label.innerText = 'Cuenta suspendida / bloqueada';
+        label.style.color = '#94a3b8';
+    }
+}
+
+function adjustFormQuota(amt) {
+    const input = document.getElementById('id_daily_prompt_limit');
+    let val = parseInt(input.value) || 0;
+    val = Math.max(0, val + amt);
+    input.value = val;
+    updateQuotaBadge();
+}
+
+function setFormQuota(amt) {
+    const input = document.getElementById('id_daily_prompt_limit');
+    input.value = amt;
+    updateQuotaBadge();
+}
+
+function updateQuotaBadge() {
+    const input = document.getElementById('id_daily_prompt_limit');
+    const badge = document.getElementById('quotaHeaderBadge');
+    const isUnl = document.getElementById('id_is_unlimited_prompts').checked;
+    if (isUnl) {
+        badge.innerText = 'Ilimitado';
+        badge.className = 'badge-admin';
+    } else {
+        badge.innerText = `${input.value || 0} / día`;
+        badge.className = 'badge-user';
+    }
+}
+
+function toggleFormUnlimited(isUnl) {
+    setUnlimited(isUnl);
+}
+
+function setUnlimited(isUnl) {
+    const chk = document.getElementById('id_is_unlimited_prompts');
+    chk.checked = isUnl;
+    const controls = document.getElementById('quotaControls');
+    const card = document.getElementById('formUnlimitedCard');
+    
+    if (isUnl) {
+        controls.style.opacity = '0.35';
+        controls.style.pointerEvents = 'none';
+        card.style.borderColor = 'rgba(96, 165, 250, 0.4)';
+        card.style.background = 'rgba(96, 165, 250, 0.08)';
+    } else {
+        controls.style.opacity = '1';
+        controls.style.pointerEvents = 'auto';
+        card.style.borderColor = 'rgba(255, 255, 255, 0.06)';
+        card.style.background = 'rgba(0, 0, 0, 0.3)';
+    }
+    updateQuotaBadge();
+}
+
+// Inicialización al cargar la página
+document.addEventListener('DOMContentLoaded', () => {
+    const roleSelect = document.getElementById('id_role');
+    const currentRole = roleSelect ? roleSelect.value : 'user';
+    // Inicializar visualmente el rol sin sobreescribir los permisos guardados
+    selectRole(currentRole, false);
+    updateActiveVisual();
+    
+    const isUnl = document.getElementById('id_is_unlimited_prompts').checked;
+    setUnlimited(isUnl);
+});
+</script>
+{% endblock %}
