@@ -179,10 +179,14 @@ def parse_abbreviated_number(s):
 
 def extract_facebook_stats(video_url):
     """
-    Multi-layer scraper for Facebook/Instagram Reels engagement stats.
-    Tries 5 progressive strategies to recover views, likes and comments
-    when yt-dlp returns None for those fields.
+    Multi-layer scraper for Facebook and Instagram Reels engagement stats.
+    Prioritizes OpenGraph authoritative titles ('X reproducciones · Y reacciones'),
+    Relay GraphQL feedback targets ('total_comment_count', 'reaction_count'),
+    and JSON-LD structured metadata to accurately retrieve views, likes, and comments.
     """
+    import html as html_lib
+    import json as _json
+
     stats = {'views': None, 'likes': None, 'comments': None}
 
     headers = {
@@ -195,13 +199,17 @@ def extract_facebook_stats(video_url):
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
         'Sec-Fetch-Dest': 'document',
         'Sec-Fetch-Mode': 'navigate',
+        'Sec-Fetch-Site': 'none',
+        'Sec-Fetch-User': '?1',
+        'Upgrade-Insecure-Requests': '1',
     }
 
-    # Build candidate URLs from the original URL
-    urls_to_try = [video_url]
+    # Extract video ID from URL if present
     match = re.search(r'/(?:reel|videos|watch)[s]?/(\d+)', video_url)
     if not match:
         match = re.search(r'[?&]v=(\d+)', video_url)
+
+    urls_to_try = [video_url]
     if match:
         vid = match.group(1)
         urls_to_try.insert(0, f"https://www.facebook.com/watch/?v={vid}")
@@ -212,121 +220,111 @@ def extract_facebook_stats(video_url):
             r = requests.get(u, headers=headers, timeout=10, allow_redirects=True)
             if r.status_code != 200:
                 continue
-            html = r.text
 
-            # ── Strategy 1: JSON-LD structured data ──────────────────────────
-            import json as _json
-            ld_blocks = re.findall(
-                r'<script[^>]+type=["\']application/ld\+json["\'][^>]*>(.*?)</script>',
-                html, re.DOTALL | re.IGNORECASE
-            )
-            for block in ld_blocks:
-                try:
-                    obj = _json.loads(block)
-                    objs = obj if isinstance(obj, list) else [obj]
-                    for o in objs:
-                        if not stats['views'] and o.get('interactionStatistic'):
-                            for stat in o['interactionStatistic']:
-                                stype = stat.get('interactionType', '')
-                                val = stat.get('userInteractionCount')
-                                if val is None:
-                                    continue
-                                val = int(val)
-                                if 'WatchAction' in stype or 'ViewAction' in stype:
-                                    stats['views'] = val
-                                elif 'LikeAction' in stype:
-                                    stats['likes'] = val
-                                elif 'CommentAction' in stype:
-                                    stats['comments'] = val
-                except Exception:
-                    pass
+            # If the URL was shortened (e.g. fb.watch) and redirected to a new video ID, add it
+            if not match:
+                redirect_match = re.search(r'/(?:reel|videos|watch)[s]?/(\d+)', r.url) or re.search(r'[?&]v=(\d+)', r.url)
+                if redirect_match:
+                    match = redirect_match
+                    vid = redirect_match.group(1)
+                    watch_candidate = f"https://www.facebook.com/watch/?v={vid}"
+                    if watch_candidate not in urls_to_try:
+                        urls_to_try.append(watch_candidate)
 
-            # ── Strategy 2: Meta __bbox__ / requireLazy JSON blobs ───────────
-            # Meta embeds stats in large JSON payloads inside script tags
-            bbox_blocks = re.findall(r'__bbox\s*=\s*(\{.*?\});', html, re.DOTALL)
-            for blob in bbox_blocks[:6]:  # limit iterations
-                try:
-                    obj = _json.loads(blob)
-                    text = _json.dumps(obj)
-                    # comment_count, like_count, share_count, play_count
-                    for field, key in [
-                        ('comments', r'"comment_count"\s*:\s*(\d+)'),
-                        ('likes',    r'"like_count"\s*:\s*(\d+)'),
-                        ('views',    r'"(?:play_count|view_count)"\s*:\s*(\d+)'),
-                    ]:
-                        if not stats[field]:
-                            m = re.search(key, text)
-                            if m:
-                                stats[field] = int(m.group(1))
-                except Exception:
-                    pass
+            html = html_lib.unescape(r.text)
 
-            # ── Strategy 3: Inline GraphQL / __data__ JSON blobs ─────────────
-            if not all(stats.values()):
-                for field, pattern in [
-                    ('comments', r'"comment_count"\s*:\s*(\d+)'),
-                    ('likes',    r'"like_count"\s*:\s*(\d+)'),
-                    ('views',    r'"(?:play_count|view_count|video_view_count)"\s*:\s*(\d+)'),
-                ]:
-                    if not stats[field]:
-                        m = re.search(pattern, html)
-                        if m:
-                            stats[field] = int(m.group(1))
+            # ── Strategy 1: Meta Tags (og:title, og:description, description) ─────────
+            # Facebook puts exact aggregated numbers in og:title, e.g.:
+            # '9636 reproducciones · 59 reacciones | Video Title'
+            meta_contents = []
+            for meta_match in re.finditer(
+                r'<meta[^>]+(?:property|name)=["\'](?:og:title|og:description|description|twitter:title|twitter:description)["\'][^>]+content=["\']([^"\']+)["\']',
+                html, re.IGNORECASE
+            ):
+                meta_contents.append(meta_match.group(1))
+            for meta_match in re.finditer(
+                r'<meta[^>]+content=["\']([^"\']+)["\'][^>]+(?:property|name)=["\'](?:og:title|og:description|description|twitter:title|twitter:description)["\']',
+                html, re.IGNORECASE
+            ):
+                meta_contents.append(meta_match.group(1))
 
-            # ── Strategy 4: Keyword-based numeric extraction (expanded) ──────
-            if not all(stats.values()):
-                keyword_patterns = {
-                    'likes': [
-                        r'([\d.,]+[KMBkmb]?)\s*(?:reactions?|reacciones?|likes?|me\s+gusta)',
-                        r'(?:reactions?|reacciones?|likes?|me\s+gusta)[^\d]*([\d.,]+[KMBkmb]?)',
-                    ],
-                    'views': [
-                        r'([\d.,]+[KMBkmb]?)\s*(?:views?|reproducciones?|visualizaciones?|plays?)',
-                        r'(?:views?|reproducciones?|visualizaciones?)[^\d]*([\d.,]+[KMBkmb]?)',
-                    ],
-                    'comments': [
-                        r'([\d.,]+[KMBkmb]?)\s*(?:comments?|comentarios?)',
-                        r'(?:comments?|comentarios?)[^\d]*([\d.,]+[KMBkmb]?)',
-                    ],
-                }
-                for field, patterns in keyword_patterns.items():
-                    if not stats[field]:
-                        for pat in patterns:
-                            matches = re.findall(pat, html, re.IGNORECASE)
-                            for m in matches:
-                                val = parse_abbreviated_number(m)
-                                if val and val > 0:
-                                    stats[field] = val
-                                    break
-                        if stats[field]:
+            for c in meta_contents:
+                if not stats['views']:
+                    v_m = re.search(r'([\d.,]+[KMBkmb]?)\s*(?:reproducciones|views|visualizaciones|plays)', c, re.IGNORECASE)
+                    if v_m:
+                        stats['views'] = parse_abbreviated_number(v_m.group(1))
+                if not stats['likes']:
+                    l_m = re.search(r'([\d.,]+[KMBkmb]?)\s*(?:reacciones|reactions|likes|me\s+gusta)', c, re.IGNORECASE)
+                    if l_m:
+                        stats['likes'] = parse_abbreviated_number(l_m.group(1))
+                if not stats['comments']:
+                    cm_m = re.search(r'([\d.,]+[KMBkmb]?)\s*(?:comentarios|comments)', c, re.IGNORECASE)
+                    if cm_m:
+                        stats['comments'] = parse_abbreviated_number(cm_m.group(1))
+
+            # ── Strategy 2: Relay GraphQL Feedback Targets (total comments & reactions) ──
+            if not stats['comments']:
+                total_comments_patterns = [
+                    r'\"total_comment_count\"\s*:\s*(\d+)',
+                    r'\"comments\"\s*:\s*\{\s*\"total_count\"\s*:\s*(\d+)',
+                    r'\"comment_rendering_instance_for_feed_location\"\s*:\s*\{[^}]*\"total_count\"\s*:\s*(\d+)',
+                    r'\"feedback\"\s*:\s*\{[^}]*\"comments\"\s*:\s*\{[^}]*\"total_count\"\s*:\s*(\d+)',
+                ]
+                for pat in total_comments_patterns:
+                    found = re.findall(pat, html)
+                    if found:
+                        for val in found:
+                            n = int(val)
+                            if n > 0:
+                                stats['comments'] = n
+                                break
+                        if stats['comments']:
                             break
 
-            # ── Strategy 5: Wbloks / action bar counter spans ─────────────────
-            if not stats['likes'] or not stats['comments']:
-                wbloks = re.findall(
-                    r'(?:wbloks_\w+|reaction_count|comment_count)[^>]*>.*?<span[^>]*>([\d.,KMBkmb]+)</span>',
+            if not stats['likes']:
+                total_reaction_patterns = [
+                    r'\"reaction_count\"\s*:\s*\{\s*\"count\"\s*:\s*(\d+)',
+                    r'\"top_reactions\"\s*:\s*\{\s*\"count\"\s*:\s*(\d+)',
+                ]
+                for pat in total_reaction_patterns:
+                    found = re.findall(pat, html)
+                    if found:
+                        for val in found:
+                            n = int(val)
+                            if n > 0:
+                                stats['likes'] = n
+                                break
+                        if stats['likes']:
+                            break
+
+            # ── Strategy 3: JSON-LD structured data ───────────────────────────
+            if not all(stats.values()):
+                ld_blocks = re.findall(
+                    r'<script[^>]+type=["\']application/ld\+json["\'][^>]*>(.*?)</script>',
                     html, re.DOTALL | re.IGNORECASE
                 )
-                if not wbloks:
-                    # Generic counter spans around action buttons
-                    wbloks = re.findall(
-                        r'<span[^>]+aria-label=["\']([^"\']*)["\'][^>]*>',
-                        html, re.IGNORECASE
-                    )
-                    for label in wbloks:
-                        num_m = re.search(r'([\d.,]+[KMBkmb]?)', label)
-                        if not num_m:
-                            continue
-                        val = parse_abbreviated_number(num_m.group(1))
-                        label_l = label.lower()
-                        if val and ('like' in label_l or 'reaccion' in label_l or 'me gusta' in label_l):
-                            if not stats['likes']:
-                                stats['likes'] = val
-                        elif val and ('comment' in label_l or 'comentari' in label_l):
-                            if not stats['comments']:
-                                stats['comments'] = val
+                for block in ld_blocks:
+                    try:
+                        obj = _json.loads(block)
+                        objs = obj if isinstance(obj, list) else [obj]
+                        for o in objs:
+                            if not stats['views'] and o.get('interactionStatistic'):
+                                for stat in o['interactionStatistic']:
+                                    stype = stat.get('interactionType', '')
+                                    val = stat.get('userInteractionCount')
+                                    if val is None:
+                                        continue
+                                    val = int(val)
+                                    if 'WatchAction' in stype or 'ViewAction' in stype:
+                                        stats['views'] = val
+                                    elif 'LikeAction' in stype:
+                                        stats['likes'] = val
+                                    elif 'CommentAction' in stype:
+                                        stats['comments'] = val
+                    except Exception:
+                        pass
 
-            # Stop early if we have at least likes and comments
+            # If we retrieved likes, comments, and views (or at least likes + comments), stop early
             if stats['likes'] is not None and stats['comments'] is not None:
                 break
 
