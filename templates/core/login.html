@@ -143,31 +143,46 @@
     resize();
     window.addEventListener('resize', resize);
 
-    const COUNT = 55;
-    const particles = Array.from({ length: COUNT }, () => ({
-        x:    Math.random() * window.innerWidth,
-        y:    Math.random() * window.innerHeight,
-        r:    Math.random() * 1.6 + 0.4,
-        vx:   (Math.random() - 0.5) * 0.35,
-        vy:   (Math.random() - 0.5) * 0.35,
-        alpha: Math.random() * 0.4 + 0.08,
-    }));
+    const COUNT = 70;
+    const COLORS = [
+        { r:239, g:68,  b:68  },   // brand red
+        { r:248, g:113, b:113 },   // softer red
+        { r:203, g:213, b:225 },   // slate-300 (white-ish)
+    ];
+    const particles = Array.from({ length: COUNT }, () => {
+        const c = COLORS[Math.floor(Math.random() * COLORS.length)];
+        const big = Math.random() < 0.15; // 15% son partículas grandes con halo
+        return {
+            x:     Math.random() * window.innerWidth,
+            y:     Math.random() * window.innerHeight,
+            r:     big ? Math.random() * 3 + 3 : Math.random() * 2 + 1,
+            vx:    (Math.random() - 0.5) * 0.4,
+            vy:    (Math.random() - 0.5) * 0.4,
+            alpha: big ? Math.random() * 0.35 + 0.5 : Math.random() * 0.45 + 0.3,
+            glow:  big ? 8 : 3,
+            color: c,
+        };
+    });
 
     function draw() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         particles.forEach(p => {
+            ctx.save();
+            ctx.shadowBlur  = p.glow;
+            ctx.shadowColor = `rgba(${p.color.r},${p.color.g},${p.color.b},0.9)`;
             ctx.beginPath();
             ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-            ctx.fillStyle = `rgba(239,68,68,${p.alpha})`;
+            ctx.fillStyle = `rgba(${p.color.r},${p.color.g},${p.color.b},${p.alpha})`;
             ctx.fill();
+            ctx.restore();
 
             p.x += p.vx;
             p.y += p.vy;
 
-            if (p.x < -4) p.x = canvas.width  + 4;
-            if (p.x > canvas.width  + 4) p.x = -4;
-            if (p.y < -4) p.y = canvas.height + 4;
-            if (p.y > canvas.height + 4) p.y = -4;
+            if (p.x < -6) p.x = canvas.width  + 6;
+            if (p.x > canvas.width  + 6) p.x = -6;
+            if (p.y < -6) p.y = canvas.height + 6;
+            if (p.y > canvas.height + 6) p.y = -6;
         });
         requestAnimationFrame(draw);
     }
