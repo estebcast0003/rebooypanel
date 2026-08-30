@@ -698,6 +698,13 @@
                 Métricas por Usuario
             </a>
             {% endif %}
+            {% if user.role == 'superadmin' %}
+            <a href="{% url 'security_sessions' %}"
+               class="nav-link {% if '/seguridad/' in request.path %}active{% endif %}">
+                <i data-lucide="shield-check" style="color:#60a5fa;"></i>
+                Sesiones Activas
+            </a>
+            {% endif %}
             {% if user.role == 'superadmin' or user.can_manage_api_keys %}
             <a href="{% url 'videoprompt:api_keys' %}"
                class="nav-link {% if '/video-prompt/api-keys/' in request.path %}active{% endif %}">
@@ -706,13 +713,6 @@
             </a>
             {% endif %}
             {% endif %}
-
-            <div class="section-label" style="margin-top:14px;">Seguridad</div>
-            <a href="{% url 'security_sessions' %}"
-               class="nav-link {% if '/seguridad/' in request.path %}active{% endif %}">
-                <i data-lucide="shield-check" style="color:#60a5fa;"></i>
-                Seguridad & Sesiones
-            </a>
 
         </nav>
     </aside>
@@ -769,14 +769,16 @@
                             </span>
                         </div>
 
+                        {% if user.role == 'superadmin' %}
                         <a href="{% url 'security_sessions' %}" class="nav-link" style="padding:7px 10px; font-size:0.82rem; border-radius:0.5rem; margin-bottom:2px;">
                             <i data-lucide="shield-check" style="width:15px; height:15px; color:#60a5fa;"></i>
-                            Centro de Seguridad
+                            Monitoreo de Sesiones
                         </a>
+                        {% endif %}
 
                         <button type="button" class="nav-link" onclick="openQuickSessionsModal()" style="width:100%; text-align:left; background:transparent; border:none; padding:7px 10px; font-size:0.82rem; border-radius:0.5rem; cursor:pointer;">
                             <i data-lucide="smartphone" style="width:15px; height:15px; color:#38bdf8;"></i>
-                            Sesiones & Dispositivos
+                            Mis Dispositivos
                         </button>
 
                         <button type="button" class="nav-link" onclick="openAlertsModal()" style="width:100%; text-align:left; background:transparent; border:none; padding:7px 10px; font-size:0.82rem; border-radius:0.5rem; cursor:pointer;">

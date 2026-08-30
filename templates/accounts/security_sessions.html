@@ -1,7 +1,7 @@
 {% extends 'panel_base.html' %}
 
-{% block title %}Seguridad & Sesiones Activas — Rebooy Panel{% endblock %}
-{% block breadcrumb %}Seguridad / Sesiones Activas{% endblock %}
+{% block title %}Monitoreo de Sesiones Activas — Rebooy Panel{% endblock %}
+{% block breadcrumb %}Administración / Sesiones Activas{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -35,17 +35,17 @@
     <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
         <div>
             <h1 style="font-size:1.85rem; font-weight:800; letter-spacing:-0.03em; color:var(--text-primary); margin:0 0 6px; display:flex; align-items:center; gap:10px;">
-                Centro de Seguridad & Sesiones
+                Monitoreo de Sesiones Activas
             </h1>
             <p style="font-size:0.875rem; color:var(--text-muted); margin:0;">
-                Monitoreá y administrá todos los dispositivos y navegadores que tienen acceso a tu cuenta.
+                Auditoría en tiempo real de usuarios y dispositivos conectados al panel de control.
             </p>
         </div>
 
         <div style="display:flex; align-items:center; gap:10px;">
             <button type="button" class="btn-danger" onclick="openRevokeOthersModal()">
                 <i data-lucide="shield-alert" style="width:15px; height:15px;"></i>
-                Cerrar en Otros Dispositivos
+                Cerrar Otras Sesiones Mías
             </button>
         </div>
     </div>
@@ -53,7 +53,7 @@
     <!-- ═════════ TARJETAS KPI ═════════ -->
     <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:16px;">
         
-        <!-- Total Sesiones -->
+        <!-- Total Sesiones Activas -->
         <div class="metric-card-shadcn">
             <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px;">
                 <span style="font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-muted);">Sesiones Activas</span>
@@ -62,39 +62,65 @@
                 </div>
             </div>
             <div style="display:flex; align-items:baseline; gap:8px;">
-                <span class="metric-value-huge" id="totalSessionsKpi" style="color:#3b82f6;">{{ sessions.count }}</span>
-                <span class="badge-pill badge-admin" style="font-size:0.68rem;">dispositivos</span>
+                <span class="metric-value-huge" id="totalSessionsKpi" style="color:#3b82f6;">{{ total_active_sessions }}</span>
+                <span class="badge-pill badge-admin" style="font-size:0.68rem;">globales</span>
             </div>
         </div>
 
-        <!-- Rol de Cuenta -->
+        <!-- Usuarios Conectados -->
         <div class="metric-card-shadcn">
             <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px;">
-                <span style="font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-muted);">Rol de Cuenta</span>
+                <span style="font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-muted);">Usuarios Conectados</span>
                 <div style="width:34px; height:34px; border-radius:9999px; background:rgba(239,68,68,0.12); display:flex; align-items:center; justify-content:center; color:#ef4444;">
-                    <i data-lucide="user-check" style="width:16px; height:16px;"></i>
+                    <i data-lucide="users" style="width:16px; height:16px;"></i>
                 </div>
             </div>
             <div style="display:flex; align-items:baseline; gap:8px;">
-                <span style="font-size:1.25rem; font-weight:800; color:var(--text-primary);">{{ user.get_role_display }}</span>
-                <span class="badge-pill badge-user" style="font-size:0.68rem;">@{{ user.username }}</span>
+                <span class="metric-value-huge" style="color:var(--text-primary);">{{ connected_users_count }}</span>
+                <span class="badge-pill badge-user" style="font-size:0.68rem;">conectados</span>
             </div>
         </div>
 
-        <!-- Nivel de Protección -->
+        <!-- Móviles vs Desktop -->
         <div class="metric-card-shadcn">
             <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px;">
-                <span style="font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-muted);">Estado de Auditoría</span>
-                <div style="width:34px; height:34px; border-radius:9999px; background:rgba(34,197,94,0.12); display:flex; align-items:center; justify-content:center; color:#22c55e;">
-                    <i data-lucide="lock" style="width:16px; height:16px;"></i>
+                <span style="font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-muted);">Dispositivos Móviles</span>
+                <div style="width:34px; height:34px; border-radius:9999px; background:rgba(168,85,247,0.12); display:flex; align-items:center; justify-content:center; color:#a855f7;">
+                    <i data-lucide="smartphone" style="width:16px; height:16px;"></i>
                 </div>
             </div>
             <div style="display:flex; align-items:baseline; gap:8px;">
-                <span style="font-size:1.25rem; font-weight:800; color:#22c55e;">Activa</span>
-                <span class="badge-pill badge-superadmin" style="font-size:0.68rem; background:rgba(34,197,94,0.12); color:#22c55e; border-color:rgba(34,197,94,0.25);">En tiempo real</span>
+                <span class="metric-value-huge" style="color:#a855f7;">{{ mobile_sessions_count }}</span>
+                <span class="badge-pill badge-admin" style="font-size:0.68rem;">móviles / tablets</span>
             </div>
         </div>
 
+        <!-- Estado de Auditoría -->
+        <div class="metric-card-shadcn">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px;">
+                <span style="font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-muted);">Auditoría en Vivo</span>
+                <div style="width:34px; height:34px; border-radius:9999px; background:rgba(34,197,94,0.12); display:flex; align-items:center; justify-content:center; color:#22c55e;">
+                    <i data-lucide="shield-check" style="width:16px; height:16px;"></i>
+                </div>
+            </div>
+            <div style="display:flex; align-items:baseline; gap:8px;">
+                <span style="font-size:1.25rem; font-weight:800; color:#22c55e;">Monitoreando</span>
+                <span class="badge-pill badge-superadmin" style="font-size:0.68rem; background:rgba(34,197,94,0.12); color:#22c55e; border-color:rgba(34,197,94,0.25);">Heartbeat Activo</span>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ═════════ FILTRO Y BÚSQUEDA ═════════ -->
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+        <form method="get" style="width:100%; max-width:340px;">
+            <div style="position:relative;">
+                <i data-lucide="search" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); width:15px; height:15px; color:var(--text-muted); pointer-events:none;"></i>
+                <input type="text" name="q" value="{{ query }}" placeholder="Buscar por usuario, IP o dispositivo..."
+                    class="shadcn-input"
+                    style="width:100%; padding-left:36px !important;">
+            </div>
+        </form>
     </div>
 
     <!-- ═════════ TABLA DE SESIONES ACTIVAS ═════════ -->
@@ -103,16 +129,17 @@
         <div style="padding:16px 20px; border-bottom:1px solid var(--border-subtle); display:flex; justify-content:space-between; align-items:center;">
             <div style="display:flex; align-items:center; gap:10px;">
                 <h2 style="font-size:1rem; font-weight:700; color:var(--text-primary); margin:0;">
-                    Dispositivos con Acceso Autorizado
+                    Dispositivos & Usuarios Conectados
                 </h2>
             </div>
-            <span class="badge-pill badge-user" id="tableSessionCountBadge">{{ sessions.count }} activas</span>
+            <span class="badge-pill badge-user" id="tableSessionCountBadge">{{ sessions.count }} sesión{{ sessions.count|pluralize:"es" }} activa{{ sessions.count|pluralize }}</span>
         </div>
 
         <div style="overflow-x:auto;">
             <table class="glass-table">
                 <thead>
                     <tr>
+                        <th>Usuario</th>
                         <th>Dispositivo / SO</th>
                         <th>Navegador</th>
                         <th>Dirección IP</th>
@@ -125,34 +152,62 @@
                 <tbody id="sessionsTableBody">
                     {% for item in sessions %}
                     <tr id="row-session-{{ item.session_key }}">
+                        <!-- Usuario -->
                         <td>
                             <div style="display:flex; align-items:center; gap:10px;">
-                                <div style="width:32px; height:32px; border-radius:9999px; background:var(--bg-muted); display:flex; align-items:center; justify-content:center; color:var(--text-secondary); flex-shrink:0;">
-                                    {% if 'Móvil' in item.device_info or 'iPhone' in item.device_info or 'Android' in item.device_info %}
-                                        <i data-lucide="smartphone" style="width:16px; height:16px; color:#3b82f6;"></i>
-                                    {% elif 'iPad' in item.device_info or 'Tablet' in item.device_info %}
-                                        <i data-lucide="tablet" style="width:16px; height:16px; color:#a855f7;"></i>
-                                    {% else %}
-                                        <i data-lucide="laptop" style="width:16px; height:16px; color:#38bdf8;"></i>
-                                    {% endif %}
+                                <div class="avatar" style="width:32px; height:32px; font-size:0.8rem;">
+                                    {{ item.user.username|make_list|first|upper }}
                                 </div>
-                                <span style="font-weight:600; color:var(--text-primary); font-size:0.9rem;">{{ item.device_info }}</span>
+                                <div>
+                                    <span style="font-weight:700; color:var(--text-primary); font-size:0.88rem; display:block;">
+                                        {{ item.user.username }}
+                                    </span>
+                                    <span class="badge-pill badge-{% if item.user.role == 'superadmin' %}superadmin{% elif item.user.role == 'admin' %}admin{% else %}user{% endif %}" style="font-size:0.65rem; padding:1px 6px;">
+                                        {{ item.user.get_role_display }}
+                                    </span>
+                                </div>
                             </div>
                         </td>
+
+                        <!-- Dispositivo -->
+                        <td>
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <div style="width:30px; height:30px; border-radius:9999px; background:var(--bg-muted); display:flex; align-items:center; justify-content:center; color:var(--text-secondary); flex-shrink:0;">
+                                    {% if 'Móvil' in item.device_info or 'iPhone' in item.device_info or 'Android' in item.device_info %}
+                                        <i data-lucide="smartphone" style="width:15px; height:15px; color:#3b82f6;"></i>
+                                    {% elif 'iPad' in item.device_info or 'Tablet' in item.device_info %}
+                                        <i data-lucide="tablet" style="width:15px; height:15px; color:#a855f7;"></i>
+                                    {% else %}
+                                        <i data-lucide="laptop" style="width:15px; height:15px; color:#38bdf8;"></i>
+                                    {% endif %}
+                                </div>
+                                <span style="font-weight:600; color:var(--text-primary); font-size:0.86rem;">{{ item.device_info }}</span>
+                            </div>
+                        </td>
+
+                        <!-- Navegador -->
                         <td>
                             <span style="font-size:0.84rem; color:var(--text-secondary);">{{ item.browser_info }}</span>
                         </td>
+
+                        <!-- IP -->
                         <td>
                             <code style="background:var(--bg-muted); padding:3px 8px; border-radius:6px; font-size:0.8rem; color:var(--text-muted); font-family:monospace; border:1px solid var(--border-subtle);">
                                 {{ item.ip_address|default:"Desconocida" }}
                             </code>
                         </td>
+
+                        <!-- Inicio -->
                         <td>
                             <span style="font-size:0.8rem; color:var(--text-muted);">{{ item.created_at|date:"d/m/Y H:i" }}</span>
                         </td>
+
+                        <!-- Última Actividad -->
                         <td>
                             <span style="font-size:0.8rem; color:var(--text-primary); font-weight:600;">{{ item.last_activity|date:"d/m/Y H:i" }}</span>
                         </td>
+
+                        <!-- Estado -->
                         <td style="text-align:center;">
                             {% if item.session_key == current_session_key %}
                                 <span class="badge-active">
@@ -164,9 +219,11 @@
                                 </span>
                             {% endif %}
                         </td>
+
+                        <!-- Acción -->
                         <td style="text-align:right;">
                             {% if item.session_key != current_session_key %}
-                                <button type="button" class="btn-danger" style="padding:4px 10px; font-size:0.75rem;" onclick="revokeSpecificSession('{{ item.session_key }}')" title="Cerrar esta sesión remota">
+                                <button type="button" class="btn-danger" style="padding:4px 10px; font-size:0.75rem;" onclick="revokeSpecificSession('{{ item.session_key }}', '{{ item.user.username }}')" title="Cerrar esta sesión remota">
                                     <i data-lucide="log-out" style="width:12px; height:12px;"></i>
                                     Revocar
                                 </button>
@@ -177,8 +234,8 @@
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="7" style="text-align:center; padding:40px; color:var(--text-muted);">
-                            No hay registros de sesiones disponibles.
+                        <td colspan="8" style="text-align:center; padding:40px; color:var(--text-muted);">
+                            No hay registros de sesiones disponibles{% if query %} para "{{ query }}"{% endif %}.
                         </td>
                     </tr>
                     {% endfor %}
@@ -196,9 +253,9 @@
             <i data-lucide="shield-alert" style="width:22px; height:22px;"></i>
         </div>
 
-        <h3 style="font-size:1.15rem; font-weight:700; color:var(--text-primary); margin:0 0 8px;">¿Cerrar todas las demás sesiones?</h3>
+        <h3 style="font-size:1.15rem; font-weight:700; color:var(--text-primary); margin:0 0 8px;">¿Cerrar todas tus demás sesiones?</h3>
         <p style="font-size:0.85rem; color:var(--text-secondary); margin:0 0 24px; line-height:1.5;">
-            Se desconectarán todos los navegadores y dispositivos excepto este en el que estás actualmente.
+            Se desconectarán todos tus otros navegadores y dispositivos excepto este en el que estás actualmente.
         </p>
 
         <div style="display:flex; gap:10px; justify-content:center;">
@@ -259,7 +316,11 @@
         document.body.style.overflow = 'auto';
     }
 
-    async function revokeSpecificSession(sessionKey) {
+    async function revokeSpecificSession(sessionKey, username) {
+        if (!confirm(`¿Cerrar la sesión de '${username}'? El usuario será desconectado inmediatamente.`)) {
+            return;
+        }
+
         try {
             const res = await fetch(`/seguridad/api/sesiones/${sessionKey}/revoke/`, {
                 method: 'POST',
@@ -271,11 +332,15 @@
             });
             const data = await res.json();
             if (data.status === 'ok') {
-                showToast('Sesión remota revocada exitosamente', 'success');
+                showToast(`Sesión de ${username} revocada exitosamente`, 'success');
                 const row = document.getElementById(`row-session-${sessionKey}`);
-                if (row) row.remove();
+                if (row) {
+                    row.style.opacity = '0';
+                    row.style.transform = 'scale(0.96)';
+                    row.style.transition = 'all 0.25s ease';
+                    setTimeout(() => row.remove(), 260);
+                }
                 
-                // Actualizar contador
                 const kpi = document.getElementById('totalSessionsKpi');
                 if (kpi) {
                     const current = parseInt(kpi.innerText) || 1;
@@ -283,7 +348,7 @@
                 }
                 const badge = document.getElementById('tableSessionCountBadge');
                 if (badge && kpi) {
-                    badge.innerText = `${kpi.innerText} activas`;
+                    badge.innerText = `${kpi.innerText} sesiones activas`;
                 }
             } else {
                 showToast(data.message || 'Error al revocar sesión', 'error');

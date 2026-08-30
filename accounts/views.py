@@ -1,22 +1,17 @@
 import json
 from django.contrib.auth.decorators import login_required
 from django.contrib.sessions.models import Session
+from django.db.models import Q
 from django.http import JsonResponse
 from django.shortcuts import render
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 from .models import UserSessionLog
 
-def _cleanup_expired_sessions(user, current_key=None):
-    """Auxiliary function to clean up expired or deleted session logs."""
+def _cleanup_all_expired_sessions():
+    """Auxiliary function to clean up all expired or deleted session logs globally."""
     active_keys = set(Session.objects.filter(expire_date__gt=timezone.now()).values_list('session_key', flat=True))
-    if current_key:
-        active_keys.add(current_key)
-
-    logs = UserSessionLog.objects.filter(user=user)
-    for log in logs:
-        if log.session_key not in active_keys:
-            log.delete()
+    UserSessionLog.objects.exclude(session_key__in=active_keys).delete()
 
 def auth_status_api_view(request):
     """Lightweight session heartbeat to immediately detect if session was revoked or deactivated."""
@@ -42,12 +37,38 @@ def security_sessions_page_view(request):
         request.session.save()
         current_key = request.session.session_key
 
-    _cleanup_expired_sessions(request.user, current_key)
-    sessions = UserSessionLog.objects.filter(user=request.user).order_by('-last_activity')
+    _cleanup_all_expired_sessions()
     
+    is_super = (request.user.role == 'superadmin')
+    query = request.GET.get('q', '').strip()
+    selected_user_id = request.GET.get('user_id')
+
+    if is_super:
+        qs = UserSessionLog.objects.select_related('user').all()
+        if query:
+            qs = qs.filter(Q(user__username__icontains=query) | Q(ip_address__icontains=query) | Q(device_info__icontains=query))
+        if selected_user_id:
+            qs = qs.filter(user_id=selected_user_id)
+        sessions = qs.order_by('-last_activity')
+    else:
+        sessions = UserSessionLog.objects.filter(user=request.user).select_related('user').order_by('-last_activity')
+
+    total_active_sessions = UserSessionLog.objects.count() if is_super else sessions.count()
+    connected_users_count = UserSessionLog.objects.values('user').distinct().count() if is_super else 1
+    mobile_sessions_count = UserSessionLog.objects.filter(
+        Q(device_info__icontains='móvil') | 
+        Q(device_info__icontains='iphone') | 
+        Q(device_info__icontains='android')
+    ).count() if is_super else 0
+
     return render(request, 'accounts/security_sessions.html', {
         'sessions': sessions,
         'current_session_key': current_key,
+        'is_superadmin': is_super,
+        'query': query,
+        'total_active_sessions': total_active_sessions,
+        'connected_users_count': connected_users_count,
+        'mobile_sessions_count': mobile_sessions_count,
     })
 
 @login_required
@@ -58,9 +79,14 @@ def sessions_list_api_view(request):
         request.session.save()
         current_key = request.session.session_key
 
-    _cleanup_expired_sessions(request.user, current_key)
+    _cleanup_all_expired_sessions()
 
-    remaining_logs = UserSessionLog.objects.filter(user=request.user).order_by('-last_activity')
+    is_super = (request.user.role == 'superadmin')
+    if is_super:
+        remaining_logs = UserSessionLog.objects.select_related('user').all().order_by('-last_activity')
+    else:
+        remaining_logs = UserSessionLog.objects.filter(user=request.user).select_related('user').order_by('-last_activity')
+
     data = []
     for item in remaining_logs:
         device_lower = (item.device_info or '').lower()
@@ -73,6 +99,8 @@ def sessions_list_api_view(request):
 
         data.append({
             'session_key': item.session_key,
+            'username': item.user.username,
+            'user_role': item.user.get_role_display(),
             'device_info': item.device_info,
             'browser_info': item.browser_info,
             'device_type': device_type,
@@ -93,12 +121,14 @@ def revoke_session_api_view(request, session_key):
     if session_key == current_key:
         return JsonResponse({'status': 'error', 'message': 'Para cerrar esta sesión usá Cerrar Sesión.'}, status=400)
 
-    # Delete from Django session table
-    Session.objects.filter(session_key=session_key).delete()
-    # Delete from log
-    UserSessionLog.objects.filter(session_key=session_key).delete()
+    if request.user.role == 'superadmin':
+        Session.objects.filter(session_key=session_key).delete()
+        UserSessionLog.objects.filter(session_key=session_key).delete()
+    else:
+        Session.objects.filter(session_key=session_key).delete()
+        UserSessionLog.objects.filter(user=request.user, session_key=session_key).delete()
 
-    return JsonResponse({'status': 'ok', 'message': 'Sesión remota revocada exitosamente.'})
+    return JsonResponse({'status': 'ok', 'message': 'Sesión revocada exitosamente.'})
 
 @login_required
 @require_http_methods(['POST'])
