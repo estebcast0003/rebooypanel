@@ -16,14 +16,68 @@
         inset: 0;
         background: radial-gradient(circle at center, rgba(15, 23, 42, 0.4) 0%, rgba(15, 23, 42, 0.9) 100%);
     }
+
+    /* ── Particle canvas ── */
+    #loginParticles {
+        position: fixed;
+        inset: 0;
+        z-index: 1;
+        pointer-events: none;
+    }
+
+    /* ── Card entrance animation ── */
+    @keyframes cardIn {
+        from { opacity: 0; transform: translateY(28px) scale(0.97); }
+        to   { opacity: 1; transform: translateY(0)    scale(1);    }
+    }
+    .login-card-wrap {
+        animation: cardIn 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+
+    /* ── Shimmer border — rotating conic gradient ── */
+    @property --angle {
+        syntax: '<angle>';
+        initial-value: 0deg;
+        inherits: false;
+    }
+    @keyframes rotateBorder { to { --angle: 360deg; } }
+    .shimmer-border {
+        position: relative;
+    }
+    .shimmer-border::before {
+        content: '';
+        position: absolute;
+        inset: -1.5px;
+        border-radius: inherit;
+        z-index: 0;
+        background: conic-gradient(
+            from var(--angle),
+            transparent 60%,
+            rgba(239, 68, 68, 0.7) 75%,
+            rgba(255, 255, 255, 0.4) 80%,
+            rgba(239, 68, 68, 0.7) 85%,
+            transparent 100%
+        );
+        animation: rotateBorder 3.5s linear infinite;
+        -webkit-mask:
+            linear-gradient(#fff 0 0) content-box,
+            linear-gradient(#fff 0 0);
+        -webkit-mask-composite: xor;
+        mask-composite: exclude;
+        padding: 1.5px;
+    }
+    .shimmer-border > * { position: relative; z-index: 1; }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="overlay z-0"></div>
 
-<div class="z-10 flex-grow flex items-center justify-center p-4">
-    <div class="glass-panel-dark p-8 md:p-12 rounded-3xl w-full max-w-md shadow-2xl relative overflow-hidden group">
+<!-- Particle canvas -->
+<canvas id="loginParticles"></canvas>
+
+<div class="z-10 flex-grow flex items-center justify-center p-4 login-card-wrap">
+    <div class="glass-panel-dark p-8 md:p-12 rounded-3xl w-full max-w-md shadow-2xl relative overflow-hidden group shimmer-border">
         <!-- Decoration -->
         <div class="absolute -top-10 -right-10 w-32 h-32 bg-brand-500 rounded-full blur-3xl opacity-20 group-hover:opacity-40 transition duration-500"></div>
         <div class="absolute -bottom-10 -left-10 w-32 h-32 bg-slate-500 rounded-full blur-3xl opacity-20 group-hover:opacity-40 transition duration-500"></div>
@@ -73,4 +127,51 @@
         </form>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+    const canvas = document.getElementById('loginParticles');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+
+    function resize() {
+        canvas.width  = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    const COUNT = 55;
+    const particles = Array.from({ length: COUNT }, () => ({
+        x:    Math.random() * window.innerWidth,
+        y:    Math.random() * window.innerHeight,
+        r:    Math.random() * 1.6 + 0.4,
+        vx:   (Math.random() - 0.5) * 0.35,
+        vy:   (Math.random() - 0.5) * 0.35,
+        alpha: Math.random() * 0.4 + 0.08,
+    }));
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        particles.forEach(p => {
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(239,68,68,${p.alpha})`;
+            ctx.fill();
+
+            p.x += p.vx;
+            p.y += p.vy;
+
+            if (p.x < -4) p.x = canvas.width  + 4;
+            if (p.x > canvas.width  + 4) p.x = -4;
+            if (p.y < -4) p.y = canvas.height + 4;
+            if (p.y > canvas.height + 4) p.y = -4;
+        });
+        requestAnimationFrame(draw);
+    }
+    draw();
+})();
+</script>
 {% endblock %}
