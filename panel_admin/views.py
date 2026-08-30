@@ -4,7 +4,8 @@ from django.contrib import messages
 from django.core.paginator import Paginator
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
-from accounts.models import CustomUser
+from django.contrib.sessions.models import Session
+from accounts.models import CustomUser, UserSessionLog
 from .forms import UserCreateForm, UserEditForm
 
 
@@ -200,6 +201,36 @@ def user_toggle_view(request, pk):
             })
 
         messages.success(request, msg)
+    return redirect('user_list')
+
+
+# ──────────────────────────────────────────────
+# Revocar Todas las Sesiones de un Usuario
+# ──────────────────────────────────────────────
+@login_required
+@user_passes_test(is_superadmin)
+@require_POST
+def user_revoke_sessions_view(request, pk):
+    target = get_object_or_404(CustomUser, pk=pk)
+    is_ajax = request.headers.get('x-requested-with') == 'XMLHttpRequest'
+
+    logs = UserSessionLog.objects.filter(user=target)
+    keys = list(logs.values_list('session_key', flat=True))
+
+    if keys:
+        Session.objects.filter(session_key__in=keys).delete()
+        logs.delete()
+
+    msg = f"Se cerraron todas las sesiones de '{target.username}'."
+    if is_ajax:
+        return JsonResponse({
+            'status': 'success',
+            'message': msg,
+            'user_id': pk,
+            'revoked_count': len(keys)
+        })
+
+    messages.success(request, msg)
     return redirect('user_list')
 
 

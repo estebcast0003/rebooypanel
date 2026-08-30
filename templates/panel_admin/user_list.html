@@ -127,6 +127,10 @@
                                     title="{% if u.is_active %}Desactivar usuario{% else %}Activar usuario{% endif %}">
                                     <i data-lucide="{% if u.is_active %}pause-circle{% else %}play-circle{% endif %}"></i>
                                 </button>
+                                <!-- Revocar Sesiones -->
+                                <button type="button" class="action-btn" title="Cerrar todas las sesiones remotas de este usuario" onclick="revokeUserSessions({{ u.pk }}, '{{ u.username }}')">
+                                    <i data-lucide="shield-alert" style="width:14px; height:14px; color:#60a5fa;"></i>
+                                </button>
                                 <!-- Eliminar -->
                                 <button type="button" class="action-btn action-btn-delete" title="Eliminar" onclick="openDeleteUserModal({{ u.pk }}, '{{ u.username }}')">
                                     <i data-lucide="trash-2"></i>
@@ -458,6 +462,29 @@ function closeDeleteUserModal() {
     currentDeleteUserId = null;
     document.getElementById('deleteUserModal').style.display = 'none';
     document.body.style.overflow = 'auto';
+}
+
+async function revokeUserSessions(userId, username) {
+    if (!confirm(`¿Cerrar todas las sesiones activas del usuario '${username}'? Se desconectarán todos sus dispositivos.`)) {
+        return;
+    }
+    try {
+        const res = await fetch(`/panel/usuarios/${userId}/revocar-sesiones/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+        const data = await res.json();
+        if (res.ok && data.status === 'success') {
+            alert(data.message);
+        } else {
+            alert(data.message || 'Error al revocar sesiones.');
+        }
+    } catch (e) {
+        alert('Error de conexión con el servidor.');
+    }
 }
 
 async function submitDeleteUser(e) {

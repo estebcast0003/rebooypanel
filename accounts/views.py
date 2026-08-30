@@ -18,6 +18,23 @@ def _cleanup_expired_sessions(user, current_key=None):
         if log.session_key not in active_keys:
             log.delete()
 
+def auth_status_api_view(request):
+    """Lightweight session heartbeat to immediately detect if session was revoked or deactivated."""
+    is_auth = request.user.is_authenticated
+    is_act = request.user.is_active if is_auth else False
+    
+    if is_auth and hasattr(request, 'session') and request.session.session_key:
+        exists = Session.objects.filter(session_key=request.session.session_key).exists()
+        if not exists:
+            is_auth = False
+            is_act = False
+
+    return JsonResponse({
+        'authenticated': bool(is_auth and is_act),
+        'username': request.user.username if is_auth else None,
+        'is_active': bool(is_act)
+    })
+
 @login_required
 def security_sessions_page_view(request):
     current_key = request.session.session_key
@@ -79,7 +96,7 @@ def revoke_session_api_view(request, session_key):
     # Delete from Django session table
     Session.objects.filter(session_key=session_key).delete()
     # Delete from log
-    UserSessionLog.objects.filter(user=request.user, session_key=session_key).delete()
+    UserSessionLog.objects.filter(session_key=session_key).delete()
 
     return JsonResponse({'status': 'ok', 'message': 'Sesión remota revocada exitosamente.'})
 

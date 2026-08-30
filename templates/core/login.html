@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Login - Rebooy Panel{% endblock %}
+{% block title %}Login — Rebooy Panel{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -36,6 +36,12 @@
         <form method="post" action="{% url 'login' %}" class="relative z-10 space-y-6">
             {% csrf_token %}
             
+            {% if request.GET.session_ended %}
+            <div class="bg-amber-500/20 border border-amber-500/50 text-amber-200 px-4 py-3 rounded-xl text-sm text-center">
+                Tu sesión fue cerrada o revocada desde otro dispositivo.
+            </div>
+            {% endif %}
+
             {% if form.errors %}
             <div class="bg-red-500/20 border border-red-500/50 text-red-200 px-4 py-3 rounded-xl text-sm text-center">
                 Credenciales incorrectas. Verificalas.

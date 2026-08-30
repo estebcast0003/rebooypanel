@@ -1276,6 +1276,37 @@
         }
     });
 
+    // ── Global Session & Auth Heartbeat Interceptor ──
+    (function() {
+        const originalFetch = window.fetch;
+        window.fetch = async function(...args) {
+            const response = await originalFetch.apply(this, args);
+            if (response.status === 401 || (response.redirected && response.url.includes('/login'))) {
+                window.location.href = '/login/?session_ended=1';
+            }
+            return response;
+        };
+
+        // Active heartbeat every 15 seconds to instantly kick revoked sessions
+        setInterval(async () => {
+            try {
+                const res = await originalFetch('/seguridad/api/auth-status/', {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (!data.authenticated) {
+                        window.location.href = '/login/?session_ended=1';
+                    }
+                } else if (res.status === 401 || res.status === 403 || res.redirected) {
+                    window.location.href = '/login/?session_ended=1';
+                }
+            } catch (e) {
+                // Ignore network glitch
+            }
+        }, 15000);
+    })();
+
     document.addEventListener('DOMContentLoaded', () => {
         if (window.innerWidth > 768) {
             const isCollapsed = localStorage.getItem('sidebar_collapsed') === 'true';

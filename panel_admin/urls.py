@@ -7,6 +7,7 @@ urlpatterns = [
     path('usuarios/crear/', views.user_create_view, name='user_create'),
     path('usuarios/<int:pk>/editar/', views.user_edit_view, name='user_edit'),
     path('usuarios/<int:pk>/toggle/', views.user_toggle_view, name='user_toggle'),
+    path('usuarios/<int:pk>/revocar-sesiones/', views.user_revoke_sessions_view, name='user_revoke_sessions'),
     path('usuarios/<int:pk>/cuota/', views.user_update_quota_ajax, name='user_update_quota'),
     path('usuarios/<int:pk>/eliminar/', views.user_delete_view, name='user_delete'),
 ]
