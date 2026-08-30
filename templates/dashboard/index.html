@@ -119,9 +119,10 @@
                     <i data-lucide="layers" style="width:16px; height:16px;"></i>
                 </div>
             </div>
-            <div style="display:flex; align-items:baseline; gap:8px;">
+            <div style="display:flex; align-items:baseline; gap:8px; position:relative;">
+                <span class="skeleton skeleton-kpi skeleton-cover"></span>
                 <span id="metricTotalPages" class="metric-value-huge" style="color:var(--text-primary);">{{ total_pages }}</span>
-                <span class="badge-pill badge-user" style="font-size:0.68rem;">activas</span>
+                <span class="badge-pill badge-user skeleton-hide-on-load" style="font-size:0.68rem;">activas</span>
             </div>
         </div>
 
@@ -136,10 +137,11 @@
                 </div>
             </div>
             <div style="display:flex; align-items:baseline; gap:8px;">
+                <span class="skeleton skeleton-kpi skeleton-cover"></span>
                 <span id="metricTotalFollowers" class="metric-value-huge" style="color:#22c55e;" title="{{ total_followers|floatformat:0 }} seguidores">
                     {{ formatted_total_followers }}
                 </span>
-                <span class="badge-pill badge-superadmin" style="font-size:0.68rem; background:rgba(34,197,94,0.12); color:#22c55e; border-color:rgba(34,197,94,0.25);">
+                <span class="badge-pill skeleton-hide-on-load" style="font-size:0.68rem; background:rgba(34,197,94,0.12); color:#22c55e; border:1px solid rgba(34,197,94,0.25);">
                     acumulados
                 </span>
             </div>
@@ -156,8 +158,9 @@
                 </div>
             </div>
             <div style="display:flex; align-items:baseline; gap:8px;">
+                <span class="skeleton skeleton-kpi skeleton-cover"></span>
                 <span class="metric-value-huge" style="color:var(--text-primary);">{{ total_prompts }}</span>
-                <span class="badge-pill badge-admin" style="font-size:0.68rem;">completados</span>
+                <span class="badge-pill badge-admin skeleton-hide-on-load" style="font-size:0.68rem;">completados</span>
             </div>
         </div>
 
@@ -172,8 +175,9 @@
                 </div>
             </div>
             <div style="display:flex; align-items:baseline; gap:8px;">
+                <span class="skeleton skeleton-kpi skeleton-cover"></span>
                 <span class="metric-value-huge" style="color:var(--text-primary);">{{ total_fanpages }}</span>
-                <span class="badge-pill badge-user" style="font-size:0.68rem;">perfiles</span>
+                <span class="badge-pill badge-user skeleton-hide-on-load" style="font-size:0.68rem;">perfiles</span>
             </div>
         </div>
 

@@ -621,10 +621,95 @@
                 border-radius: 1rem;
             }
         }
+
+        /* ══════════════════════════════════════════
+           TOP PROGRESS BAR
+        ══════════════════════════════════════════ */
+        #topProgressBar {
+            position: fixed;
+            top: 0; left: 0;
+            height: 2px;
+            width: 0%;
+            background: #ef4444;
+            z-index: 999999;
+            opacity: 0;
+            transition: width 0.25s ease, opacity 0.3s ease;
+            box-shadow: 0 0 10px rgba(239,68,68,0.65), 0 0 4px rgba(239,68,68,0.4);
+            pointer-events: none;
+        }
+        #topProgressBar.active { opacity: 1; }
+
+        /* ══════════════════════════════════════════
+           PAGE FADE-IN (main content area)
+        ══════════════════════════════════════════ */
+        @keyframes pageIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .main-content-wrapper {
+            animation: pageIn 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+
+        /* ══════════════════════════════════════════
+           SKELETON SHIMMER
+        ══════════════════════════════════════════ */
+        @keyframes shimmer {
+            from { background-position: 200% 0; }
+            to   { background-position: -200% 0; }
+        }
+        .skeleton {
+            background: linear-gradient(
+                90deg,
+                var(--bg-muted) 25%,
+                var(--border-highlight) 50%,
+                var(--bg-muted) 75%
+            );
+            background-size: 200% 100%;
+            animation: shimmer 1.6s ease-in-out infinite;
+            border-radius: 6px;
+            display: block;
+        }
+        /* Card placeholder — fila de skeleton dentro de un card */
+        .skeleton-card {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding: 20px;
+        }
+        .skeleton-line       { height: 14px; }
+        .skeleton-line-sm    { height: 11px; }
+        .skeleton-line-lg    { height: 32px; }
+        .skeleton-w-full     { width: 100%; }
+        .skeleton-w-3q       { width: 75%; }
+        .skeleton-w-half     { width: 50%; }
+        .skeleton-w-third    { width: 33%; }
+        /* KPI number placeholder */
+        .skeleton-kpi {
+            height: 36px;
+            width: 90px;
+            border-radius: 6px;
+        }
+        /* Table row placeholder */
+        .skeleton-row td div.skeleton { margin: 2px 0; }
+        /* ── Page Loading State: hide real values briefly so skeleton shows ── */
+        body.page-loading .metric-value-huge,
+        body.page-loading .skeleton-hide-on-load {
+            opacity: 0;
+            transition: none;
+        }
+        body.page-loading .skeleton-cover {
+            display: block !important;
+        }
+        .skeleton-cover {
+            display: none;
+        }
     </style>
     {% block extra_css %}{% endblock %}
 </head>
-<body class="antialiased">
+<body class="antialiased page-loading">
+
+<!-- Top Progress Bar -->
+<div id="topProgressBar"></div>
 
 <div id="mobileOverlay" onclick="toggleMobileSidebar(false)"></div>
 
@@ -1309,6 +1394,70 @@
         }, 15000);
     })();
 
+    // ── Top Progress Bar Controller ──
+    const TopProgress = (function() {
+        const bar = document.getElementById('topProgressBar');
+        let _raf = null;
+        let _current = 0;
+        let _target = 0;
+
+        function _tick() {
+            if (_current < _target) {
+                _current = Math.min(_current + (_target - _current) * 0.12 + 0.4, _target);
+                bar.style.width = _current + '%';
+                _raf = requestAnimationFrame(_tick);
+            }
+        }
+
+        function start() {
+            cancelAnimationFrame(_raf);
+            _current = 0;
+            _target = 0;
+            bar.style.transition = 'none';
+            bar.style.width = '0%';
+            bar.classList.add('active');
+            const steps = [15, 30, 50, 70, 82, 85];
+            let i = 0;
+            function advance() {
+                if (i < steps.length) {
+                    _target = steps[i++];
+                    _tick();
+                    setTimeout(advance, 250 + Math.random() * 200);
+                }
+            }
+            requestAnimationFrame(advance);
+        }
+
+        function done() {
+            cancelAnimationFrame(_raf);
+            bar.style.transition = 'width 0.22s ease, opacity 0.4s ease';
+            bar.style.width = '100%';
+            bar.classList.add('active');
+            setTimeout(() => {
+                bar.classList.remove('active');
+                setTimeout(() => {
+                    bar.style.transition = 'none';
+                    bar.style.width = '0%';
+                }, 350);
+            }, 300);
+        }
+
+        return { start, done };
+    })();
+
+    // ── Navigation click interceptor: trigger progress bar ──
+    document.addEventListener('click', function(e) {
+        const link = e.target.closest('a[href]');
+        if (!link) return;
+        const href = link.getAttribute('href');
+        if (!href || href.startsWith('#') || href.startsWith('javascript') ||
+            href.startsWith('http') || href.startsWith('mailto') ||
+            link.target === '_blank' || e.ctrlKey || e.metaKey || e.shiftKey) {
+            return;
+        }
+        TopProgress.start();
+    });
+
     document.addEventListener('DOMContentLoaded', () => {
         if (window.innerWidth > 768) {
             const isCollapsed = localStorage.getItem('sidebar_collapsed') === 'true';
@@ -1319,6 +1468,19 @@
         const activeTheme = document.documentElement.getAttribute('data-theme') || 'dark';
         updateThemeIcons(activeTheme);
         lucide.createIcons();
+
+        // Complete progress bar when page is ready
+        TopProgress.done();
+
+        // Remove skeleton loading state — reveal real content with a fade
+        requestAnimationFrame(() => {
+            document.body.classList.remove('page-loading');
+            // Fade in the metric values
+            document.querySelectorAll('.metric-value-huge, .skeleton-hide-on-load').forEach(el => {
+                el.style.transition = 'opacity 0.35s ease';
+                el.style.opacity = '1';
+            });
+        });
     });
 </script>
 {% block extra_js %}{% endblock %}
