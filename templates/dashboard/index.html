@@ -481,10 +481,19 @@
                 <div style="font-size:0.7rem; color:var(--text-secondary); text-transform:uppercase;">Crecimiento Total</div>
                 <div id="growthModalTotalDelta" style="font-size:1.1rem; font-weight:700; color:#22c55e; font-family:monospace;">-</div>
             </div>
+        <!-- Interactive Chart Visualizer -->
+        <div style="padding:14px 20px; border-bottom:1px solid var(--border-glass); background:rgba(0,0,0,0.12);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                <span style="font-size:0.75rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-secondary);">Curva de Evolución de Seguidores</span>
+                <span class="badge-admin" style="font-size:0.7rem; padding:2px 8px;">Tendencia</span>
+            </div>
+            <div style="height:150px; position:relative; width:100%;">
+                <canvas id="growthChartCanvas"></canvas>
+            </div>
         </div>
 
         <!-- Snapshots Table with Scroll -->
-        <div style="overflow-y:auto; flex:1; padding:0;">
+        <div style="overflow-y:auto; max-height:220px; flex:1; padding:0;">
             <table class="panel-table" style="margin:0;">
                 <thead>
                     <tr>

@@ -648,8 +648,89 @@ function upsertTableRow(data) {
 }
 
 // ----------------------------------------------------
-// Growth History Modal Operations
+// Growth History Modal & Visual Chart Operations
 // ----------------------------------------------------
+let activeGrowthChart = null;
+
+function renderGrowthChart(historyList, pageName) {
+    const canvas = document.getElementById('growthChartCanvas');
+    if (!canvas || typeof Chart === 'undefined') return;
+
+    if (activeGrowthChart) {
+        activeGrowthChart.destroy();
+        activeGrowthChart = null;
+    }
+
+    if (!historyList || historyList.length === 0) return;
+
+    const chronological = [...historyList].reverse();
+    const labels = chronological.map(item => {
+        return item.date.length > 10 ? item.date.substring(0, 5) + ' ' + item.date.substring(11, 16) : item.date;
+    });
+    const values = chronological.map(item => item.followers);
+
+    const ctx = canvas.getContext('2d');
+    const gradient = ctx.createLinearGradient(0, 0, 0, 150);
+    gradient.addColorStop(0, 'rgba(34, 197, 94, 0.35)');
+    gradient.addColorStop(1, 'rgba(34, 197, 94, 0.0)');
+
+    activeGrowthChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Seguidores',
+                data: values,
+                borderColor: '#22c55e',
+                backgroundColor: gradient,
+                fill: true,
+                tension: 0.35,
+                borderWidth: 2,
+                pointRadius: values.length > 15 ? 2 : 4,
+                pointBackgroundColor: '#22c55e',
+                pointHoverRadius: 6,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                    titleColor: '#e2e8f0',
+                    bodyColor: '#4ade80',
+                    borderColor: 'rgba(255, 255, 255, 0.1)',
+                    borderWidth: 1,
+                    padding: 10,
+                    displayColors: false,
+                    callbacks: {
+                        label: function(context) {
+                            return `${Number(context.raw).toLocaleString()} seguidores`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    grid: { color: 'rgba(255, 255, 255, 0.04)' },
+                    ticks: { color: '#64748b', font: { size: 10 } }
+                },
+                y: {
+                    grid: { color: 'rgba(255, 255, 255, 0.04)' },
+                    ticks: {
+                        color: '#64748b',
+                        font: { size: 10 },
+                        callback: function(value) {
+                            return formatCompactNumber(value);
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
 async function openGrowthModal(pageId) {
     const modal = document.getElementById('growthHistoryModal');
     const tbody = document.getElementById('growthSnapshotsBody');
@@ -694,6 +775,8 @@ async function openGrowthModal(pageId) {
             if (initEl) initEl.textContent = initialFmt;
             if (currEl) currEl.textContent = currentFmt;
             if (deltaEl) deltaEl.textContent = `${deltaFmt} (${pctFmt})`;
+
+            renderGrowthChart(data.history, data.page_name);
 
             if (data.history && data.history.length > 0) {
                 tbody.innerHTML = data.history.map(item => `
