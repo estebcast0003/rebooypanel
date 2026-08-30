@@ -187,24 +187,71 @@
             z-index: 501;
         }
 
+        #userMenuBtn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--action-btn-bg);
+            border: 1px solid var(--action-btn-border);
+            border-radius: 10px;
+            padding: 4px 10px 4px 6px;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        #userMenuBtn:hover,
+        #userMenuBtn.active {
+            background: rgba(255, 255, 255, 0.12) !important;
+            border-color: rgba(255, 255, 255, 0.25) !important;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3) !important;
+            transform: translateY(-1px);
+        }
+        #userMenuBtn:active {
+            transform: translateY(0);
+        }
+
         #userDropdownMenu {
             display: none;
             position: absolute;
             right: 0;
             top: calc(100% + 8px);
-            width: 230px;
-            background: #0f172a !important;
+            width: 240px;
+            background: rgba(15, 23, 42, 0.80) !important;
+            backdrop-filter: blur(28px) saturate(180%) !important;
+            -webkit-backdrop-filter: blur(28px) saturate(180%) !important;
             border: 1px solid rgba(255, 255, 255, 0.15) !important;
-            border-radius: 12px;
-            box-shadow: 0 20px 45px -5px rgba(0, 0, 0, 0.75) !important;
+            border-radius: 14px;
+            box-shadow: 0 20px 45px -5px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.12) !important;
             padding: 8px;
             z-index: 99999 !important;
-            animation: modalIn 0.18s ease-out;
+            transform-origin: top right;
+            animation: dropdownIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
         }
         html[data-theme="light"] #userDropdownMenu {
-            background: #ffffff !important;
-            border: 1px solid #cbd5e1 !important;
-            box-shadow: 0 20px 45px -5px rgba(0, 0, 0, 0.15) !important;
+            background: rgba(255, 255, 255, 0.88) !important;
+            border: 1px solid rgba(0, 0, 0, 0.1) !important;
+            box-shadow: 0 20px 45px -5px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.9) !important;
+        }
+
+        @keyframes dropdownIn {
+            from {
+                opacity: 0;
+                transform: translateY(-8px) scale(0.96);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        @keyframes modalIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
         }
 
         /* ── Reglas Específicas para Light Mode de Alta Fidelidad y Contraste ── */
@@ -978,11 +1025,16 @@
 
     // Dropdown de Usuario
     function toggleUserDropdown() {
+        const btn = document.getElementById('userMenuBtn');
         const menu = document.getElementById('userDropdownMenu');
         const chevron = document.getElementById('userDropdownChevron');
         if (!menu) return;
         const isHidden = menu.style.display === 'none' || !menu.style.display;
         menu.style.display = isHidden ? 'block' : 'none';
+        if (btn) {
+            if (isHidden) btn.classList.add('active');
+            else btn.classList.remove('active');
+        }
         if (chevron) {
             chevron.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
         }
@@ -993,10 +1045,12 @@
 
     document.addEventListener('click', (e) => {
         const container = document.getElementById('userDropdownContainer');
+        const btn = document.getElementById('userMenuBtn');
         const menu = document.getElementById('userDropdownMenu');
         const chevron = document.getElementById('userDropdownChevron');
         if (container && !container.contains(e.target) && menu && menu.style.display === 'block') {
             menu.style.display = 'none';
+            if (btn) btn.classList.remove('active');
             if (chevron) chevron.style.transform = 'rotate(0deg)';
         }
     });
