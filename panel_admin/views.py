@@ -2,6 +2,8 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
 from django.core.paginator import Paginator
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST
 from accounts.models import CustomUser
 from .forms import UserCreateForm, UserEditForm
 
@@ -122,7 +124,6 @@ def user_statistics_view(request):
     return render(request, 'panel_admin/user_statistics.html', context)
 
 
-
 # ──────────────────────────────────────────────
 # Crear Usuario
 # ──────────────────────────────────────────────
@@ -134,7 +135,6 @@ def user_create_view(request):
         user = form.save(commit=False)
         user.set_password(form.cleaned_data['password'])
         user.created_by = request.user
-        # Sincronizar flags de Django según el rol elegido
         role = form.cleaned_data['role']
         user.is_staff = role in ('admin', 'superadmin')
         user.is_superuser = role == 'superadmin'
@@ -177,13 +177,29 @@ def user_edit_view(request, pk):
 def user_toggle_view(request, pk):
     if request.method == 'POST':
         target = get_object_or_404(CustomUser, pk=pk)
+        is_ajax = request.headers.get('x-requested-with') == 'XMLHttpRequest'
+        
         if target == request.user:
-            messages.error(request, "No podés desactivarte a vos mismo.")
+            msg = "No podés desactivarte a vos mismo."
+            if is_ajax:
+                return JsonResponse({'status': 'error', 'message': msg}, status=400)
+            messages.error(request, msg)
             return redirect('user_list')
+
         target.is_active = not target.is_active
-        target.save()
+        target.save(update_fields=['is_active'])
         estado = "activado" if target.is_active else "desactivado"
-        messages.success(request, f"Usuario '{target.username}' {estado}.")
+        msg = f"Usuario '{target.username}' {estado}."
+
+        if is_ajax:
+            return JsonResponse({
+                'status': 'success',
+                'is_active': target.is_active,
+                'message': msg,
+                'user_id': pk
+            })
+
+        messages.success(request, msg)
     return redirect('user_list')
 
 
@@ -194,14 +210,28 @@ def user_toggle_view(request, pk):
 @user_passes_test(is_superadmin)
 def user_delete_view(request, pk):
     target = get_object_or_404(CustomUser, pk=pk)
+    is_ajax = request.headers.get('x-requested-with') == 'XMLHttpRequest'
+
     if target == request.user:
-        messages.error(request, "No podés eliminarte a vos mismo.")
+        msg = "No podés eliminarte a vos mismo."
+        if is_ajax:
+            return JsonResponse({'status': 'error', 'message': msg}, status=400)
+        messages.error(request, msg)
         return redirect('user_list')
 
     if request.method == 'POST':
         username = target.username
         target.delete()
-        messages.success(request, f"Usuario '{username}' eliminado.")
+        msg = f"Usuario '{username}' eliminado correctamente."
+
+        if is_ajax:
+            return JsonResponse({
+                'status': 'success',
+                'message': msg,
+                'user_id': pk
+            })
+
+        messages.success(request, msg)
         return redirect('user_list')
 
     return render(request, 'panel_admin/user_confirm_delete.html', {'target': target})
@@ -210,9 +240,6 @@ def user_delete_view(request, pk):
 # ──────────────────────────────────────────────
 # Actualizar Cuota Diaria (AJAX)
 # ──────────────────────────────────────────────
-from django.views.decorators.http import require_POST
-from django.http import JsonResponse
-
 @login_required
 @user_passes_test(is_superadmin)
 @require_POST

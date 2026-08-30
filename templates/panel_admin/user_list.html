@@ -61,7 +61,7 @@
                         <th style="text-align:right;">Acciones</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="userTableBody">
                     {% for u in users %}
                     <tr id="user-row-{{ u.pk }}">
                         <td>
@@ -81,7 +81,7 @@
                                 <span class="badge-pill badge-user">User</span>
                             {% endif %}
                         </td>
-                        <td>
+                        <td id="status-cell-{{ u.pk }}">
                             {% if u.is_active %}
                                 <span class="badge-active">
                                     <span class="status-dot" style="background:#22c55e;"></span>Activo
@@ -120,18 +120,13 @@
                                 <a href="{% url 'user_edit' u.pk %}" class="action-btn action-btn-edit" title="Editar">
                                     <i data-lucide="pencil"></i>
                                 </a>
-                                <!-- Toggle -->
-                                <form method="post" action="{% url 'user_toggle' u.pk %}" style="display:inline; margin:0;">
-                                    {% csrf_token %}
-                                    <button type="submit" class="action-btn action-btn-toggle"
-                                        title="{% if u.is_active %}Desactivar{% else %}Activar{% endif %}">
-                                        {% if u.is_active %}
-                                            <i data-lucide="pause-circle"></i>
-                                        {% else %}
-                                            <i data-lucide="play-circle"></i>
-                                        {% endif %}
-                                    </button>
-                                </form>
+                                <!-- Toggle Activo/Inactivo -->
+                                <button type="button" class="action-btn action-btn-toggle"
+                                    id="btn-toggle-{{ u.pk }}"
+                                    onclick="toggleUserStatus({{ u.pk }})"
+                                    title="{% if u.is_active %}Desactivar usuario{% else %}Activar usuario{% endif %}">
+                                    <i data-lucide="{% if u.is_active %}pause-circle{% else %}play-circle{% endif %}"></i>
+                                </button>
                                 <!-- Eliminar -->
                                 <button type="button" class="action-btn action-btn-delete" title="Eliminar" onclick="openDeleteUserModal({{ u.pk }}, '{{ u.username }}')">
                                     <i data-lucide="trash-2"></i>
@@ -268,13 +263,13 @@
             <strong id="deleteUserUsernameText" class="badge-pill badge-superadmin" style="font-size:0.9rem; padding:4px 14px;"></strong>
         </div>
 
-        <form id="deleteUserForm" method="post" action="">
+        <form id="deleteUserForm" method="post" action="" onsubmit="submitDeleteUser(event)">
             {% csrf_token %}
             <div style="display:flex; gap:10px; justify-content:center;">
                 <button type="button" class="btn-ghost" style="flex:1; justify-content:center;" onclick="closeDeleteUserModal()">
                     Cancelar
                 </button>
-                <button type="submit" class="btn-danger" style="flex:1; justify-content:center;">
+                <button type="submit" id="btnConfirmDeleteUser" class="btn-danger" style="flex:1; justify-content:center;">
                     <i data-lucide="trash-2" style="width:14px; height:14px;"></i>
                     Eliminar
                 </button>
@@ -284,6 +279,8 @@
 </div>
 
 <script>
+let currentDeleteUserId = null;
+
 function openQuotaModal(userId, username, currentLimit, isUnlimited) {
     document.getElementById('quotaUserId').value = userId;
     document.getElementById('quotaUsernameText').innerText = username;
@@ -396,7 +393,57 @@ async function submitQuotaChange(e) {
     }
 }
 
+async function toggleUserStatus(userId) {
+    const btn = document.getElementById(`btn-toggle-${userId}`);
+    if (btn) btn.disabled = true;
+
+    try {
+        const res = await fetch(`/panel/usuarios/${userId}/toggle/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+        const data = await res.json();
+        if (res.ok && data.status === 'success') {
+            const cell = document.getElementById(`status-cell-${userId}`);
+            if (cell) {
+                if (data.is_active) {
+                    cell.innerHTML = `
+                        <span class="badge-active">
+                            <span class="status-dot" style="background:#22c55e;"></span>Activo
+                        </span>
+                    `;
+                    if (btn) {
+                        btn.title = 'Desactivar usuario';
+                        btn.innerHTML = '<i data-lucide="pause-circle"></i>';
+                    }
+                } else {
+                    cell.innerHTML = `
+                        <span class="badge-inactive">
+                            <span class="status-dot" style="background:#ef4444;"></span>Inactivo
+                        </span>
+                    `;
+                    if (btn) {
+                        btn.title = 'Activar usuario';
+                        btn.innerHTML = '<i data-lucide="play-circle"></i>';
+                    }
+                }
+            }
+            lucide.createIcons();
+        } else {
+            alert(data.message || 'Error al cambiar estado.');
+        }
+    } catch (e) {
+        alert('Error de conexión.');
+    } finally {
+        if (btn) btn.disabled = false;
+    }
+}
+
 function openDeleteUserModal(userId, username) {
+    currentDeleteUserId = userId;
     const form = document.getElementById('deleteUserForm');
     form.action = `/panel/usuarios/${userId}/eliminar/`;
     document.getElementById('deleteUserUsernameText').innerText = username;
@@ -408,8 +455,47 @@ function openDeleteUserModal(userId, username) {
 }
 
 function closeDeleteUserModal() {
+    currentDeleteUserId = null;
     document.getElementById('deleteUserModal').style.display = 'none';
     document.body.style.overflow = 'auto';
+}
+
+async function submitDeleteUser(e) {
+    e.preventDefault();
+    if (!currentDeleteUserId) return;
+    const btn = document.getElementById('btnConfirmDeleteUser');
+    btn.disabled = true;
+    btn.innerHTML = '<i data-lucide="loader-2" class="animate-spin" style="width:14px; height:14px;"></i> Eliminando...';
+    lucide.createIcons();
+
+    try {
+        const res = await fetch(`/panel/usuarios/${currentDeleteUserId}/eliminar/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+        const data = await res.json();
+        if (res.ok && data.status === 'success') {
+            const row = document.getElementById(`user-row-${currentDeleteUserId}`);
+            if (row) {
+                row.style.opacity = '0';
+                row.style.transform = 'scale(0.95)';
+                row.style.transition = 'all 0.25s ease';
+                setTimeout(() => row.remove(), 260);
+            }
+            closeDeleteUserModal();
+        } else {
+            alert(data.message || 'Error al eliminar usuario.');
+        }
+    } catch (err) {
+        document.getElementById('deleteUserForm').submit();
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i data-lucide="trash-2" style="width:14px; height:14px;"></i> Eliminar';
+        lucide.createIcons();
+    }
 }
 
 window.addEventListener('keydown', (e) => {
