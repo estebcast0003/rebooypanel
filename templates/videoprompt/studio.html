@@ -622,34 +622,29 @@
                 </div>
             </div>
 
-            <!-- Vista 3: Raw Markdown (rendered) -->
-            <div id="rawView" style="display:none;">
-                <!-- Toolbar: copy + toggle raw -->
-                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; gap:10px; flex-wrap:wrap;">
+            <!-- Vista 3: Código Fuente Markdown -->
+            <div id="rawView" style="display:none; margin:-24px; margin-top:0;">
+                <!-- Toolbar pegado arriba -->
+                <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 20px; border-bottom:1px solid var(--border-subtle); background:var(--bg-muted);">
                     <div style="display:flex; align-items:center; gap:6px;">
-                        <i data-lucide="file-text" style="width:15px; height:15px; color:#ef4444;"></i>
-                        <span style="font-size:0.8rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em;">Markdown Renderizado</span>
+                        <i data-lucide="code-2" style="width:14px; height:14px; color:var(--text-muted);"></i>
+                        <span style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em;">Código fuente Markdown</span>
                     </div>
-                    <div style="display:flex; gap:8px;">
-                        <button type="button" id="toggleRawSourceBtn" class="btn-ghost" style="font-size:0.75rem; padding:5px 12px;" onclick="toggleRawSource()">
-                            <i data-lucide="code-2" style="width:13px; height:13px;"></i>
-                            Ver código fuente
-                        </button>
-                        <button type="button" class="btn-ghost" style="font-size:0.75rem; padding:5px 12px;" onclick="copyFullPrompt()">
-                            <i data-lucide="copy" style="width:13px; height:13px;"></i>
-                            Copiar
-                        </button>
-                    </div>
+                    <button type="button" class="btn-ghost" style="font-size:0.75rem; padding:4px 12px;" onclick="copyFullPrompt()">
+                        <i data-lucide="copy" style="width:13px; height:13px;"></i>
+                        Copiar
+                    </button>
                 </div>
-
-                <!-- Rendered prose view -->
-                <div id="markdownRendered" class="md-prose" style="min-height:200px; padding:4px 2px;"></div>
-
-                <!-- Raw source (hidden by default) -->
-                <div id="rawSourceBlock" style="display:none; margin-top:16px;">
-                    <div style="font-size:0.72rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:8px;">Fuente</div>
-                    <textarea id="rawMarkdownContent" readonly class="shadcn-input" style="width:100%; height:320px; padding:14px 16px; font-family:'JetBrains Mono','Fira Code',monospace; font-size:0.78rem; border-radius:8px; line-height:1.65; resize:vertical;"></textarea>
-                </div>
+                <!-- Bloque de código sin radius propio -->
+                <textarea id="rawMarkdownContent" readonly
+                    style="display:block; width:100%; height:480px; padding:20px 24px;
+                           font-family:'JetBrains Mono','Fira Code','Cascadia Code',monospace;
+                           font-size:0.8rem; line-height:1.7;
+                           color:var(--text-secondary);
+                           background:var(--bg-card);
+                           border:none; outline:none; resize:none;
+                           border-radius:0;
+                           white-space:pre; overflow-wrap:normal; overflow-x:auto;"></textarea>
             </div>
         </div>
 
@@ -687,29 +682,6 @@
 <script>
 let currentRawMarkdown = '';
 let promptIdToDelete = null;
-let rawSourceVisible = false;
-
-function renderMarkdown(md) {
-    const rendered = document.getElementById('markdownRendered');
-    if (!rendered) return;
-    if (typeof marked !== 'undefined' && md) {
-        marked.setOptions({ breaks: true, gfm: true });
-        rendered.innerHTML = marked.parse(md);
-    } else {
-        rendered.innerHTML = '<p style="color:var(--text-muted); font-style:italic;">Sin contenido markdown disponible.</p>';
-    }
-}
-
-function toggleRawSource() {
-    rawSourceVisible = !rawSourceVisible;
-    const block = document.getElementById('rawSourceBlock');
-    const btn = document.getElementById('toggleRawSourceBtn');
-    block.style.display = rawSourceVisible ? 'block' : 'none';
-    btn.innerHTML = rawSourceVisible
-        ? '<i data-lucide="eye-off" style="width:13px; height:13px;"></i> Ocultar fuente'
-        : '<i data-lucide="code-2" style="width:13px; height:13px;"></i> Ver código fuente';
-    lucide.createIcons({ root: btn.parentElement });
-}
 
 function switchTab(type) {
     const isUpload = type === 'upload';
@@ -940,15 +912,6 @@ function openPromptModalData(data) {
     currentRawMarkdown = data.prompt_data.full_prompt_markdown || JSON.stringify(data.prompt_data, null, 2);
     document.getElementById('rawMarkdownContent').value = currentRawMarkdown;
 
-    // Reset raw source toggle state and render markdown
-    rawSourceVisible = false;
-    const rawSourceBlock = document.getElementById('rawSourceBlock');
-    if (rawSourceBlock) rawSourceBlock.style.display = 'none';
-    const toggleBtn = document.getElementById('toggleRawSourceBtn');
-    if (toggleBtn) {
-        toggleBtn.innerHTML = '<i data-lucide="code-2" style="width:13px; height:13px;"></i> Ver código fuente';
-    }
-    renderMarkdown(currentRawMarkdown);
 
     const styleList = document.getElementById('styleList');
     styleList.innerHTML = '';
