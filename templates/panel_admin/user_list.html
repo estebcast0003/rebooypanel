@@ -128,7 +128,7 @@
                                     <i data-lucide="{% if u.is_active %}pause-circle{% else %}play-circle{% endif %}"></i>
                                 </button>
                                 <!-- Revocar Sesiones -->
-                                <button type="button" class="action-btn" title="Cerrar todas las sesiones remotas de este usuario" onclick="revokeUserSessions({{ u.pk }}, '{{ u.username }}')">
+                                <button type="button" class="action-btn" title="Cerrar todas las sesiones remotas de este usuario" onclick="openRevokeUserSessionsModal({{ u.pk }}, '{{ u.username }}')">
                                     <i data-lucide="shield-alert" style="width:14px; height:14px; color:#60a5fa;"></i>
                                 </button>
                                 <!-- Eliminar -->
@@ -464,12 +464,66 @@ function closeDeleteUserModal() {
     document.body.style.overflow = 'auto';
 }
 
-async function revokeUserSessions(userId, username) {
-    if (!confirm(`¿Cerrar todas las sesiones activas del usuario '${username}'? Se desconectarán todos sus dispositivos.`)) {
-        return;
-    }
+<!-- ═════════ MODAL RADIX / SHADCN: CONFIRMAR REVOCAR SESIONES DE USUARIO ═════════ -->
+<div id="revokeUserSessionsModal" style="display:none; position:fixed; inset:0; z-index:100000; background:var(--modal-backdrop); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); align-items:center; justify-content:center; padding:16px;">
+    <div class="shadcn-card" style="width:100%; max-width:440px; padding:28px; animation:modalIn 0.22s ease-out; text-align:center; position:relative; overflow:hidden;">
+        
+        <div style="width:48px; height:48px; border-radius:9999px; background:rgba(59,130,246,0.12); border:1px solid rgba(59,130,246,0.3); display:flex; align-items:center; justify-content:center; margin:0 auto 16px; color:#3b82f6;">
+            <i data-lucide="shield-alert" style="width:22px; height:22px;"></i>
+        </div>
+
+        <h3 style="font-size:1.15rem; font-weight:700; color:var(--text-primary); margin:0 0 8px;">¿Cerrar sesiones de este usuario?</h3>
+        <p style="font-size:0.85rem; color:var(--text-secondary); margin:0 0 12px; line-height:1.5;">
+            Se desconectarán todos los dispositivos y sesiones activas del usuario:
+        </p>
+        <div style="margin-bottom:22px;">
+            <strong id="revokeUserUsernameText" class="badge-pill badge-admin" style="font-size:0.9rem; padding:4px 14px;"></strong>
+        </div>
+
+        <div style="display:flex; gap:10px; justify-content:center;">
+            <button type="button" class="btn-ghost" style="flex:1; justify-content:center;" onclick="closeRevokeUserSessionsModal()">
+                Cancelar
+            </button>
+            <button type="button" id="btnConfirmRevokeUserSessions" class="btn-danger" style="flex:1; justify-content:center;" onclick="executeRevokeUserSessions()">
+                <i data-lucide="shield-alert" style="width:14px; height:14px;"></i>
+                Cerrar Sesiones
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentDeleteUserId = null;
+let currentRevokeUserId = null;
+let currentRevokeUsername = null;
+
+function openRevokeUserSessionsModal(userId, username) {
+    currentRevokeUserId = userId;
+    currentRevokeUsername = username;
+    document.getElementById('revokeUserUsernameText').innerText = username;
+    
+    const modal = document.getElementById('revokeUserSessionsModal');
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    lucide.createIcons({ root: modal });
+}
+
+function closeRevokeUserSessionsModal() {
+    currentRevokeUserId = null;
+    currentRevokeUsername = null;
+    document.getElementById('revokeUserSessionsModal').style.display = 'none';
+    document.body.style.overflow = 'auto';
+}
+
+async function executeRevokeUserSessions() {
+    if (!currentRevokeUserId) return;
+    const btn = document.getElementById('btnConfirmRevokeUserSessions');
+    btn.disabled = true;
+    btn.innerHTML = '<i data-lucide="loader-2" class="animate-spin" style="width:14px; height:14px;"></i> Cerrando...';
+    lucide.createIcons();
+
     try {
-        const res = await fetch(`/panel/usuarios/${userId}/revocar-sesiones/`, {
+        const res = await fetch(`/panel/usuarios/${currentRevokeUserId}/revocar-sesiones/`, {
             method: 'POST',
             headers: {
                 'X-CSRFToken': '{{ csrf_token }}',
@@ -478,12 +532,17 @@ async function revokeUserSessions(userId, username) {
         });
         const data = await res.json();
         if (res.ok && data.status === 'success') {
+            closeRevokeUserSessionsModal();
             alert(data.message);
         } else {
             alert(data.message || 'Error al revocar sesiones.');
         }
     } catch (e) {
         alert('Error de conexión con el servidor.');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i data-lucide="shield-alert" style="width:14px; height:14px;"></i> Cerrar Sesiones';
+        lucide.createIcons();
     }
 }
 

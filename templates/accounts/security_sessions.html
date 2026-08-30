@@ -29,6 +29,8 @@
 {% endblock %}
 
 {% block content %}
+<input type="hidden" id="pageCsrfToken" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+
 <div style="display:flex; flex-direction:column; gap:24px;">
 
     <!-- ═════════ HEADER PRINCIPAL ═════════ -->
@@ -45,7 +47,7 @@
         <div style="display:flex; align-items:center; gap:10px;">
             <button type="button" class="btn-danger" onclick="openRevokeOthersModal()">
                 <i data-lucide="shield-alert" style="width:15px; height:15px;"></i>
-                Cerrar Otras Sesiones Mías
+                Cerrar Mis Otras Sesiones
             </button>
         </div>
     </div>
@@ -223,7 +225,9 @@
                         <!-- Acción -->
                         <td style="text-align:right;">
                             {% if item.session_key != current_session_key %}
-                                <button type="button" class="btn-danger" style="padding:4px 10px; font-size:0.75rem;" onclick="revokeSpecificSession('{{ item.session_key }}', '{{ item.user.username }}')" title="Cerrar esta sesión remota">
+                                <button type="button" class="btn-danger" style="padding:4px 10px; font-size:0.75rem;" 
+                                    onclick="openRevokeSingleModal('{{ item.session_key }}', '{{ item.user.username }}', '{{ item.device_info }}', '{{ item.ip_address|default:"Desconocida" }}')" 
+                                    title="Cerrar esta sesión remota">
                                     <i data-lucide="log-out" style="width:12px; height:12px;"></i>
                                     Revocar
                                 </button>
@@ -244,6 +248,45 @@
         </div>
     </div>
 
+</div>
+
+<!-- ═════════ MODAL RADIX / SHADCN: CONFIRMAR REVOCAR SESIÓN ESPECÍFICA ═════════ -->
+<div id="revokeSingleModal" style="display:none; position:fixed; inset:0; z-index:100000; background:var(--modal-backdrop); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); align-items:center; justify-content:center; padding:16px;">
+    <div class="shadcn-card" style="width:100%; max-width:440px; padding:28px; animation:modalIn 0.22s ease-out; text-align:center; position:relative; overflow:hidden;">
+        <div style="width:48px; height:48px; border-radius:9999px; background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.3); display:flex; align-items:center; justify-content:center; margin:0 auto 16px; color:#ef4444;">
+            <i data-lucide="log-out" style="width:22px; height:22px;"></i>
+        </div>
+
+        <h3 style="font-size:1.15rem; font-weight:700; color:var(--text-primary); margin:0 0 6px;">¿Cerrar esta sesión remota?</h3>
+        <p style="font-size:0.85rem; color:var(--text-secondary); margin:0 0 16px; line-height:1.4;">
+            El usuario será desconectado inmediatamente del dispositivo seleccionado.
+        </p>
+
+        <div style="background:var(--bg-muted); border:1px solid var(--border-subtle); border-radius:0.875rem; padding:12px 14px; margin-bottom:20px; text-align:left;">
+            <div style="font-size:0.82rem; margin-bottom:4px;">
+                <span style="color:var(--text-muted);">Usuario:</span>
+                <strong id="revokeTargetUsername" style="color:var(--text-primary); margin-left:4px;"></strong>
+            </div>
+            <div style="font-size:0.82rem; margin-bottom:4px;">
+                <span style="color:var(--text-muted);">Dispositivo:</span>
+                <span id="revokeTargetDevice" style="color:var(--text-secondary); margin-left:4px;"></span>
+            </div>
+            <div style="font-size:0.82rem;">
+                <span style="color:var(--text-muted);">IP:</span>
+                <code id="revokeTargetIp" style="margin-left:4px; font-size:0.78rem;"></code>
+            </div>
+        </div>
+
+        <div style="display:flex; gap:10px; justify-content:center;">
+            <button type="button" class="btn-ghost" style="flex:1; justify-content:center;" onclick="closeRevokeSingleModal()">
+                Cancelar
+            </button>
+            <button type="button" id="confirmRevokeSingleBtn" class="btn-danger" style="flex:1; justify-content:center;" onclick="executeRevokeSingleSession()">
+                <i data-lucide="log-out" style="width:14px; height:14px;"></i>
+                Revocar Sesión
+            </button>
+        </div>
+    </div>
 </div>
 
 <!-- ═════════ MODAL RADIX / SHADCN: CONFIRMAR REVOCAR OTRAS SESIONES ═════════ -->
@@ -276,7 +319,12 @@
 
 {% block extra_js %}
 <script>
+    let activeRevokeSessionKey = null;
+    let activeRevokeUsername = null;
+
     function getCsrfToken() {
+        const input = document.getElementById('pageCsrfToken');
+        if (input && input.value) return input.value;
         return getCookie('csrftoken') || '{{ csrf_token }}';
     }
 
@@ -303,11 +351,33 @@
         }, 3500);
     }
 
+    function openRevokeSingleModal(sessionKey, username, deviceInfo, ipAddress) {
+        activeRevokeSessionKey = sessionKey;
+        activeRevokeUsername = username;
+
+        document.getElementById('revokeTargetUsername').innerText = username;
+        document.getElementById('revokeTargetDevice').innerText = deviceInfo;
+        document.getElementById('revokeTargetIp').innerText = ipAddress;
+
+        const modal = document.getElementById('revokeSingleModal');
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+        lucide.createIcons({ root: modal });
+    }
+
+    function closeRevokeSingleModal() {
+        activeRevokeSessionKey = null;
+        activeRevokeUsername = null;
+        const modal = document.getElementById('revokeSingleModal');
+        modal.style.display = 'none';
+        document.body.style.overflow = 'auto';
+    }
+
     function openRevokeOthersModal() {
         const modal = document.getElementById('revokeOthersModal');
         modal.style.display = 'flex';
         document.body.style.overflow = 'hidden';
-        lucide.createIcons();
+        lucide.createIcons({ root: modal });
     }
 
     function closeRevokeOthersModal() {
@@ -316,10 +386,15 @@
         document.body.style.overflow = 'auto';
     }
 
-    async function revokeSpecificSession(sessionKey, username) {
-        if (!confirm(`¿Cerrar la sesión de '${username}'? El usuario será desconectado inmediatamente.`)) {
-            return;
-        }
+    async function executeRevokeSingleSession() {
+        if (!activeRevokeSessionKey) return;
+        const btn = document.getElementById('confirmRevokeSingleBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<i data-lucide="loader-2" class="animate-spin" style="width:14px; height:14px;"></i> Revocando...';
+        lucide.createIcons();
+
+        const sessionKey = activeRevokeSessionKey;
+        const username = activeRevokeUsername;
 
         try {
             const res = await fetch(`/seguridad/api/sesiones/${sessionKey}/revoke/`, {
@@ -331,7 +406,7 @@
                 }
             });
             const data = await res.json();
-            if (data.status === 'ok') {
+            if (res.ok && data.status === 'ok') {
                 showToast(`Sesión de ${username} revocada exitosamente`, 'success');
                 const row = document.getElementById(`row-session-${sessionKey}`);
                 if (row) {
@@ -344,18 +419,23 @@
                 const kpi = document.getElementById('totalSessionsKpi');
                 if (kpi) {
                     const current = parseInt(kpi.innerText) || 1;
-                    kpi.innerText = Math.max(1, current - 1);
+                    kpi.innerText = Math.max(0, current - 1);
                 }
                 const badge = document.getElementById('tableSessionCountBadge');
                 if (badge && kpi) {
                     badge.innerText = `${kpi.innerText} sesiones activas`;
                 }
+                closeRevokeSingleModal();
             } else {
                 showToast(data.message || 'Error al revocar sesión', 'error');
             }
         } catch (e) {
             console.error('Error revoking session:', e);
-            showToast('Error de conexión', 'error');
+            showToast('Error de conexión con el servidor', 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i data-lucide="log-out" style="width:14px; height:14px;"></i> Revocar Sesión';
+            lucide.createIcons();
         }
     }
 
@@ -375,7 +455,7 @@
                 }
             });
             const data = await res.json();
-            if (data.status === 'ok') {
+            if (res.ok && data.status === 'ok') {
                 showToast(data.message, 'success');
                 closeRevokeOthersModal();
                 setTimeout(() => window.location.reload(), 600);
@@ -393,10 +473,16 @@
     }
 
     window.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') closeRevokeOthersModal();
+        if (e.key === 'Escape') {
+            closeRevokeOthersModal();
+            closeRevokeSingleModal();
+        }
     });
     document.getElementById('revokeOthersModal')?.addEventListener('click', (e) => {
         if (e.target.id === 'revokeOthersModal') closeRevokeOthersModal();
+    });
+    document.getElementById('revokeSingleModal')?.addEventListener('click', (e) => {
+        if (e.target.id === 'revokeSingleModal') closeRevokeSingleModal();
     });
 </script>
 {% endblock %}
