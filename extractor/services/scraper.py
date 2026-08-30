@@ -235,13 +235,16 @@ async def _fetch_with_client(client: httpx.AsyncClient, normalized_url: str, tim
     return name, followers, status_msg
 
 
+from extractor.services.proxy_manager import default_proxy_manager
+
 async def fetch_page(
     client: httpx.AsyncClient,
     url: str,
     timeout: float = 15.0,
     direct_client: httpx.AsyncClient | None = None,
+    current_proxy: str | None = None,
 ) -> ExtractionResult:
-    """Fetches a single Facebook page via crawler headers through proxy with direct fallback."""
+    """Fetches a single Facebook page via crawler headers through proxy with direct fallback and circuit breaker."""
     normalized_url = normalize_url(url)
     if not normalized_url:
         return ExtractionResult(
@@ -256,6 +259,8 @@ async def fetch_page(
     try:
         name, followers, status_msg = await _fetch_with_client(client, normalized_url, timeout)
         if followers > 0:
+            if current_proxy:
+                default_proxy_manager.record_outcome(current_proxy, is_success=True)
             return ExtractionResult(
                 url=normalized_url,
                 name=name,
@@ -264,8 +269,13 @@ async def fetch_page(
                 is_success=True,
             )
     except Exception as first_err:
-        logger.warning(f"Client fetch failed for {normalized_url}: {first_err}")
-        # If proxy failed (SSL/connection error), attempt direct fallback
+        err_text = str(first_err)
+        is_rate_limit = "429" in err_text or "checkpoint" in err_text.lower()
+        if current_proxy:
+            default_proxy_manager.record_outcome(current_proxy, is_success=False, error_msg=err_text, is_rate_limit=is_rate_limit)
+
+        logger.warning(f"Client fetch failed for {normalized_url} (proxy: {current_proxy}): {first_err}")
+        # If proxy failed (SSL/connection/rate-limit error), attempt direct fallback
         if direct_client and direct_client != client:
             try:
                 name, followers, status_msg = await _fetch_with_client(direct_client, normalized_url, timeout)
@@ -326,17 +336,19 @@ async def extract_all_urls(
     timeout: float | None = None,
     item_callback=None,
 ) -> list[ExtractionResult]:
-    """Executes concurrent fetching bounded by semaphore with transparent proxy & direct fallbacks."""
-    proxy = proxy_url or getattr(settings, "EXTRACTOR_PROXY_URL", None)
+    """Executes concurrent fetching bounded by semaphore with circuit breaker proxy management & direct fallbacks."""
     max_concurrency = concurrency or getattr(settings, "EXTRACTOR_CONCURRENCY", 10)
     req_timeout = timeout or getattr(settings, "EXTRACTOR_TIMEOUT", 15.0)
+
+    # Select proxy from manager or explicit arg
+    active_proxy = proxy_url or default_proxy_manager.get_next_available_proxy()
 
     semaphore = asyncio.Semaphore(max_concurrency)
     results: list[ExtractionResult] = []
 
-    async def _sem_fetch(active_client: httpx.AsyncClient, target_url: str, fallback_client: httpx.AsyncClient | None = None):
+    async def _sem_fetch(active_client: httpx.AsyncClient, target_url: str, fallback_client: httpx.AsyncClient | None = None, proxy_used: str | None = None):
         async with semaphore:
-            res = await fetch_page(active_client, target_url, timeout=req_timeout, direct_client=fallback_client)
+            res = await fetch_page(active_client, target_url, timeout=req_timeout, direct_client=fallback_client, current_proxy=proxy_used)
             results.append(res)
             if item_callback:
                 if asyncio.iscoroutinefunction(item_callback):
@@ -350,17 +362,18 @@ async def extract_all_urls(
     clean_urls = [normalize_url(u) for u in urls if u and u.strip()]
 
     async with httpx.AsyncClient(limits=limits, verify=ssl_context) as direct_client:
-        if proxy:
+        if active_proxy:
             try:
-                async with httpx.AsyncClient(proxy=proxy, limits=limits, verify=ssl_context) as proxy_client:
-                    tasks = [_sem_fetch(proxy_client, u, fallback_client=direct_client) for u in clean_urls]
+                async with httpx.AsyncClient(proxy=active_proxy, limits=limits, verify=ssl_context) as proxy_client:
+                    tasks = [_sem_fetch(proxy_client, u, fallback_client=direct_client, proxy_used=active_proxy) for u in clean_urls]
                     await asyncio.gather(*tasks, return_exceptions=True)
             except Exception as proxy_err:
-                logger.warning(f"Proxy client crashed ({proxy_err}), executing via direct client...")
-                tasks = [_sem_fetch(direct_client, u, fallback_client=None) for u in clean_urls]
+                logger.warning(f"Proxy client connection crashed ({proxy_err}), switching to direct fallback...")
+                default_proxy_manager.record_outcome(active_proxy, is_success=False, error_msg=str(proxy_err))
+                tasks = [_sem_fetch(direct_client, u, fallback_client=None, proxy_used=None) for u in clean_urls]
                 await asyncio.gather(*tasks, return_exceptions=True)
         else:
-            tasks = [_sem_fetch(direct_client, u, fallback_client=None) for u in clean_urls]
+            tasks = [_sem_fetch(direct_client, u, fallback_client=None, proxy_used=None) for u in clean_urls]
             await asyncio.gather(*tasks, return_exceptions=True)
 
     return results
