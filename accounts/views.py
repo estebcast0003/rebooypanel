@@ -7,9 +7,25 @@ from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 from .models import UserSessionLog
 
+def _cleanup_expired_sessions(user, current_key=None):
+    """Auxiliary function to clean up expired or deleted session logs."""
+    active_keys = set(Session.objects.filter(expire_date__gt=timezone.now()).values_list('session_key', flat=True))
+    if current_key:
+        active_keys.add(current_key)
+
+    logs = UserSessionLog.objects.filter(user=user)
+    for log in logs:
+        if log.session_key not in active_keys:
+            log.delete()
+
 @login_required
 def security_sessions_page_view(request):
     current_key = request.session.session_key
+    if not current_key and request.session:
+        request.session.save()
+        current_key = request.session.session_key
+
+    _cleanup_expired_sessions(request.user, current_key)
     sessions = UserSessionLog.objects.filter(user=request.user).order_by('-last_activity')
     
     return render(request, 'accounts/security_sessions.html', {
@@ -21,30 +37,35 @@ def security_sessions_page_view(request):
 @require_http_methods(['GET'])
 def sessions_list_api_view(request):
     current_key = request.session.session_key
-    # Clean up expired sessions from Django Session table
-    active_keys = set(Session.objects.filter(expire_date__gt=timezone.now()).values_list('session_key', flat=True))
-    if current_key:
-        active_keys.add(current_key)
+    if not current_key and request.session:
+        request.session.save()
+        current_key = request.session.session_key
 
-    logs = UserSessionLog.objects.filter(user=request.user)
-    # Remove stale logs
-    for log in logs:
-        if log.session_key not in active_keys:
-            log.delete()
+    _cleanup_expired_sessions(request.user, current_key)
 
     remaining_logs = UserSessionLog.objects.filter(user=request.user).order_by('-last_activity')
-    data = [
-        {
+    data = []
+    for item in remaining_logs:
+        device_lower = (item.device_info or '').lower()
+        if 'móvil' in device_lower or 'iphone' in device_lower or 'android' in device_lower:
+            device_type = 'mobile'
+        elif 'tablet' in device_lower or 'ipad' in device_lower:
+            device_type = 'tablet'
+        else:
+            device_type = 'desktop'
+
+        data.append({
             'session_key': item.session_key,
             'device_info': item.device_info,
             'browser_info': item.browser_info,
+            'device_type': device_type,
+            'os': item.device_info,
+            'browser': item.browser_info,
             'ip_address': item.ip_address or 'Desconocida',
             'is_current': item.session_key == current_key,
             'last_activity': item.last_activity.strftime('%d/%m/%Y %H:%M'),
             'created_at': item.created_at.strftime('%d/%m/%Y %H:%M'),
-        }
-        for item in remaining_logs
-    ]
+        })
 
     return JsonResponse({'status': 'ok', 'sessions': data, 'total': len(data)})
 
@@ -66,7 +87,14 @@ def revoke_session_api_view(request, session_key):
 @require_http_methods(['POST'])
 def revoke_other_sessions_api_view(request):
     current_key = request.session.session_key
-    other_logs = UserSessionLog.objects.filter(user=request.user).exclude(session_key=current_key)
+    if not current_key and request.session:
+        request.session.save()
+        current_key = request.session.session_key
+
+    other_logs = UserSessionLog.objects.filter(user=request.user)
+    if current_key:
+        other_logs = other_logs.exclude(session_key=current_key)
+
     other_keys = list(other_logs.values_list('session_key', flat=True))
 
     if other_keys:
