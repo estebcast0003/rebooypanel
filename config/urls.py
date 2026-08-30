@@ -44,6 +44,9 @@ urlpatterns = [
     # Custom Panel Admin
     path('panel/', include('panel_admin.urls')),
 
+    # Seguridad & Gestión de Sesiones
+    path('seguridad/', include('accounts.urls')),
+
     # Default Admin
     path('admin/', admin.site.urls),
 ]

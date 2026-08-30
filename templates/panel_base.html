@@ -810,32 +810,14 @@
             {% endif %}
             {% endif %}
 
+            <div class="section-label" style="margin-top:20px;">Cuenta & Seguridad</div>
+            <a href="{% url 'security_sessions' %}"
+               class="nav-link {% if '/seguridad/' in request.path %}active{% endif %}">
+                <i data-lucide="shield-check" style="color:#60a5fa;"></i>
+                Seguridad & Sesiones
+            </a>
+
         </nav>
-
-        <!-- User + Logout -->
-        <div style="padding:12px; border-top:1px solid rgba(255,255,255,0.05);">
-            <div style="display:flex; align-items:center; gap:10px; padding:10px 12px; margin-bottom:6px;">
-                <div class="avatar" style="width:30px;height:30px;font-size:0.7rem;">
-                    {{ user.username|make_list|first|upper }}
-                </div>
-                <div style="min-width:0;">
-                    <div style="font-size:0.8rem; font-weight:600; color:#e2e8f0; truncate;">{{ user.username }}</div>
-                    <div class="badge-{% if user.role == 'superadmin' %}superadmin{% elif user.role == 'admin' %}admin{% else %}user{% endif %}" style="display:inline-block; margin-top:2px;">
-                        {{ user.get_role_display }}
-                    </div>
-                </div>
-            </div>
-
-            <form method="post" action="{% url 'logout' %}">
-                {% csrf_token %}
-                <button type="submit" class="nav-link" style="width:100%; cursor:pointer; background:transparent; border:none; color:rgba(239,68,68,0.7);"
-                    onmouseover="this.style.background='rgba(239,68,68,0.08)'; this.style.color='#f87171'"
-                    onmouseout="this.style.background='transparent'; this.style.color='rgba(239,68,68,0.7)'">
-                    <i data-lucide="log-out"></i>
-                    Cerrar Sesión
-                </button>
-            </form>
-        </div>
     </aside>
 
     <!-- ═══════════════════════ MAIN ═══════════════════════ -->
@@ -860,10 +842,53 @@
                     <i data-lucide="moon" id="themeIconMoon" style="width:17px; height:17px; color:#94a3b8; display:none;"></i>
                 </button>
 
-                <span style="font-size:0.8rem; color:var(--text-muted); display:none; @media(min-width:640px){display:inline;}">{{ user.username }}</span>
-                <div class="avatar" style="width:28px;height:28px;font-size:0.7rem;">
-                    {{ user.username|make_list|first|upper }}
+                <!-- Menú Dropdown de Usuario Glassmorphism -->
+                <div style="position:relative;" id="userDropdownContainer">
+                    <button type="button" id="userMenuBtn" onclick="toggleUserDropdown()" style="display:flex; align-items:center; gap:8px; background:var(--action-btn-bg); border:1px solid var(--action-btn-border); border-radius:10px; padding:4px 10px 4px 6px; cursor:pointer; transition:all 0.2s ease;">
+                        <div class="avatar" style="width:28px; height:28px; font-size:0.75rem; background:linear-gradient(135deg, #ef4444, #dc2626); color:#fff; font-weight:700; border-radius:8px; display:flex; align-items:center; justify-content:center;">
+                            {{ user.username|make_list|first|upper }}
+                        </div>
+                        <div style="text-align:left; line-height:1.2; display:none;" class="user-topbar-info">
+                            <span style="font-size:0.8rem; font-weight:600; color:var(--text-primary); display:block;">{{ user.username }}</span>
+                            <span style="font-size:0.68rem; color:var(--text-muted); text-transform:capitalize;">{{ user.get_role_display }}</span>
+                        </div>
+                        <i data-lucide="chevron-down" id="userDropdownChevron" style="width:14px; height:14px; color:var(--text-muted); transition:transform 0.2s ease;"></i>
+                    </button>
+
+                    <!-- Menú Flotante -->
+                    <div id="userDropdownMenu" style="display:none; position:absolute; right:0; top:calc(100% + 8px); width:230px; background:var(--bg-glass-card); backdrop-filter:blur(24px); -webkit-backdrop-filter:blur(24px); border:1px solid var(--border-glass); border-radius:12px; box-shadow:0 15px 35px rgba(0,0,0,0.4); padding:8px; z-index:1000; animation:modalIn 0.18s ease-out;">
+                        
+                        <div style="padding:8px 10px 10px; border-bottom:1px solid var(--border-glass); margin-bottom:6px;">
+                            <div style="font-size:0.85rem; font-weight:700; color:var(--text-primary); margin-bottom:4px;">{{ user.username }}</div>
+                            <span class="badge-{% if user.role == 'superadmin' %}superadmin{% elif user.role == 'admin' %}admin{% else %}user{% endif %}" style="font-size:0.7rem;">
+                                {{ user.get_role_display }}
+                            </span>
+                        </div>
+
+                        <a href="{% url 'security_sessions' %}" class="nav-link" style="padding:8px 10px; font-size:0.82rem; border-radius:8px; margin-bottom:2px;">
+                            <i data-lucide="shield-check" style="width:15px; height:15px; color:#60a5fa;"></i>
+                            Centro de Seguridad
+                        </a>
+
+                        <button type="button" class="nav-link" onclick="openQuickSessionsModal()" style="width:100%; text-align:left; background:transparent; border:none; padding:8px 10px; font-size:0.82rem; border-radius:8px; cursor:pointer; color:var(--nav-link-color);">
+                            <i data-lucide="smartphone" style="width:15px; height:15px; color:#38bdf8;"></i>
+                            Sesiones & Dispositivos
+                        </button>
+
+                        <div style="border-top:1px solid var(--border-glass); margin:6px 0;"></div>
+
+                        <form method="post" action="{% url 'logout' %}" style="margin:0;">
+                            {% csrf_token %}
+                            <button type="submit" class="nav-link" style="width:100%; text-align:left; background:transparent; border:none; padding:8px 10px; font-size:0.82rem; border-radius:8px; cursor:pointer; color:#f87171;"
+                                onmouseover="this.style.background='rgba(239,68,68,0.1)'; this.style.color='#ef4444'"
+                                onmouseout="this.style.background='transparent'; this.style.color='#f87171'">
+                                <i data-lucide="log-out" style="width:15px; height:15px; color:#ef4444;"></i>
+                                Cerrar Sesión
+                            </button>
+                        </form>
+                    </div>
                 </div>
+
             </div>
         </header>
 
@@ -875,7 +900,210 @@
 
 </div>
 
+<!-- ═════════ MODAL GLOBAL: GESTIÓN RÁPIDA DE SESIONES ═════════ -->
+<div id="quickSessionsModal" style="display:none; position:fixed; inset:0; z-index:10000; background:rgba(2, 6, 23, 0.85); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); align-items:center; justify-content:center; padding:16px;">
+    <div class="glass-card" style="width:100%; max-width:540px; padding:24px; border:1px solid rgba(59,130,246,0.3); box-shadow:0 25px 50px -12px rgba(0,0,0,0.8); animation:modalIn 0.2s ease-out; position:relative; overflow:hidden;">
+        
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <div style="width:38px; height:38px; border-radius:10px; background:rgba(59,130,246,0.12); border:1px solid rgba(59,130,246,0.25); display:flex; align-items:center; justify-content:center; color:#60a5fa;">
+                    <i data-lucide="shield-check" style="width:20px; height:20px;"></i>
+                </div>
+                <div>
+                    <h3 style="font-size:1.15rem; font-weight:700; color:var(--text-primary); margin:0;">Sesiones & Dispositivos</h3>
+                    <span style="font-size:0.75rem; color:var(--text-muted);">Dispositivos actualmente conectados a tu cuenta</span>
+                </div>
+            </div>
+            <button type="button" class="action-btn" onclick="closeQuickSessionsModal()">
+                <i data-lucide="x"></i>
+            </button>
+        </div>
+
+        <!-- Lista de Sesiones -->
+        <div id="quickSessionsListContainer" style="max-height:280px; overflow-y:auto; display:flex; flex-direction:column; gap:8px; margin-bottom:18px; padding-right:4px;">
+            <div style="text-align:center; padding:30px; color:var(--text-muted);">
+                <i data-lucide="loader-2" class="animate-spin" style="width:20px; height:20px; margin:0 auto 8px; display:block;"></i>
+                Cargando sesiones activas...
+            </div>
+        </div>
+
+        <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--border-glass); padding-top:14px;">
+            <a href="{% url 'security_sessions' %}" class="btn-ghost" style="font-size:0.78rem;">
+                <i data-lucide="external-link" style="width:13px; height:13px;"></i>
+                Centro de Seguridad
+            </a>
+            <div style="display:flex; gap:8px;">
+                <button type="button" class="btn-ghost" onclick="closeQuickSessionsModal()">Cerrar</button>
+                <button type="button" id="btnQuickRevokeOther" class="btn-danger" style="font-size:0.8rem;" onclick="revokeOtherSessionsFromModal()">
+                    <i data-lucide="shield-alert" style="width:14px; height:14px;"></i>
+                    Cerrar Otras Sesiones
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
+    // Responsive Topbar display rule for username
+    if (window.innerWidth >= 640) {
+        document.querySelectorAll('.user-topbar-info').forEach(el => el.style.display = 'block');
+    }
+
+    // Dropdown de Usuario
+    function toggleUserDropdown() {
+        const menu = document.getElementById('userDropdownMenu');
+        const chevron = document.getElementById('userDropdownChevron');
+        if (!menu) return;
+        const isHidden = menu.style.display === 'none' || !menu.style.display;
+        menu.style.display = isHidden ? 'block' : 'none';
+        if (chevron) {
+            chevron.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
+        }
+        if (isHidden) {
+            lucide.createIcons({ root: menu });
+        }
+    }
+
+    document.addEventListener('click', (e) => {
+        const container = document.getElementById('userDropdownContainer');
+        const menu = document.getElementById('userDropdownMenu');
+        const chevron = document.getElementById('userDropdownChevron');
+        if (container && !container.contains(e.target) && menu && menu.style.display === 'block') {
+            menu.style.display = 'none';
+            if (chevron) chevron.style.transform = 'rotate(0deg)';
+        }
+    });
+
+    // Modal de Sesiones Rápidas
+    async function openQuickSessionsModal() {
+        const menu = document.getElementById('userDropdownMenu');
+        if (menu) menu.style.display = 'none';
+
+        const modal = document.getElementById('quickSessionsModal');
+        if (modal) {
+            modal.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+            lucide.createIcons({ root: modal });
+        }
+        await loadQuickSessions();
+    }
+
+    function closeQuickSessionsModal() {
+        const modal = document.getElementById('quickSessionsModal');
+        if (modal) {
+            modal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+    }
+
+    async function loadQuickSessions() {
+        const container = document.getElementById('quickSessionsListContainer');
+        if (!container) return;
+
+        try {
+            const res = await fetch('/seguridad/api/sesiones/');
+            const data = await res.json();
+            if (data.status === 'ok' && data.sessions) {
+                if (data.sessions.length === 0) {
+                    container.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-muted);">No hay sesiones activas registradas.</div>';
+                    return;
+                }
+
+                container.innerHTML = data.sessions.map(s => {
+                    const isMobile = s.device_info.includes('Móvil') || s.device_info.includes('iPhone') || s.device_info.includes('Android');
+                    const icon = isMobile ? 'smartphone' : 'laptop';
+                    return `
+                        <div class="glass-card" style="padding:12px 14px; display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.02); border-color:var(--border-glass);">
+                            <div style="display:flex; align-items:center; gap:10px;">
+                                <div style="width:32px; height:32px; border-radius:8px; background:rgba(59,130,246,0.1); display:flex; align-items:center; justify-content:center; color:#60a5fa;">
+                                    <i data-lucide="${icon}" style="width:16px; height:16px;"></i>
+                                </div>
+                                <div>
+                                    <div style="font-size:0.85rem; font-weight:600; color:var(--text-primary); display:flex; align-items:center; gap:6px;">
+                                        ${escapeHtml(s.device_info)}
+                                        ${s.is_current ? '<span class="badge-active" style="font-size:0.68rem; padding:1px 6px;">Esta Sesión</span>' : ''}
+                                    </div>
+                                    <div style="font-size:0.72rem; color:var(--text-muted); font-family:monospace; margin-top:2px;">
+                                        ${escapeHtml(s.browser_info)} · ${escapeHtml(s.ip_address)} · ${escapeHtml(s.last_activity)}
+                                    </div>
+                                </div>
+                            </div>
+                            ${!s.is_current ? `
+                                <button type="button" class="btn-ghost" style="padding:4px 8px; font-size:0.72rem; color:#f87171;" onclick="revokeQuickSession('${s.session_key}')" title="Revocar sesión">
+                                    <i data-lucide="log-out" style="width:12px; height:12px;"></i>
+                                </button>
+                            ` : ''}
+                        </div>
+                    `;
+                }).join('');
+                lucide.createIcons({ root: container });
+            }
+        } catch (err) {
+            console.error('Error loading quick sessions:', err);
+            container.innerHTML = '<div style="text-align:center; padding:20px; color:#f87171;">Error al cargar las sesiones.</div>';
+        }
+    }
+
+    async function revokeQuickSession(sessionKey) {
+        try {
+            const res = await fetch(`/seguridad/api/sesiones/${sessionKey}/revoke/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken') || '',
+                }
+            });
+            const data = await res.json();
+            if (data.status === 'ok') {
+                await loadQuickSessions();
+            }
+        } catch (e) {
+            console.error('Error revoking quick session:', e);
+        }
+    }
+
+    async function revokeOtherSessionsFromModal() {
+        const btn = document.getElementById('btnQuickRevokeOther');
+        if (btn) btn.disabled = true;
+
+        try {
+            const res = await fetch('/seguridad/api/sesiones/revoke-other/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken') || '',
+                }
+            });
+            const data = await res.json();
+            if (data.status === 'ok') {
+                await loadQuickSessions();
+            }
+        } catch (e) {
+            console.error('Error revoking other sessions from modal:', e);
+        } finally {
+            if (btn) btn.disabled = false;
+        }
+    }
+
+    function getCookie(name) {
+        const cookies = document.cookie.split(';');
+        for (let cookie of cookies) {
+            const [k, v] = cookie.trim().split('=');
+            if (k === name) return decodeURIComponent(v);
+        }
+        return '';
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
     // Toggle Universal del Sidebar (Desktop y Móvil)
     function toggleSidebar() {
         const sidebar = document.getElementById('mainSidebar');
