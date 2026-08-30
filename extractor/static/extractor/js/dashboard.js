@@ -1197,3 +1197,16 @@ async function testWebhookAlert() {
         }
     }
 }
+
+// Attach globally to window
+window.openAlertsModal = openAlertsModal;
+window.closeAlertsModal = closeAlertsModal;
+window.loadAlertsConfig = loadAlertsConfig;
+window.saveAlertsConfig = saveAlertsConfig;
+window.testWebhookAlert = testWebhookAlert;
+
+// Listeners for click outside & escape
+document.getElementById('alertsConfigModal')?.addEventListener('click', (e) => {
+    if (e.target.id === 'alertsConfigModal') closeAlertsModal();
+});
+
