@@ -72,9 +72,12 @@ def process_video_background(prompt_id, input_type, video_url, local_video_path,
                     ]
                     subprocess.run(cmd, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
                 
-                if os.path.exists(thumbnail_path):
+                if os.path.exists(thumbnail_path) and os.path.getsize(thumbnail_path) > 1024:
                     prompt_record.thumbnail = f"thumbnails/{thumbnail_name}"
                     prompt_record.save(update_fields=['thumbnail'])
+                elif os.path.exists(thumbnail_path):
+                    # File exists but too small — likely corrupt, remove it
+                    os.remove(thumbnail_path)
             except Exception as thumb_err:
                 print("Thumbnail extraction error:", thumb_err)
                 
@@ -231,7 +234,7 @@ def check_prompt_status_ajax(request, pk):
         'video_url': prompt_record.video_url or '',
         'video_file_url': prompt_record.video_file.url if prompt_record.video_file else '',
         'error_message': prompt_record.error_message or '',
-        'thumbnail_url': prompt_record.thumbnail.url if prompt_record.thumbnail else '',
+        'thumbnail_url': (prompt_record.thumbnail.url if prompt_record.thumbnail else '') if prompt_record.status == 'completed' else '',
         'created_at': prompt_record.created_at.strftime('%d %b %Y, %H:%M'),
         'stats': {
             'upload_date': prompt_record.upload_date or 'No disponible',
