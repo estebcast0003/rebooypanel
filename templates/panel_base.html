@@ -1,17 +1,17 @@
 {% load static %}
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Rebooy Panel{% endblock %}</title>
 
-    <!-- Google Fonts -->
+    <!-- Google Fonts: Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
-    <!-- Tailwind CSS -->
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -20,6 +20,15 @@
                     fontFamily: { sans: ['Inter', 'sans-serif'] },
                     colors: {
                         brand: { 400: '#f87171', 500: '#ef4444', 600: '#dc2626' },
+                        zinc: {
+                            850: '#1e1e24',
+                            900: '#18181b',
+                            950: '#09090b',
+                        }
+                    },
+                    borderRadius: {
+                        '2xl': '1rem',
+                        '3xl': '1.5rem',
                     }
                 }
             }
@@ -41,128 +50,140 @@
     </script>
 
     <style>
+        /* ══════════════════════════════════════════════════════
+           SHADCN UI / RADIX UI DESIGN TOKENS (ZINC PALETTE)
+        ══════════════════════════════════════════════════════ */
         :root, html[data-theme="dark"] {
-            --bg-page: #020617;
-            --bg-gradient: radial-gradient(ellipse at 20% 50%, rgba(220, 38, 38, 0.06) 0%, transparent 60%),
-                           radial-gradient(ellipse at 80% 20%, rgba(59, 130, 246, 0.05) 0%, transparent 60%),
-                           linear-gradient(135deg, #020617 0%, #0d1117 50%, #020617 100%);
-            --bg-glass: rgba(15, 23, 42, 0.65);
-            --bg-glass-card: rgba(30, 41, 59, 0.50);
-            --border-glass: rgba(255, 255, 255, 0.08);
-            --bg-glass-input: rgba(2, 6, 23, 0.70);
-            --border-glass-input: rgba(255, 255, 255, 0.10);
-            --text-primary: #f1f5f9;
-            --text-secondary: #94a3b8;
-            --text-muted: #64748b;
-            --sidebar-bg: rgba(10, 15, 30, 0.85);
-            --sidebar-border: rgba(255, 255, 255, 0.06);
-            --topbar-bg: rgba(10, 15, 30, 0.60);
-            --nav-link-color: rgba(148, 163, 184, 0.85);
-            --nav-hover: rgba(255, 255, 255, 0.06);
-            --action-btn-bg: rgba(255, 255, 255, 0.05);
-            --action-btn-border: rgba(255, 255, 255, 0.08);
-            --modal-bg: rgba(2, 6, 23, 0.85);
+            --bg-page: #09090b;             /* Zinc 950 */
+            --bg-card: #18181b;             /* Zinc 900 */
+            --bg-card-hover: #27272a;       /* Zinc 800 */
+            --bg-muted: #27272a;            /* Zinc 800 */
+            --border-subtle: #27272a;       /* Zinc 800 */
+            --border-highlight: #3f3f46;    /* Zinc 700 */
+            --text-primary: #fafafa;        /* Zinc 50 */
+            --text-secondary: #a1a1aa;      /* Zinc 400 */
+            --text-muted: #71717a;          /* Zinc 500 */
+            --primary-brand: #ef4444;       /* Brand Red */
+            --primary-brand-hover: #dc2626;
+            --primary-brand-soft: rgba(239, 68, 68, 0.12);
+            --pill-bg: #27272a;
+            --pill-active-bg: #fafafa;
+            --pill-active-text: #09090b;
+            --action-btn-bg: #18181b;
+            --action-btn-border: #27272a;
+            --sidebar-bg: #18181b;
+            --sidebar-border: #27272a;
+            --topbar-bg: rgba(24, 24, 27, 0.88);
+            --modal-backdrop: rgba(9, 9, 11, 0.80);
+            --shadow-subtle: 0 4px 20px -2px rgba(0, 0, 0, 0.45);
         }
 
         html[data-theme="light"] {
-            --bg-page: #f8fafc;
-            --bg-gradient: radial-gradient(ellipse at 20% 50%, rgba(239, 68, 68, 0.05) 0%, transparent 60%),
-                           radial-gradient(ellipse at 80% 20%, rgba(59, 130, 246, 0.04) 0%, transparent 60%),
-                           linear-gradient(135deg, #f8fafc 0%, #f1f5f9 50%, #e2e8f0 100%);
-            --bg-glass: rgba(255, 255, 255, 0.80);
-            --bg-glass-card: rgba(255, 255, 255, 0.90);
-            --border-glass: rgba(0, 0, 0, 0.08);
-            --bg-glass-input: rgba(248, 250, 252, 0.95);
-            --border-glass-input: rgba(0, 0, 0, 0.14);
-            --text-primary: #0f172a;
-            --text-secondary: #475569;
-            --text-muted: #64748b;
-            --sidebar-bg: rgba(255, 255, 255, 0.95);
-            --sidebar-border: rgba(0, 0, 0, 0.08);
-            --topbar-bg: rgba(255, 255, 255, 0.85);
-            --nav-link-color: #475569;
-            --nav-hover: rgba(0, 0, 0, 0.05);
-            --action-btn-bg: rgba(0, 0, 0, 0.04);
-            --action-btn-border: rgba(0, 0, 0, 0.08);
-            --modal-bg: rgba(15, 23, 42, 0.5);
+            --bg-page: #f4f4f5;             /* Zinc 100 */
+            --bg-card: #ffffff;             /* Pure White */
+            --bg-card-hover: #fafafa;       /* Zinc 50 */
+            --bg-muted: #f4f4f5;            /* Zinc 100 */
+            --border-subtle: #e4e4e7;       /* Zinc 200 */
+            --border-highlight: #d4d4d8;    /* Zinc 300 */
+            --text-primary: #09090b;        /* Zinc 950 */
+            --text-secondary: #52525b;      /* Zinc 600 */
+            --text-muted: #a1a1aa;          /* Zinc 400 */
+            --primary-brand: #ef4444;       /* Brand Red */
+            --primary-brand-hover: #dc2626;
+            --primary-brand-soft: rgba(239, 68, 68, 0.08);
+            --pill-bg: #f4f4f5;
+            --pill-active-bg: #09090b;
+            --pill-active-text: #fafafa;
+            --action-btn-bg: #ffffff;
+            --action-btn-border: #e4e4e7;
+            --sidebar-bg: #ffffff;
+            --sidebar-border: #e4e4e7;
+            --topbar-bg: rgba(255, 255, 255, 0.90);
+            --modal-backdrop: rgba(9, 9, 11, 0.40);
+            --shadow-subtle: 0 4px 20px -2px rgba(0, 0, 0, 0.06);
         }
 
         * { box-sizing: border-box; }
         body {
             font-family: 'Inter', sans-serif;
-            background: var(--bg-gradient);
+            background-color: var(--bg-page);
             color: var(--text-primary);
             min-height: 100vh;
-            transition: background 0.3s ease, color 0.3s ease;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+            transition: background-color 0.25s ease, color 0.25s ease;
         }
 
-        /* ── Glassmorphism base ── */
-        .glass {
-            background: var(--bg-glass);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid var(--border-glass);
+        /* ── Componentes Shadcn UI / Radix ── */
+        .shadcn-card, .glass-card {
+            background-color: var(--bg-card) !important;
+            border: 1px solid var(--border-subtle) !important;
+            border-radius: 1.25rem !important; /* 20px */
+            box-shadow: var(--shadow-subtle) !important;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
         }
-        .glass-card {
-            background: var(--bg-glass-card);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid var(--border-glass);
-            border-radius: 1rem;
-            box-shadow: 0 4px 20px -2px rgba(0,0,0,0.05);
+
+        .shadcn-card:hover {
+            border-color: var(--border-highlight) !important;
         }
-        .glass-input {
-            background: var(--bg-glass-input) !important;
-            border: 1px solid var(--border-glass-input) !important;
+
+        .shadcn-input, .glass-input {
+            background-color: var(--bg-card) !important;
+            border: 1px solid var(--border-subtle) !important;
             color: var(--text-primary) !important;
-            transition: border-color 0.2s, box-shadow 0.2s;
+            border-radius: 9999px !important;
+            padding: 8px 16px !important;
+            font-size: 0.875rem !important;
+            transition: all 0.18s ease !important;
         }
-        .glass-input:focus {
-            outline: none;
-            border-color: rgba(239, 68, 68, 0.6) !important;
-            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.12);
+        .shadcn-input:focus, .glass-input:focus {
+            outline: none !important;
+            border-color: var(--primary-brand) !important;
+            box-shadow: 0 0 0 3px var(--primary-brand-soft) !important;
         }
 
-        /* ── Sidebar Desktop / Mobile ── */
-        .sidebar {
-            width: 240px;
+        /* ── Floating Sidebar Shadcn ── */
+        .floating-sidebar {
+            width: 250px;
             flex-shrink: 0;
-            background: var(--sidebar-bg);
-            backdrop-filter: blur(24px);
-            -webkit-backdrop-filter: blur(24px);
-            border-right: 1px solid var(--sidebar-border);
+            margin: 12px 0 12px 16px;
+            height: calc(100vh - 24px);
+            background-color: var(--sidebar-bg);
+            border: 1px solid var(--sidebar-border);
+            border-radius: 1.25rem; /* 20px */
+            box-shadow: var(--shadow-subtle);
             display: flex;
             flex-direction: column;
-            height: 100vh;
             overflow: hidden;
             transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
             z-index: 100;
         }
-        .sidebar.collapsed {
-            margin-left: -240px;
+        .floating-sidebar.collapsed {
+            margin-left: -266px;
             opacity: 0;
             pointer-events: none;
         }
+
         .nav-link {
             display: flex;
             align-items: center;
             gap: 10px;
-            padding: 10px 14px;
-            border-radius: 10px;
-            color: var(--nav-link-color);
-            font-size: 0.875rem;
+            padding: 9px 14px;
+            border-radius: 0.75rem; /* 12px */
+            color: var(--text-secondary);
+            font-size: 0.85rem;
             font-weight: 500;
-            transition: all 0.18s ease;
+            transition: all 0.16s ease;
             text-decoration: none;
         }
         .nav-link:hover {
-            background: var(--nav-hover);
+            background-color: var(--bg-muted);
             color: var(--text-primary);
         }
         .nav-link.active {
-            background: rgba(239, 68, 68, 0.15);
-            color: #ef4444;
-            border: 1px solid rgba(239, 68, 68, 0.2);
+            background-color: var(--primary-brand-soft);
+            color: var(--primary-brand);
             font-weight: 600;
         }
         .nav-link i, .nav-link [data-lucide] {
@@ -171,17 +192,132 @@
             flex-shrink: 0;
         }
 
-        /* ── Topbar ── */
-        .topbar {
-            background: var(--topbar-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border-bottom: 1px solid var(--sidebar-border);
-            transition: background 0.3s ease;
-            position: relative;
-            z-index: 500;
+        .section-label {
+            font-size: 0.68rem;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            padding: 12px 14px 4px;
         }
 
+        /* ── Floating Topbar Pill ── */
+        .floating-topbar {
+            margin: 12px 16px 8px 16px;
+            height: 56px;
+            background-color: var(--topbar-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--border-subtle);
+            border-radius: 9999px; /* Pill */
+            box-shadow: var(--shadow-subtle);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            flex-shrink: 0;
+            position: relative;
+            z-index: 500;
+            transition: background-color 0.25s ease, border-color 0.25s ease;
+        }
+
+        /* ── Botones Píldora Shadcn UI ── */
+        .btn-brand {
+            background-color: var(--primary-brand) !important;
+            color: #ffffff !important;
+            font-weight: 600 !important;
+            border-radius: 9999px !important; /* Pill */
+            padding: 8px 20px !important;
+            font-size: 0.85rem !important;
+            height: 38px !important;
+            transition: all 0.16s ease !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 8px !important;
+            text-decoration: none !important;
+            border: none !important;
+            cursor: pointer !important;
+            white-space: nowrap !important;
+            box-shadow: 0 2px 10px rgba(239, 68, 68, 0.28) !important;
+        }
+        .btn-brand:hover {
+            background-color: var(--primary-brand-hover) !important;
+            transform: translateY(-1px) !important;
+            box-shadow: 0 4px 14px rgba(239, 68, 68, 0.38) !important;
+        }
+        .btn-brand:active {
+            transform: translateY(0) !important;
+        }
+
+        .btn-ghost {
+            background-color: var(--pill-bg) !important;
+            border: 1px solid var(--border-subtle) !important;
+            color: var(--text-primary) !important;
+            font-weight: 500 !important;
+            border-radius: 9999px !important; /* Pill */
+            padding: 8px 18px !important;
+            font-size: 0.85rem !important;
+            height: 38px !important;
+            transition: all 0.16s ease !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 8px !important;
+            text-decoration: none !important;
+            cursor: pointer !important;
+            white-space: nowrap !important;
+        }
+        .btn-ghost:hover {
+            background-color: var(--bg-muted) !important;
+            border-color: var(--border-highlight) !important;
+            transform: translateY(-1px) !important;
+        }
+        .btn-ghost:active {
+            transform: translateY(0) !important;
+        }
+
+        .btn-danger {
+            background-color: #dc2626 !important;
+            color: #ffffff !important;
+            border-radius: 9999px !important;
+            padding: 8px 18px !important;
+            font-size: 0.85rem !important;
+            font-weight: 600 !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 8px !important;
+            cursor: pointer !important;
+            border: none !important;
+            transition: all 0.16s ease !important;
+        }
+        .btn-danger:hover {
+            background-color: #b91c1c !important;
+            transform: translateY(-1px) !important;
+        }
+
+        /* ── Botones de Acción de Topbar (Iconos Píldora) ── */
+        .action-pill-btn {
+            background-color: var(--action-btn-bg);
+            border: 1px solid var(--action-btn-border);
+            border-radius: 9999px;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.16s ease;
+            color: var(--text-secondary);
+        }
+        .action-pill-btn:hover {
+            background-color: var(--bg-muted);
+            color: var(--text-primary);
+            border-color: var(--border-highlight);
+            transform: translateY(-1px);
+        }
+
+        /* ── Menú Dropdown Radix-Style ── */
         #userDropdownContainer {
             position: relative;
             z-index: 501;
@@ -191,22 +327,16 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            background: var(--action-btn-bg);
+            background-color: var(--action-btn-bg);
             border: 1px solid var(--action-btn-border);
-            border-radius: 10px;
-            padding: 4px 10px 4px 6px;
+            border-radius: 9999px; /* Pill */
+            padding: 4px 12px 4px 6px;
             cursor: pointer;
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.16s ease;
         }
-        #userMenuBtn:hover,
-        #userMenuBtn.active {
-            background: rgba(255, 255, 255, 0.12) !important;
-            border-color: rgba(255, 255, 255, 0.25) !important;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3) !important;
-            transform: translateY(-1px);
-        }
-        #userMenuBtn:active {
-            transform: translateY(0);
+        #userMenuBtn:hover, #userMenuBtn.active {
+            background-color: var(--bg-muted);
+            border-color: var(--border-highlight);
         }
 
         #userDropdownMenu {
@@ -214,28 +344,21 @@
             position: absolute;
             right: 0;
             top: calc(100% + 8px);
-            width: 240px;
-            background: rgba(15, 23, 42, 0.80) !important;
-            backdrop-filter: blur(28px) saturate(180%) !important;
-            -webkit-backdrop-filter: blur(28px) saturate(180%) !important;
-            border: 1px solid rgba(255, 255, 255, 0.15) !important;
-            border-radius: 14px;
-            box-shadow: 0 20px 45px -5px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.12) !important;
-            padding: 8px;
-            z-index: 99999 !important;
+            width: 230px;
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 1rem; /* 16px */
+            box-shadow: 0 20px 45px -5px rgba(0, 0, 0, 0.45);
+            padding: 6px;
+            z-index: 99999;
             transform-origin: top right;
-            animation: dropdownIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-        html[data-theme="light"] #userDropdownMenu {
-            background: rgba(255, 255, 255, 0.88) !important;
-            border: 1px solid rgba(0, 0, 0, 0.1) !important;
-            box-shadow: 0 20px 45px -5px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.9) !important;
+            animation: dropdownIn 0.16s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
         @keyframes dropdownIn {
             from {
                 opacity: 0;
-                transform: translateY(-8px) scale(0.96);
+                transform: translateY(-6px) scale(0.97);
             }
             to {
                 opacity: 1;
@@ -246,7 +369,7 @@
         @keyframes modalIn {
             from {
                 opacity: 0;
-                transform: scale(0.95);
+                transform: scale(0.96);
             }
             to {
                 opacity: 1;
@@ -254,597 +377,156 @@
             }
         }
 
-        /* ── Reglas Específicas para Light Mode de Alta Fidelidad y Contraste ── */
-        html[data-theme="light"] {
-            color-scheme: light;
-        }
-        html[data-theme="light"] body {
-            background-color: #f8fafc;
-            color: #0f172a;
-        }
-        html[data-theme="light"] .glass-card {
-            background: #ffffff !important;
-            border: 1px solid #e2e8f0 !important;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05) !important;
-        }
-        html[data-theme="light"] .glass {
-            background: rgba(255, 255, 255, 0.95) !important;
-            border: 1px solid #e2e8f0 !important;
-        }
-        html[data-theme="light"] .sidebar {
-            background: #ffffff !important;
-            border-right: 1px solid #e2e8f0 !important;
-            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.02) !important;
-        }
-        html[data-theme="light"] .topbar {
-            background: rgba(255, 255, 255, 0.92) !important;
-            border-bottom: 1px solid #e2e8f0 !important;
-        }
-        html[data-theme="light"] .btn-ghost {
-            background: #f1f5f9 !important;
-            border: 1px solid #e2e8f0 !important;
-            color: #334155 !important;
-        }
-        html[data-theme="light"] .btn-ghost:hover {
-            background: #e2e8f0 !important;
-            color: #0f172a !important;
-        }
-        html[data-theme="light"] .glass-input {
-            background: #ffffff !important;
-            border: 1px solid #cbd5e1 !important;
-            color: #0f172a !important;
-        }
-        html[data-theme="light"] .glass-input::placeholder {
-            color: #94a3b8 !important;
-        }
-        html[data-theme="light"] .section-label {
-            color: #94a3b8 !important;
-        }
-        html[data-theme="light"] .nav-link {
-            color: #475569 !important;
-        }
-        html[data-theme="light"] .nav-link:hover {
-            background: #f1f5f9 !important;
-            color: #0f172a !important;
-        }
-        html[data-theme="light"] .nav-link.active {
-            background: #fee2e2 !important;
-            color: #dc2626 !important;
-            border-color: #fca5a5 !important;
-        }
-        html[data-theme="light"] .glass-table th {
-            background: #f8fafc !important;
-            color: #475569 !important;
-            border-bottom: 1px solid #e2e8f0 !important;
-        }
-        html[data-theme="light"] .glass-table td {
-            color: #1e293b !important;
-            border-bottom: 1px solid #f1f5f9 !important;
-        }
-        html[data-theme="light"] .glass-table tr:hover {
-            background: #f8fafc !important;
-        }
-        html[data-theme="light"] .badge-superadmin {
-            background: #fee2e2 !important;
-            color: #dc2626 !important;
-            border-color: #fca5a5 !important;
-        }
-        html[data-theme="light"] .badge-admin {
-            background: #eff6ff !important;
-            color: #2563eb !important;
-            border-color: #bfdbfe !important;
-        }
-        html[data-theme="light"] .badge-user {
-            background: #f1f5f9 !important;
-            color: #475569 !important;
-            border-color: #cbd5e1 !important;
-        }
-        html[data-theme="light"] .role-card {
-            background: #f8fafc !important;
-            border-color: #e2e8f0 !important;
-        }
-        html[data-theme="light"] .role-card:hover {
-            background: #f1f5f9 !important;
-        }
-        html[data-theme="light"] .role-card.selected {
-            background: #eff6ff !important;
-            border-color: #3b82f6 !important;
-        }
-        html[data-theme="light"] .perm-row {
-            background: #f8fafc !important;
-            border-color: #e2e8f0 !important;
-        }
-        html[data-theme="light"] .perm-row:hover {
-            background: #f1f5f9 !important;
-        }
-
-        /* ── Sistema Universal de Botones Glassmorphism ── */
-        .btn-brand,
-        html[data-theme="light"] .btn-brand,
-        html[data-theme="dark"] .btn-brand {
-            background: linear-gradient(135deg, #dc2626, #ef4444) !important;
-            box-shadow: 0 4px 16px rgba(239, 68, 68, 0.35) !important;
-            color: #ffffff !important;
-            font-weight: 600 !important;
-            border-radius: 10px !important;
-            padding: 8px 18px !important;
-            font-size: 0.85rem !important;
-            height: 38px !important;
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
-            display: inline-flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            gap: 8px !important;
-            text-decoration: none !important;
-            border: 1px solid rgba(239, 68, 68, 0.4) !important;
-            cursor: pointer !important;
-            white-space: nowrap !important;
-        }
-        .btn-brand:hover,
-        html[data-theme="light"] .btn-brand:hover,
-        html[data-theme="dark"] .btn-brand:hover {
-            transform: translateY(-1px) !important;
-            box-shadow: 0 6px 22px rgba(239, 68, 68, 0.5) !important;
-            background: linear-gradient(135deg, #b91c1c, #dc2626) !important;
-            color: #ffffff !important;
-        }
-        .btn-brand [data-lucide], .btn-brand i { 
-            color: #ffffff !important;
-            width: 15px !important; 
-            height: 15px !important; 
-        }
-
-        /* Botón Secundario / Ghost (Alertas, Excel, CSV, Gestionar Cuentas, etc.) */
-        .btn-ghost,
-        html[data-theme="dark"] .btn-ghost {
-            background: rgba(30, 41, 59, 0.70) !important;
-            backdrop-filter: blur(12px) !important;
-            -webkit-backdrop-filter: blur(12px) !important;
-            border: 1px solid rgba(255, 255, 255, 0.14) !important;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
-            color: #e2e8f0 !important;
-            font-weight: 500 !important;
-            border-radius: 10px !important;
-            padding: 8px 16px !important;
-            font-size: 0.85rem !important;
-            height: 38px !important;
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
-            display: inline-flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            gap: 8px !important;
-            text-decoration: none !important;
-            cursor: pointer !important;
-            white-space: nowrap !important;
-        }
-        .btn-ghost:hover,
-        html[data-theme="dark"] .btn-ghost:hover {
-            background: rgba(51, 65, 85, 0.90) !important;
-            border-color: rgba(255, 255, 255, 0.25) !important;
-            color: #ffffff !important;
-            transform: translateY(-1px) !important;
-            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3) !important;
-        }
-        .btn-ghost:active,
-        html[data-theme="dark"] .btn-ghost:active {
-            transform: translateY(0) !important;
-        }
-        .btn-ghost [data-lucide], .btn-ghost i {
-            width: 15px !important;
-            height: 15px !important;
-            flex-shrink: 0 !important;
-        }
-
-        html[data-theme="light"] .btn-ghost {
-            background: #ffffff !important;
-            border: 1px solid #cbd5e1 !important;
-            color: #334155 !important;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
-            font-weight: 500 !important;
-            border-radius: 10px !important;
-            padding: 8px 16px !important;
-            font-size: 0.85rem !important;
-            height: 38px !important;
-            display: inline-flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            gap: 8px !important;
-            text-decoration: none !important;
-            cursor: pointer !important;
-            white-space: nowrap !important;
-        }
-        html[data-theme="light"] .btn-ghost:hover {
-            background: #f1f5f9 !important;
-            border-color: #94a3b8 !important;
-            color: #0f172a !important;
-            transform: translateY(-1px) !important;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
-        }
-
-        /* Botón Secundario con Tinte Azul */
-        .btn-secondary,
-        html[data-theme="dark"] .btn-secondary {
-            background: rgba(59, 130, 246, 0.12) !important;
-            border: 1px solid rgba(59, 130, 246, 0.3) !important;
-            color: #60a5fa !important;
-            font-weight: 600 !important;
-            border-radius: 10px !important;
-            padding: 8px 16px !important;
-            font-size: 0.85rem !important;
-            height: 38px !important;
-            transition: all 0.2s ease !important;
-            display: inline-flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            gap: 8px !important;
-            text-decoration: none !important;
-            cursor: pointer !important;
-            white-space: nowrap !important;
-        }
-        .btn-secondary:hover,
-        html[data-theme="dark"] .btn-secondary:hover {
-            background: rgba(59, 130, 246, 0.22) !important;
-            border-color: rgba(59, 130, 246, 0.45) !important;
-            color: #93c5fd !important;
-            transform: translateY(-1px) !important;
-            box-shadow: 0 4px 14px rgba(59, 130, 246, 0.25) !important;
-        }
-        .btn-secondary [data-lucide], .btn-secondary i {
-            width: 15px !important;
-            height: 15px !important;
-        }
-
-        html[data-theme="light"] .btn-secondary {
-            background: #eff6ff !important;
-            border: 1px solid #bfdbfe !important;
-            color: #2563eb !important;
-            font-weight: 600 !important;
-            border-radius: 10px !important;
-            padding: 8px 16px !important;
-            font-size: 0.85rem !important;
-            height: 38px !important;
-            display: inline-flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            gap: 8px !important;
-            text-decoration: none !important;
-            cursor: pointer !important;
-            white-space: nowrap !important;
-        }
-        html[data-theme="light"] .btn-secondary:hover {
-            background: #dbeafe !important;
-            border-color: #93c5fd !important;
-            color: #1d4ed8 !important;
-            transform: translateY(-1px) !important;
-        }
-
-        /* Botón Peligro */
-        .btn-danger,
-        html[data-theme="light"] .btn-danger,
-        html[data-theme="dark"] .btn-danger {
-            background: linear-gradient(135deg, #991b1b, #dc2626) !important;
-            box-shadow: 0 4px 16px rgba(220, 38, 38, 0.25) !important;
-            color: #ffffff !important;
-            font-weight: 600 !important;
-            border-radius: 10px !important;
-            padding: 8px 18px !important;
-            font-size: 0.85rem !important;
-            height: 38px !important;
-            transition: all 0.2s ease !important;
-            display: inline-flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            gap: 8px !important;
-            border: none !important;
-            cursor: pointer !important;
-            white-space: nowrap !important;
-        }
-        .btn-danger:hover,
-        html[data-theme="light"] .btn-danger:hover,
-        html[data-theme="dark"] .btn-danger:hover {
-            transform: translateY(-1px) !important;
-            box-shadow: 0 6px 20px rgba(220, 38, 38, 0.45) !important;
-            color: #ffffff !important;
-        }
-        .btn-danger [data-lucide], .btn-danger i { 
-            color: #ffffff !important;
-            width: 15px !important; 
-            height: 15px !important; 
-        }
-
-        /* Overrides para textos oscuros y contenedores en Light Mode */
-        html[data-theme="light"] h1, 
-        html[data-theme="light"] h2, 
-        html[data-theme="light"] h3, 
-        html[data-theme="light"] h4,
-        html[data-theme="light"] [style*="color:#f1f5f9"]:not(.btn-brand):not(.btn-danger),
-        html[data-theme="light"] [style*="color: #f1f5f9"]:not(.btn-brand):not(.btn-danger),
-        html[data-theme="light"] [style*="color:#e2e8f0"]:not(.btn-brand):not(.btn-danger),
-        html[data-theme="light"] [style*="color: #e2e8f0"]:not(.btn-brand):not(.btn-danger),
-        html[data-theme="light"] [style*="color:#f8fafc"]:not(.btn-brand):not(.btn-danger),
-        html[data-theme="light"] [style*="color: #f8fafc"]:not(.btn-brand):not(.btn-danger) {
-            color: #0f172a !important;
-        }
-
-        html[data-theme="light"] [style*="color:#cbd5e1"]:not(.btn-brand):not(.btn-danger),
-        html[data-theme="light"] [style*="color: #cbd5e1"]:not(.btn-brand):not(.btn-danger) {
-            color: #334155 !important;
-        }
-
-        html[data-theme="light"] [style*="color:#94a3b8"]:not(.btn-brand):not(.btn-danger),
-        html[data-theme="light"] [style*="color: #94a3b8"]:not(.btn-brand):not(.btn-danger) {
-            color: #475569 !important;
-        }
-
-        html[data-theme="light"] [style*="background:rgba(0,0,0"]:not(.btn-brand):not(.btn-danger),
-        html[data-theme="light"] [style*="background: rgba(0,0,0"]:not(.btn-brand):not(.btn-danger),
-        html[data-theme="light"] [style*="background:rgba(0, 0, 0"]:not(.btn-brand):not(.btn-danger) {
-            background: #f1f5f9 !important;
-            border-color: #e2e8f0 !important;
-        }
-
-        html[data-theme="light"] [style*="background:rgba(15,23,42"]:not(.btn-brand):not(.btn-danger),
-        html[data-theme="light"] [style*="background: rgba(15,23,42"]:not(.btn-brand):not(.btn-danger),
-        html[data-theme="light"] [style*="background:rgba(15, 23, 42"]:not(.btn-brand):not(.btn-danger) {
-            background: #ffffff !important;
-            border-color: #e2e8f0 !important;
-        }
-
-        html[data-theme="light"] [style*="background:rgba(2,6,23"]:not(.btn-brand):not(.btn-danger),
-        html[data-theme="light"] [style*="background: rgba(2,6,23"]:not(.btn-brand):not(.btn-danger),
-        html[data-theme="light"] [style*="background:rgba(2, 6, 23"]:not(.btn-brand):not(.btn-danger) {
-            background: #f8fafc !important;
-            border-color: #e2e8f0 !important;
-        }
-
-        html[data-theme="light"] [style*="border-top:1px solid rgba(255,255,255"],
-        html[data-theme="light"] [style*="border-bottom:1px solid rgba(255,255,255"],
-        html[data-theme="light"] [style*="border-left:1px solid rgba(255,255,255"],
-        html[data-theme="light"] [style*="border-right:1px solid rgba(255,255,255"] {
-            border-color: #e2e8f0 !important;
-        }
-
-        /* ── Badges de roles ── */
-        .badge-superadmin {
-            background: rgba(239, 68, 68, 0.15);
-            color: #fca5a5;
-            border: 1px solid rgba(239, 68, 68, 0.25);
+        /* ── Badges Píldora ── */
+        .badge-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
             padding: 3px 10px;
-            border-radius: 999px;
-            font-size: 0.7rem;
+            border-radius: 9999px;
+            font-size: 0.72rem;
             font-weight: 600;
-            letter-spacing: 0.03em;
-            text-transform: uppercase;
+            letter-spacing: 0.02em;
+        }
+        .badge-superadmin {
+            background-color: rgba(239, 68, 68, 0.12);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.25);
         }
         .badge-admin {
-            background: rgba(59, 130, 246, 0.15);
-            color: #93c5fd;
+            background-color: rgba(59, 130, 246, 0.12);
+            color: #3b82f6;
             border: 1px solid rgba(59, 130, 246, 0.25);
-            padding: 3px 10px;
-            border-radius: 999px;
-            font-size: 0.7rem;
-            font-weight: 600;
-            letter-spacing: 0.03em;
-            text-transform: uppercase;
         }
         .badge-user {
-            background: rgba(148, 163, 184, 0.10);
-            color: #94a3b8;
-            border: 1px solid rgba(148, 163, 184, 0.18);
-            padding: 3px 10px;
-            border-radius: 999px;
-            font-size: 0.7rem;
-            font-weight: 600;
-            letter-spacing: 0.03em;
-            text-transform: uppercase;
-        }
-        .badge-active {
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            color: #4ade80;
-            font-size: 0.78rem;
-            font-weight: 500;
-        }
-        .badge-inactive {
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            color: #64748b;
-            font-size: 0.78rem;
-            font-weight: 500;
-        }
-        .status-dot {
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            display: inline-block;
+            background-color: var(--pill-bg);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-subtle);
         }
 
-        /* ── Table ── */
-        .panel-table {
+        /* ── Tablas Shadcn ── */
+        .glass-table {
             width: 100%;
             border-collapse: separate;
             border-spacing: 0;
         }
-        .panel-table th {
-            padding: 12px 20px;
-            font-size: 0.7rem;
+        .glass-table th {
+            padding: 12px 16px;
+            font-size: 0.75rem;
             font-weight: 600;
+            letter-spacing: 0.04em;
             text-transform: uppercase;
-            letter-spacing: 0.06em;
-            color: #475569;
-            background: rgba(2, 6, 23, 0.4);
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border-subtle);
             text-align: left;
         }
-        .panel-table td {
-            padding: 14px 20px;
-            font-size: 0.875rem;
-            color: #cbd5e1;
-            border-top: 1px solid rgba(255,255,255,0.04);
+        .glass-table td {
+            padding: 14px 16px;
+            font-size: 0.85rem;
+            color: var(--text-primary);
+            border-bottom: 1px solid var(--border-subtle);
+            vertical-align: middle;
         }
-        .panel-table tr:hover td {
-            background: rgba(255,255,255,0.025);
+        .glass-table tr:last-child td {
+            border-bottom: none;
         }
-
-        /* ── Avatar initial ── */
-        .avatar {
-            width: 34px;
-            height: 34px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, rgba(239,68,68,0.3), rgba(220,38,38,0.15));
-            border: 1px solid rgba(239,68,68,0.2);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
-            font-size: 0.8rem;
-            color: #fca5a5;
-            flex-shrink: 0;
+        .glass-table tr:hover td {
+            background-color: var(--bg-muted);
         }
 
-        /* ── Action icon buttons ── */
-        .action-btn {
-            width: 32px;
-            height: 32px;
-            border-radius: 8px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.18s;
-            cursor: pointer;
-            text-decoration: none;
-            border: none;
+        /* ── Scrollbar Minimalista ── */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
             background: transparent;
         }
-        .action-btn [data-lucide] { width: 14px; height: 14px; }
-        .action-btn-edit { color: #64748b; }
-        .action-btn-edit:hover { background: rgba(59,130,246,0.12); color: #93c5fd; }
-        .action-btn-toggle { color: #64748b; }
-        .action-btn-toggle:hover { background: rgba(234,179,8,0.12); color: #fde047; }
-        .action-btn-delete { color: #64748b; }
-        .action-btn-delete:hover { background: rgba(239,68,68,0.12); color: #f87171; }
-
-        /* ── Section label ── */
-        .section-label {
-            font-size: 0.65rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            color: #334155;
-            padding: 0 14px;
-            margin: 16px 0 6px;
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-subtle);
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--border-highlight);
         }
 
-        /* ── Scrollbar ── */
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
-
-        /* ── Alert / flash message ── */
-        .alert-success {
-            background: rgba(74,222,128,0.1);
-            border: 1px solid rgba(74,222,128,0.2);
-            color: #86efac;
-            padding: 12px 16px;
-            border-radius: 10px;
-            font-size: 0.875rem;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .alert-error {
-            background: rgba(239,68,68,0.1);
-            border: 1px solid rgba(239,68,68,0.2);
-            color: #fca5a5;
-            padding: 12px 16px;
-            border-radius: 10px;
-            font-size: 0.875rem;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        /* ── Responsive Rules (Móvil / Tablet) ── */
+        /* ── Responsive Mobile Overlay ── */
         #mobileOverlay {
             display: none;
             position: fixed;
             inset: 0;
-            background: rgba(2, 6, 23, 0.7);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            z-index: 90;
-        }
-        .mobile-toggle-btn {
-            display: none;
-        }
-        .main-content-wrapper {
-            padding: 28px 32px;
+            background-color: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            z-index: 99;
         }
 
         @media (max-width: 768px) {
-            .sidebar {
+            .floating-sidebar {
                 position: fixed;
                 top: 0;
                 bottom: 0;
                 left: 0;
+                margin: 0;
+                height: 100vh;
+                border-radius: 0;
                 transform: translateX(-100%);
+                transition: transform 0.25s ease;
+                z-index: 100;
             }
-            .sidebar.mobile-open {
+            .floating-sidebar.mobile-open {
                 transform: translateX(0);
             }
-            .mobile-toggle-btn {
-                display: inline-flex;
-            }
-            .main-content-wrapper {
-                padding: 18px 16px;
+            .floating-topbar {
+                margin: 8px 12px;
+                border-radius: 1rem;
             }
         }
     </style>
     {% block extra_css %}{% endblock %}
 </head>
-<body>
+<body class="antialiased">
 
-<!-- Overlay para cerrar sidebar en móvil -->
 <div id="mobileOverlay" onclick="toggleMobileSidebar(false)"></div>
 
-<div style="display:flex; height:100vh; overflow:hidden;">
+<div class="flex h-screen overflow-hidden">
 
-    <!-- ═══════════════════════ SIDEBAR ═══════════════════════ -->
-    <aside id="mainSidebar" class="sidebar">
+    <!-- ═══════════════════════ FLOATING SIDEBAR (SHADCN UI) ═══════════════════════ -->
+    <aside id="mainSidebar" class="floating-sidebar">
 
-        <!-- Logo + Close button en móvil -->
-        <div style="padding: 20px 20px 16px; border-bottom: 1px solid rgba(255,255,255,0.05); display:flex; align-items:center; justify-content:space-between;">
-            <a href="{% url 'dashboard' %}" style="text-decoration:none;">
-                <span style="font-size:1.2rem; font-weight:800; color:#f1f5f9; letter-spacing:-0.02em;">
-                    Rebooy<span style="color:#ef4444;">Panel</span>
-                </span>
+        <!-- Logo & Brand -->
+        <div style="height:64px; display:flex; align-items:center; justify-content:space-between; padding:0 18px; border-bottom:1px solid var(--border-subtle); flex-shrink:0;">
+            <a href="{% url 'dashboard' %}" style="display:flex; align-items:center; gap:10px; text-decoration:none;">
+                <div style="width:32px; height:32px; border-radius:9999px; background:linear-gradient(135deg, #ef4444, #dc2626); display:flex; align-items:center; justify-content:center; box-shadow:0 2px 10px rgba(239,68,68,0.35);">
+                    <i data-lucide="zap" style="width:17px; height:17px; color:#ffffff;"></i>
+                </div>
+                <div style="display:flex; flex-direction:column;">
+                    <span style="font-weight:800; font-size:1.05rem; letter-spacing:-0.02em; color:var(--text-primary);">Rebooy<span style="color:#ef4444;">.</span></span>
+                </div>
             </a>
-            <button type="button" class="action-btn mobile-toggle-btn" onclick="toggleMobileSidebar(false)">
-                <i data-lucide="x" style="width:18px; height:18px; color:#94a3b8;"></i>
-            </button>
+            <span class="badge-pill badge-user" style="font-size:0.65rem;">v2.4</span>
         </div>
 
-        <!-- Navigation -->
-        <nav style="flex:1; padding:16px 12px; overflow-y:auto; display:flex; flex-direction:column; gap:2px;">
+        <!-- Navigation Links -->
+        <nav style="flex:1; overflow-y:auto; padding:12px 10px; display:flex; flex-direction:column; gap:3px;">
 
-            {% if user.role == 'superadmin' or user.can_view_dashboard %}
+            <div class="section-label">General</div>
             <a href="{% url 'dashboard' %}"
                class="nav-link {% if request.path == '/dashboard/' %}active{% endif %}">
                 <i data-lucide="layout-dashboard"></i>
                 Dashboard
             </a>
-            {% endif %}
 
             {% if user.role == 'superadmin' or user.can_view_videoprompt or user.can_view_fanpages or user.can_view_extractor %}
-            <div class="section-label">Herramientas IA</div>
+            <div class="section-label" style="margin-top:14px;">Herramientas IA</div>
+
             {% if user.role == 'superadmin' or user.can_view_videoprompt %}
             <a href="{% url 'videoprompt:studio' %}"
                class="nav-link {% if '/video-prompt/' in request.path and '/api-keys/' not in request.path %}active{% endif %}">
-                <i data-lucide="clapperboard"></i>
+                <i data-lucide="video"></i>
                 Video to Prompt
             </a>
             {% endif %}
+
             {% if user.role == 'superadmin' or user.can_view_fanpages %}
             <a href="{% url 'fanpages:studio' %}"
                class="nav-link {% if '/fanpages/' in request.path %}active{% endif %}">
@@ -852,6 +534,7 @@
                 Fanpage Creator
             </a>
             {% endif %}
+
             {% if user.role == 'superadmin' or user.can_view_extractor %}
             <a href="{% url 'extractor:dashboard' %}"
                class="nav-link {% if '/extractor/' in request.path %}active{% endif %}">
@@ -862,7 +545,7 @@
             {% endif %}
 
             {% if user.role == 'superadmin' or user.can_manage_users or user.can_manage_api_keys %}
-            <div class="section-label">Administración</div>
+            <div class="section-label" style="margin-top:14px;">Administración</div>
             {% if user.role == 'superadmin' or user.can_manage_users %}
             <a href="{% url 'user_list' %}"
                class="nav-link {% if request.path == '/panel/usuarios/' %}active{% endif %}">
@@ -884,7 +567,7 @@
             {% endif %}
             {% endif %}
 
-            <div class="section-label" style="margin-top:20px;">Cuenta & Seguridad</div>
+            <div class="section-label" style="margin-top:14px;">Seguridad</div>
             <a href="{% url 'security_sessions' %}"
                class="nav-link {% if '/seguridad/' in request.path %}active{% endif %}">
                 <i data-lucide="shield-check" style="color:#60a5fa;"></i>
@@ -894,37 +577,40 @@
         </nav>
     </aside>
 
-    <!-- ═══════════════════════ MAIN ═══════════════════════ -->
+    <!-- ═══════════════════════ MAIN VIEWPORT ═══════════════════════ -->
     <div style="flex:1; display:flex; flex-direction:column; min-width:0; overflow:hidden;">
 
-        <!-- Topbar -->
-        <header class="topbar" style="height:56px; display:flex; align-items:center; justify-content:space-between; padding:0 20px; flex-shrink:0;">
+        <!-- Floating Topbar Pill -->
+        <header class="floating-topbar">
+            
+            <!-- Left: Toggle & Breadcrumb -->
             <div style="display:flex; align-items:center; gap:12px;">
-                <!-- Botón Universal de Ocultar / Mostrar Barra Lateral -->
-                <button type="button" class="action-btn" id="sidebarToggleBtn" style="background:rgba(255,255,255,0.05); border-radius:8px; width:34px; height:34px; display:flex; align-items:center; justify-content:center;" onclick="toggleSidebar()" title="Mostrar / Ocultar menú lateral">
-                    <i data-lucide="panel-left" id="sidebarToggleIcon" style="width:18px; height:18px; color:#f1f5f9;"></i>
+                <button type="button" class="action-pill-btn" id="sidebarToggleBtn" onclick="toggleSidebar()" title="Mostrar / Ocultar menú lateral">
+                    <i data-lucide="panel-left" style="width:17px; height:17px;"></i>
                 </button>
-                <div style="font-size:0.85rem; color:#64748b; font-weight:500;">
+                <div style="font-size:0.85rem; color:var(--text-secondary); font-weight:500;">
                     {% block breadcrumb %}{% endblock %}
                 </div>
             </div>
 
-            <div style="display:flex; align-items:center; gap:10px;">
-                <!-- Botón de Alertas & Webhooks Global -->
-                <button type="button" class="action-btn" onclick="openAlertsModal()" title="Configurar Alertas & Webhooks de Crecimiento" style="background:var(--action-btn-bg); border:1px solid var(--action-btn-border); border-radius:8px; width:34px; height:34px; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+            <!-- Right: Actions & User Menu -->
+            <div style="display:flex; align-items:center; gap:8px;">
+
+                <!-- Alertas & Webhooks Pill Button -->
+                <button type="button" class="action-pill-btn" onclick="openAlertsModal()" title="Configurar Alertas & Webhooks de Crecimiento">
                     <i data-lucide="bell" style="width:16px; height:16px; color:#facc15;"></i>
                 </button>
 
-                <!-- Botón Toggle de Tema (Dark / Light) -->
-                <button type="button" class="action-btn" id="themeToggleBtn" onclick="toggleTheme()" title="Cambiar tema (Claro / Oscuro)" style="background:var(--action-btn-bg); border:1px solid var(--action-btn-border); border-radius:8px; width:34px; height:34px; display:flex; align-items:center; justify-content:center; cursor:pointer;">
-                    <i data-lucide="sun" id="themeIconSun" style="width:17px; height:17px; color:#facc15; display:none;"></i>
-                    <i data-lucide="moon" id="themeIconMoon" style="width:17px; height:17px; color:#94a3b8; display:none;"></i>
+                <!-- Toggle de Tema (Dark / Light) -->
+                <button type="button" class="action-pill-btn" id="themeToggleBtn" onclick="toggleTheme()" title="Cambiar tema (Claro / Oscuro)">
+                    <i data-lucide="sun" id="themeIconSun" style="width:16px; height:16px; color:#facc15; display:none;"></i>
+                    <i data-lucide="moon" id="themeIconMoon" style="width:16px; height:16px; color:#94a3b8; display:none;"></i>
                 </button>
 
-                <!-- Menú Dropdown de Usuario Glassmorphism -->
+                <!-- Menú Dropdown Radix-Style -->
                 <div style="position:relative;" id="userDropdownContainer">
-                    <button type="button" id="userMenuBtn" onclick="toggleUserDropdown()" style="display:flex; align-items:center; gap:8px; background:var(--action-btn-bg); border:1px solid var(--action-btn-border); border-radius:10px; padding:4px 10px 4px 6px; cursor:pointer; transition:all 0.2s ease;">
-                        <div class="avatar" style="width:28px; height:28px; font-size:0.75rem; background:linear-gradient(135deg, #ef4444, #dc2626); color:#fff; font-weight:700; border-radius:8px; display:flex; align-items:center; justify-content:center;">
+                    <button type="button" id="userMenuBtn" onclick="toggleUserDropdown()">
+                        <div style="width:28px; height:28px; font-size:0.75rem; background:linear-gradient(135deg, #ef4444, #dc2626); color:#fff; font-weight:700; border-radius:9999px; display:flex; align-items:center; justify-content:center;">
                             {{ user.username|make_list|first|upper }}
                         </div>
                         <div style="text-align:left; line-height:1.2; display:none;" class="user-topbar-info">
@@ -934,36 +620,35 @@
                         <i data-lucide="chevron-down" id="userDropdownChevron" style="width:14px; height:14px; color:var(--text-muted); transition:transform 0.2s ease;"></i>
                     </button>
 
-                    <!-- Menú Flotante -->
+                    <!-- Dropdown Content -->
                     <div id="userDropdownMenu">
-                        
-                        <div style="padding:8px 10px 10px; border-bottom:1px solid var(--border-glass); margin-bottom:6px;">
+                        <div style="padding:8px 10px 10px; border-bottom:1px solid var(--border-subtle); margin-bottom:4px;">
                             <div style="font-size:0.85rem; font-weight:700; color:var(--text-primary); margin-bottom:4px;">{{ user.username }}</div>
-                            <span class="badge-{% if user.role == 'superadmin' %}superadmin{% elif user.role == 'admin' %}admin{% else %}user{% endif %}" style="font-size:0.7rem;">
+                            <span class="badge-pill badge-{% if user.role == 'superadmin' %}superadmin{% elif user.role == 'admin' %}admin{% else %}user{% endif %}">
                                 {{ user.get_role_display }}
                             </span>
                         </div>
 
-                        <a href="{% url 'security_sessions' %}" class="nav-link" style="padding:8px 10px; font-size:0.82rem; border-radius:8px; margin-bottom:2px;">
+                        <a href="{% url 'security_sessions' %}" class="nav-link" style="padding:7px 10px; font-size:0.82rem; border-radius:0.5rem; margin-bottom:2px;">
                             <i data-lucide="shield-check" style="width:15px; height:15px; color:#60a5fa;"></i>
                             Centro de Seguridad
                         </a>
 
-                        <button type="button" class="nav-link" onclick="openQuickSessionsModal()" style="width:100%; text-align:left; background:transparent; border:none; padding:8px 10px; font-size:0.82rem; border-radius:8px; cursor:pointer; color:var(--nav-link-color);">
+                        <button type="button" class="nav-link" onclick="openQuickSessionsModal()" style="width:100%; text-align:left; background:transparent; border:none; padding:7px 10px; font-size:0.82rem; border-radius:0.5rem; cursor:pointer;">
                             <i data-lucide="smartphone" style="width:15px; height:15px; color:#38bdf8;"></i>
                             Sesiones & Dispositivos
                         </button>
 
-                        <button type="button" class="nav-link" onclick="openAlertsModal()" style="width:100%; text-align:left; background:transparent; border:none; padding:8px 10px; font-size:0.82rem; border-radius:8px; cursor:pointer; color:var(--nav-link-color);">
+                        <button type="button" class="nav-link" onclick="openAlertsModal()" style="width:100%; text-align:left; background:transparent; border:none; padding:7px 10px; font-size:0.82rem; border-radius:0.5rem; cursor:pointer;">
                             <i data-lucide="bell-ring" style="width:15px; height:15px; color:#facc15;"></i>
                             Alertas & Webhooks
                         </button>
 
-                        <div style="border-top:1px solid var(--border-glass); margin:6px 0;"></div>
+                        <div style="border-top:1px solid var(--border-subtle); margin:4px 0;"></div>
 
                         <form method="post" action="{% url 'logout' %}" style="margin:0;">
                             {% csrf_token %}
-                            <button type="submit" class="nav-link" style="width:100%; text-align:left; background:transparent; border:none; padding:8px 10px; font-size:0.82rem; border-radius:8px; cursor:pointer; color:#f87171;"
+                            <button type="submit" class="nav-link" style="width:100%; text-align:left; background:transparent; border:none; padding:7px 10px; font-size:0.82rem; border-radius:0.5rem; cursor:pointer; color:#f87171;"
                                 onmouseover="this.style.background='rgba(239,68,68,0.1)'; this.style.color='#ef4444'"
                                 onmouseout="this.style.background='transparent'; this.style.color='#f87171'">
                                 <i data-lucide="log-out" style="width:15px; height:15px; color:#ef4444;"></i>
@@ -976,21 +661,21 @@
             </div>
         </header>
 
-        <!-- Content -->
-        <main class="main-content-wrapper" style="flex:1; overflow-y:auto;">
+        <!-- Main Content Scroll Area -->
+        <main class="main-content-wrapper" style="flex:1; overflow-y:auto; padding:8px 16px 24px 16px;">
             {% block content %}{% endblock %}
         </main>
     </div>
 
 </div>
 
-<!-- ═════════ MODAL GLOBAL: GESTIÓN RÁPIDA DE SESIONES ═════════ -->
-<div id="quickSessionsModal" style="display:none; position:fixed; inset:0; z-index:100000; background:rgba(2, 6, 23, 0.85); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); align-items:center; justify-content:center; padding:16px;">
-    <div class="glass-card" style="width:100%; max-width:540px; padding:24px; border:1px solid rgba(59,130,246,0.3); box-shadow:0 25px 50px -12px rgba(0,0,0,0.8); animation:modalIn 0.2s ease-out; position:relative; overflow:hidden;">
+<!-- ═════════ MODAL GLOBAL: GESTIÓN RÁPIDA DE SESIONES (RADIX STYLE) ═════════ -->
+<div id="quickSessionsModal" style="display:none; position:fixed; inset:0; z-index:100000; background:var(--modal-backdrop); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); align-items:center; justify-content:center; padding:16px;">
+    <div class="shadcn-card" style="width:100%; max-width:540px; padding:24px; animation:modalIn 0.2s ease-out; position:relative; overflow:hidden;">
         
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
             <div style="display:flex; align-items:center; gap:10px;">
-                <div style="width:38px; height:38px; border-radius:10px; background:rgba(59,130,246,0.12); border:1px solid rgba(59,130,246,0.25); display:flex; align-items:center; justify-content:center; color:#60a5fa;">
+                <div style="width:38px; height:38px; border-radius:9999px; background:rgba(59,130,246,0.12); border:1px solid rgba(59,130,246,0.25); display:flex; align-items:center; justify-content:center; color:#60a5fa;">
                     <i data-lucide="shield-check" style="width:20px; height:20px;"></i>
                 </div>
                 <div>
@@ -998,20 +683,17 @@
                     <span style="font-size:0.75rem; color:var(--text-muted);">Dispositivos actualmente conectados a tu cuenta</span>
                 </div>
             </div>
-            <button type="button" class="action-btn" onclick="closeQuickSessionsModal()">
+            <button type="button" class="action-pill-btn" onclick="closeQuickSessionsModal()">
                 <i data-lucide="x"></i>
             </button>
         </div>
 
         <!-- Lista de Sesiones -->
         <div id="quickSessionsListContainer" style="max-height:280px; overflow-y:auto; display:flex; flex-direction:column; gap:8px; margin-bottom:18px; padding-right:4px;">
-            <div style="text-align:center; padding:30px; color:var(--text-muted);">
-                <i data-lucide="loader-2" class="animate-spin" style="width:20px; height:20px; margin:0 auto 8px; display:block;"></i>
-                Cargando sesiones activas...
-            </div>
+            <div style="text-align:center; padding:30px; color:var(--text-muted);"><i data-lucide="loader-2" class="animate-spin" style="width:20px; height:20px; margin:0 auto 8px; display:block;"></i>Cargando sesiones activas...</div>
         </div>
 
-        <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--border-glass); padding-top:14px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--border-subtle); padding-top:14px;">
             <a href="{% url 'security_sessions' %}" class="btn-ghost" style="font-size:0.78rem;">
                 <i data-lucide="external-link" style="width:13px; height:13px;"></i>
                 Centro de Seguridad
@@ -1027,14 +709,13 @@
     </div>
 </div>
 
-<!-- ═════════ MODAL GLOBAL: CONFIGURACIÓN DE ALERTAS & WEBHOOKS ═════════ -->
-<div id="alertsConfigModal" style="display:none; position:fixed; inset:0; z-index:100000; background:rgba(2, 6, 23, 0.85); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); align-items:center; justify-content:center; padding:16px;">
-    <div class="glass-card" style="width:100%; max-width:540px; padding:28px; border:1px solid rgba(250,204,21,0.25); box-shadow:0 25px 50px -12px rgba(0,0,0,0.8); animation:modalIn 0.22s ease-out; position:relative; overflow:hidden;">
-        <div style="position:absolute; top:-30px; left:50%; transform:translateX(-50%); width:120px; height:120px; background:rgba(250,204,21,0.08); border-radius:50%; pointer-events:none; filter:blur(20px);"></div>
-
+<!-- ═════════ MODAL GLOBAL: CONFIGURACIÓN DE ALERTAS & WEBHOOKS (RADIX STYLE) ═════════ -->
+<div id="alertsConfigModal" style="display:none; position:fixed; inset:0; z-index:100000; background:var(--modal-backdrop); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); align-items:center; justify-content:center; padding:16px;">
+    <div class="shadcn-card" style="width:100%; max-width:540px; padding:28px; animation:modalIn 0.22s ease-out; position:relative; overflow:hidden;">
+        
         <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:18px;">
             <div style="display:flex; align-items:center; gap:12px;">
-                <div style="width:42px; height:42px; border-radius:12px; background:rgba(250,204,21,0.12); border:1px solid rgba(250,204,21,0.3); display:flex; align-items:center; justify-content:center; color:#facc15;">
+                <div style="width:42px; height:42px; border-radius:9999px; background:rgba(250,204,21,0.12); border:1px solid rgba(250,204,21,0.3); display:flex; align-items:center; justify-content:center; color:#facc15;">
                     <i data-lucide="bell-ring" style="width:22px; height:22px;"></i>
                 </div>
                 <div>
@@ -1042,7 +723,7 @@
                     <span style="font-size:0.78rem; color:var(--text-muted);">Notificaciones en Discord o Endpoint HTTP ante hitos de crecimiento</span>
                 </div>
             </div>
-            <button type="button" class="action-btn" onclick="closeAlertsModal()">
+            <button type="button" class="action-pill-btn" onclick="closeAlertsModal()">
                 <i data-lucide="x"></i>
             </button>
         </div>
@@ -1057,8 +738,8 @@
                     type="url" 
                     id="alertWebhookUrlInput" 
                     placeholder="https://discord.com/api/webhooks/..." 
-                    class="glass-input" 
-                    style="width:100%; padding:10px 14px; border-radius:10px; font-size:0.85rem; font-family:monospace;"
+                    class="shadcn-input" 
+                    style="width:100%; border-radius:0.75rem !important; padding:10px 14px !important; font-size:0.85rem; font-family:monospace;"
                 >
                 <span style="font-size:0.72rem; color:var(--text-muted); display:block; margin-top:4px;">
                     Pegá la URL del Webhook de tu canal de Discord o tu servicio receptor.
@@ -1066,15 +747,9 @@
             </div>
 
             <!-- Options Box -->
-            <div style="background:rgba(255,255,255,0.03); border:1px solid var(--border-glass); border-radius:10px; padding:14px; display:flex; flex-direction:column; gap:10px;">
-                <label style="display:flex; align-items:center; gap:10px; cursor:pointer; font-size:0.82rem; color:var(--text-primary);">
-                    <input type="checkbox" id="alertsEnabledCheckbox" checked style="accent-color:#facc15; width:16px; height:16px;">
-                    <span>Activar alertas automáticas de hitos (<code>10K</code>, <code>50K</code>, <code>100K</code>, <code>1M</code>)</span>
-                </label>
-                <label style="display:flex; align-items:center; gap:10px; cursor:pointer; font-size:0.82rem; color:var(--text-primary);">
-                    <input type="checkbox" id="alertsGrowthSpikeCheckbox" checked style="accent-color:#facc15; width:16px; height:16px;">
-                    <span>Notificar ante incrementos mayores al 5% o +1.000 seguidores</span>
-                </label>
+            <div style="background-color:var(--bg-muted); border:1px solid var(--border-subtle); border-radius:0.875rem; padding:14px; display:flex; flex-direction:column; gap:10px;">
+                <label style="display:flex; align-items:center; gap:10px; cursor:pointer; font-size:0.82rem; color:var(--text-primary);"><input type="checkbox" id="alertsEnabledCheckbox" checked style="accent-color:#ef4444; width:16px; height:16px; border-radius:4px;"><span>Activar alertas automáticas de hitos (<code>10K</code>, <code>50K</code>, <code>100K</code>, <code>1M</code>)</span></label>
+                <label style="display:flex; align-items:center; gap:10px; cursor:pointer; font-size:0.82rem; color:var(--text-primary);"><input type="checkbox" id="alertsGrowthSpikeCheckbox" checked style="accent-color:#ef4444; width:16px; height:16px; border-radius:4px;"><span>Notificar ante incrementos mayores al 5% o +1.000 seguidores</span></label>
             </div>
         </div>
 
@@ -1086,7 +761,7 @@
 
             <div style="display:flex; gap:10px;">
                 <button type="button" class="btn-ghost" onclick="closeAlertsModal()">Cancelar</button>
-                <button type="button" id="btnSaveAlertsConfig" class="btn-brand" style="background:#facc15; color:#0f172a; font-weight:700;" onclick="saveAlertsConfig()">
+                <button type="button" id="btnSaveAlertsConfig" class="btn-brand" onclick="saveAlertsConfig()">
                     <i data-lucide="check" style="width:14px; height:14px;"></i>
                     Guardar
                 </button>
@@ -1096,12 +771,10 @@
 </div>
 
 <script>
-    // Responsive Topbar display rule for username
     if (window.innerWidth >= 640) {
         document.querySelectorAll('.user-topbar-info').forEach(el => el.style.display = 'block');
     }
 
-    // Dropdown de Usuario
     function toggleUserDropdown() {
         const btn = document.getElementById('userMenuBtn');
         const menu = document.getElementById('userDropdownMenu');
@@ -1126,17 +799,16 @@
         const btn = document.getElementById('userMenuBtn');
         const menu = document.getElementById('userDropdownMenu');
         const chevron = document.getElementById('userDropdownChevron');
-        if (container && !container.contains(e.target) && menu && menu.style.display === 'block') {
-            menu.style.display = 'none';
+        if (container && !container.contains(e.target)) {
+            if (menu) menu.style.display = 'none';
             if (btn) btn.classList.remove('active');
             if (chevron) chevron.style.transform = 'rotate(0deg)';
         }
     });
 
-    // Modal de Sesiones Rápidas
-    async function openQuickSessionsModal() {
-        const menu = document.getElementById('userDropdownMenu');
-        if (menu) menu.style.display = 'none';
+    function openQuickSessionsModal() {
+        const userMenu = document.getElementById('userDropdownMenu');
+        if (userMenu) userMenu.style.display = 'none';
 
         const modal = document.getElementById('quickSessionsModal');
         if (modal) {
@@ -1144,7 +816,7 @@
             document.body.style.overflow = 'hidden';
             lucide.createIcons({ root: modal });
         }
-        await loadQuickSessions();
+        loadQuickSessions();
     }
 
     function closeQuickSessionsModal() {
@@ -1155,6 +827,10 @@
         }
     }
 
+    document.getElementById('quickSessionsModal')?.addEventListener('click', (e) => {
+        if (e.target.id === 'quickSessionsModal') closeQuickSessionsModal();
+    });
+
     async function loadQuickSessions() {
         const container = document.getElementById('quickSessionsListContainer');
         if (!container) return;
@@ -1162,41 +838,39 @@
         try {
             const res = await fetch('/seguridad/api/sesiones/');
             const data = await res.json();
-            if (data.status === 'ok' && data.sessions) {
-                if (data.sessions.length === 0) {
-                    container.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-muted);">No hay sesiones activas registradas.</div>';
-                    return;
-                }
 
-                container.innerHTML = data.sessions.map(s => {
-                    const isMobile = s.device_info.includes('Móvil') || s.device_info.includes('iPhone') || s.device_info.includes('Android');
-                    const icon = isMobile ? 'smartphone' : 'laptop';
-                    return `
-                        <div class="glass-card" style="padding:12px 14px; display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.02); border-color:var(--border-glass);">
-                            <div style="display:flex; align-items:center; gap:10px;">
-                                <div style="width:32px; height:32px; border-radius:8px; background:rgba(59,130,246,0.1); display:flex; align-items:center; justify-content:center; color:#60a5fa;">
-                                    <i data-lucide="${icon}" style="width:16px; height:16px;"></i>
+            if (!data.sessions || data.sessions.length === 0) {
+                container.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-muted);">No hay sesiones activas registradas.</div>';
+                return;
+            }
+
+            container.innerHTML = data.sessions.map(s => {
+                const icon = s.device_type === 'mobile' ? 'smartphone' : (s.device_type === 'tablet' ? 'tablet' : 'laptop');
+                return `
+                    <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 14px; background:var(--bg-muted); border:1px solid var(--border-subtle); border-radius:0.75rem;">
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <div style="width:32px; height:32px; border-radius:9999px; background:var(--bg-card); display:flex; align-items:center; justify-content:center; color:var(--text-secondary);">
+                                <i data-lucide="${icon}" style="width:16px; height:16px;"></i>
+                            </div>
+                            <div>
+                                <div style="font-size:0.82rem; font-weight:600; color:var(--text-primary); display:flex; align-items:center; gap:6px;">
+                                    ${escapeHtml(s.browser)} en ${escapeHtml(s.os)}
+                                    ${s.is_current ? '<span class="badge-pill badge-superadmin" style="font-size:0.65rem;">Actual</span>' : ''}
                                 </div>
-                                <div>
-                                    <div style="font-size:0.85rem; font-weight:600; color:var(--text-primary); display:flex; align-items:center; gap:6px;">
-                                        ${escapeHtml(s.device_info)}
-                                        ${s.is_current ? '<span class="badge-active" style="font-size:0.68rem; padding:1px 6px;">Esta Sesión</span>' : ''}
-                                    </div>
-                                    <div style="font-size:0.72rem; color:var(--text-muted); font-family:monospace; margin-top:2px;">
-                                        ${escapeHtml(s.browser_info)} · ${escapeHtml(s.ip_address)} · ${escapeHtml(s.last_activity)}
-                                    </div>
+                                <div style="font-size:0.72rem; color:var(--text-muted);">
+                                    IP: <code>${escapeHtml(s.ip_address)}</code> &bull; Activo: ${escapeHtml(s.last_activity)}
                                 </div>
                             </div>
-                            ${!s.is_current ? `
-                                <button type="button" class="btn-ghost" style="padding:4px 8px; font-size:0.72rem; color:#f87171;" onclick="revokeQuickSession('${s.session_key}')" title="Revocar sesión">
-                                    <i data-lucide="log-out" style="width:12px; height:12px;"></i>
-                                </button>
-                            ` : ''}
                         </div>
-                    `;
-                }).join('');
-                lucide.createIcons({ root: container });
-            }
+                        ${!s.is_current ? `
+                            <button type="button" class="btn-ghost" style="padding:4px 10px; font-size:0.72rem; color:#f87171;" onclick="revokeQuickSession('${s.session_key}')" title="Revocar sesión">
+                                <i data-lucide="log-out" style="width:12px; height:12px;"></i>
+                            </button>
+                        ` : ''}
+                    </div>
+                `;
+            }).join('');
+            lucide.createIcons({ root: container });
         } catch (err) {
             console.error('Error loading quick sessions:', err);
             container.innerHTML = '<div style="text-align:center; padding:20px; color:#f87171;">Error al cargar las sesiones.</div>';
@@ -1263,7 +937,6 @@
             .replace(/'/g, '&#039;');
     }
 
-    // ═════════ Modal Global de Alertas & Webhooks ═════════
     async function openAlertsModal() {
         const userMenu = document.getElementById('userDropdownMenu');
         if (userMenu) userMenu.style.display = 'none';
@@ -1292,8 +965,10 @@
                 const data = await res.json();
                 const input = document.getElementById('alertWebhookUrlInput');
                 const checkbox = document.getElementById('alertsEnabledCheckbox');
+                const spikeCheckbox = document.getElementById('alertsGrowthSpikeCheckbox');
                 if (input) input.value = data.webhook_url || '';
                 if (checkbox) checkbox.checked = data.enabled !== false;
+                if (spikeCheckbox) spikeCheckbox.checked = data.growth_spike_alert !== false;
             }
         } catch (e) {
             console.error('Error loading alerts config:', e);
@@ -1303,10 +978,12 @@
     async function saveAlertsConfig() {
         const input = document.getElementById('alertWebhookUrlInput');
         const checkbox = document.getElementById('alertsEnabledCheckbox');
+        const spikeCheckbox = document.getElementById('alertsGrowthSpikeCheckbox');
         const btn = document.getElementById('btnSaveAlertsConfig');
 
         const webhookUrl = input ? input.value.trim() : '';
         const enabled = checkbox ? checkbox.checked : true;
+        const growthSpike = spikeCheckbox ? spikeCheckbox.checked : true;
 
         if (btn) btn.disabled = true;
 
@@ -1320,6 +997,7 @@
                 body: JSON.stringify({
                     webhook_url: webhookUrl,
                     enabled: enabled,
+                    growth_spike_alert: growthSpike
                 })
             });
             const data = await res.json();
@@ -1410,7 +1088,6 @@
         if (e.target.id === 'alertsConfigModal') closeAlertsModal();
     });
 
-    // Toggle Universal del Sidebar (Desktop y Móvil)
     function toggleSidebar() {
         const sidebar = document.getElementById('mainSidebar');
         if (window.innerWidth <= 768) {
@@ -1434,7 +1111,6 @@
         }
     }
 
-    // Toggle de Tema (Dark / Light)
     function toggleTheme() {
         const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
         const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
@@ -1453,21 +1129,22 @@
         }
     }
 
-    // Restaurar preferencias al cargar la página
+    window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            closeQuickSessionsModal();
+            closeAlertsModal();
+        }
+    });
+
     document.addEventListener('DOMContentLoaded', () => {
-        // Restaurar estado de Sidebar en Desktop
         if (window.innerWidth > 768) {
             const isCollapsed = localStorage.getItem('sidebar_collapsed') === 'true';
             if (isCollapsed) {
                 document.getElementById('mainSidebar').classList.add('collapsed');
             }
         }
-        
-        // Restaurar estado de Iconos de Tema
         const activeTheme = document.documentElement.getAttribute('data-theme') || 'dark';
         updateThemeIcons(activeTheme);
-        
-        // Inicializar Lucide Icons
         lucide.createIcons();
     });
 </script>
