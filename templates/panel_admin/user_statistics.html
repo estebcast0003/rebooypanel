@@ -6,41 +6,25 @@
 
 {% block extra_css %}
 <style>
-    @keyframes modalIn {
-        from { opacity: 0; transform: scale(0.96); }
-        to { opacity: 1; transform: scale(1); }
+    .metric-card-shadcn {
+        background-color: var(--bg-card);
+        border: 1px solid var(--border-subtle);
+        border-radius: 1.25rem;
+        padding: 22px 24px;
+        transition: all 0.2s ease;
+        position: relative;
+        overflow: hidden;
     }
-    .metric-value {
-        font-size: 1.75rem;
+    .metric-card-shadcn:hover {
+        border-color: var(--border-highlight);
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+    }
+    .metric-value-huge {
+        font-size: 2rem;
         font-weight: 800;
+        letter-spacing: -0.03em;
         line-height: 1.1;
-        letter-spacing: -0.02em;
-    }
-    .growth-badge-up {
-        background: rgba(34, 197, 94, 0.12);
-        color: #4ade80;
-        border: 1px solid rgba(34, 197, 94, 0.25);
-        padding: 3px 8px;
-        border-radius: 6px;
-        font-size: 0.75rem;
-        font-weight: 600;
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        font-family: monospace;
-    }
-    .growth-badge-neutral {
-        background: rgba(148, 163, 184, 0.08);
-        color: #94a3b8;
-        border: 1px solid rgba(148, 163, 184, 0.15);
-        padding: 3px 8px;
-        border-radius: 6px;
-        font-size: 0.75rem;
-        font-weight: 600;
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        font-family: monospace;
     }
 </style>
 {% endblock %}
@@ -51,26 +35,23 @@
     <!-- ═════════ HEADER PRINCIPAL ═════════ -->
     <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px;">
         <div>
-            <h1 style="font-size:1.5rem; font-weight:700; color:var(--text-primary); margin:0 0 4px; display:flex; align-items:center; gap:10px;">
-                <div style="width:36px; height:36px; border-radius:10px; background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.25); display:flex; align-items:center; justify-content:center; color:#ef4444;">
-                    <i data-lucide="bar-chart-3" style="width:20px; height:20px;"></i>
-                </div>
+            <h1 style="font-size:1.85rem; font-weight:800; letter-spacing:-0.03em; color:var(--text-primary); margin:0 0 6px;">
                 {% if selected_user %}
                     Métricas de {{ selected_user.username }}
                 {% else %}
-                    Estadísticas & Métricas por Usuario
+                    Métricas por Usuario
                 {% endif %}
             </h1>
             <p style="font-size:0.875rem; color:var(--text-muted); margin:0;">
                 {% if selected_user %}
-                    Inspección individual de fanpages, crecimiento de seguidores y actividad de la cuenta.
+                    Inspección individual de fanpages monitoreadas, audiencia y actividad.
                 {% else %}
-                    Resumen comparativo de fanpages monitoreadas, volumen de seguidores y actividad de cada usuario.
+                    Resumen comparativo de fanpages monitoreadas, volumen de seguidores y actividad de cada cuenta.
                 {% endif %}
             </p>
         </div>
 
-        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
             {% if selected_user %}
                 <a href="{% url 'user_statistics' %}" class="btn-ghost">
                     <i data-lucide="arrow-left" style="width:14px; height:14px;"></i>
@@ -88,19 +69,19 @@
     <!-- ═════════ VISTA GENERAL: TABLA COMPARATIVA DE USUARIOS ═════════ -->
     
     <!-- Buscador -->
-    <form method="get" style="display:flex; gap:10px; max-width:380px;">
+    <form method="get" style="display:flex; gap:10px; max-width:340px;">
         <div style="position:relative; width:100%;">
-            <i data-lucide="search" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); width:14px; height:14px; color:var(--text-muted);"></i>
-            <input type="text" name="q" value="{{ query }}" placeholder="Filtrar usuario por nombre..." class="glass-input" style="width:100%; padding:8px 12px 8px 36px; border-radius:10px; font-size:0.85rem;">
+            <i data-lucide="search" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); width:15px; height:15px; color:var(--text-muted);"></i>
+            <input type="text" name="q" value="{{ query }}" placeholder="Filtrar usuario..." class="shadcn-input" style="width:100%; padding-left:36px !important;">
         </div>
         {% if query %}
-            <a href="{% url 'user_statistics' %}" class="btn-ghost" style="padding:8px 12px; font-size:0.85rem;">Limpiar</a>
+            <a href="{% url 'user_statistics' %}" class="btn-ghost" style="padding:6px 14px; font-size:0.8rem;">Limpiar</a>
         {% endif %}
     </form>
 
-    <div class="glass-card" style="padding:0; overflow:hidden;">
+    <div class="shadcn-card" style="padding:0; overflow:hidden;">
         <div style="overflow-x:auto;">
-            <table class="panel-table">
+            <table class="glass-table">
                 <thead>
                     <tr>
                         <th>Usuario</th>
@@ -109,7 +90,7 @@
                         <th style="text-align:right;">Seguidores Acumulados</th>
                         <th style="text-align:center;">Prompts IA</th>
                         <th style="text-align:center;">Fanpages IA</th>
-                        <th style="text-align:center; width:140px;">Acciones</th>
+                        <th style="text-align:right; width:140px;">Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -128,20 +109,20 @@
                         </td>
                         <td>
                             {% if item.user.role == 'superadmin' %}
-                                <span class="badge-superadmin">Super Admin</span>
+                                <span class="badge-pill badge-superadmin">Super Admin</span>
                             {% elif item.user.role == 'admin' %}
-                                <span class="badge-admin">Admin</span>
+                                <span class="badge-pill badge-admin">Admin</span>
                             {% else %}
-                                <span class="badge-user">User</span>
+                                <span class="badge-pill badge-user">User</span>
                             {% endif %}
                         </td>
                         <td style="text-align:center;">
-                            <span class="badge-active" style="font-family:monospace; font-size:0.85rem; font-weight:700; padding:4px 10px; border-radius:6px; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.2); color:#f87171;">
+                            <span class="badge-pill badge-user" style="font-family:monospace; font-weight:700;">
                                 {{ item.pages_count }}
                             </span>
                         </td>
                         <td style="text-align:right;">
-                            <span class="badge-active" title="{{ item.total_followers|floatformat:0 }} seguidores" style="font-family:monospace; font-size:0.88rem; font-weight:700; padding:4px 10px; border-radius:6px; background:rgba(34,197,94,0.12); border:1px solid rgba(34,197,94,0.25); cursor:help;">
+                            <span class="badge-pill badge-superadmin" title="{{ item.total_followers|floatformat:0 }} seguidores" style="font-family:monospace; font-weight:700; font-size:0.85rem; background:rgba(34,197,94,0.12); color:#22c55e; border-color:rgba(34,197,94,0.25);">
                                 {{ item.formatted_followers }}
                             </span>
                         </td>
@@ -151,8 +132,8 @@
                         <td style="text-align:center; font-family:monospace; font-size:0.85rem; color:var(--text-primary);">
                             {{ item.fanpages_count }}
                         </td>
-                        <td style="text-align:center;">
-                            <a href="{% url 'user_statistics' %}?user_id={{ item.user.id }}" class="btn-brand" style="padding:5px 12px; font-size:0.78rem; text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
+                        <td style="text-align:right;">
+                            <a href="{% url 'user_statistics' %}?user_id={{ item.user.id }}" class="btn-brand" style="padding:4px 14px; font-size:0.75rem; text-decoration:none;">
                                 <i data-lucide="eye" style="width:13px; height:13px;"></i>
                                 Inspeccionar
                             </a>
@@ -177,77 +158,76 @@
     <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:16px;">
         
         <!-- Total Fanpages -->
-        <div class="glass-card" style="padding:20px; position:relative; overflow:hidden;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                <span style="font-size:0.75rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-secondary);">Fanpages Monitoreadas</span>
-                <div style="width:34px; height:34px; border-radius:8px; background:rgba(239,68,68,0.12); display:flex; align-items:center; justify-content:center;">
-                    <i data-lucide="layers" style="width:16px; height:16px; color:#ef4444;"></i>
+        <div class="metric-card-shadcn">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px;">
+                <span style="font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-muted);">Fanpages Monitoreadas</span>
+                <div style="width:34px; height:34px; border-radius:9999px; background:rgba(239,68,68,0.12); display:flex; align-items:center; justify-content:center; color:#ef4444;">
+                    <i data-lucide="layers" style="width:16px; height:16px;"></i>
                 </div>
             </div>
             <div style="display:flex; align-items:baseline; gap:8px;">
-                <span class="metric-value" style="color:var(--text-primary);">{{ selected_user_metrics.total_pages }}</span>
-                <span style="font-size:0.78rem; color:var(--text-muted);">páginas activas</span>
+                <span class="metric-value-huge" style="color:var(--text-primary);">{{ selected_user_metrics.total_pages }}</span>
+                <span class="badge-pill badge-user" style="font-size:0.68rem;">activas</span>
             </div>
         </div>
 
         <!-- Total Seguidores -->
-        <div class="glass-card" style="padding:20px; position:relative; overflow:hidden;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                <span style="font-size:0.75rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-secondary);">Seguidores Acumulados</span>
-                <div style="width:34px; height:34px; border-radius:8px; background:rgba(34,197,94,0.12); display:flex; align-items:center; justify-content:center;">
-                    <i data-lucide="users" style="width:16px; height:16px; color:#22c55e;"></i>
+        <div class="metric-card-shadcn">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px;">
+                <span style="font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-muted);">Audiencia Total</span>
+                <div style="width:34px; height:34px; border-radius:9999px; background:rgba(34,197,94,0.12); display:flex; align-items:center; justify-content:center; color:#22c55e;">
+                    <i data-lucide="users" style="width:16px; height:16px;"></i>
                 </div>
             </div>
             <div style="display:flex; align-items:baseline; gap:8px;">
-                <span class="metric-value" style="color:#22c55e;" title="{{ selected_user_metrics.total_followers|floatformat:0 }} seguidores">{{ selected_user_metrics.formatted_followers }}</span>
-                <span style="font-size:0.78rem; color:var(--text-muted);">seguidores</span>
+                <span class="metric-value-huge" style="color:#22c55e;" title="{{ selected_user_metrics.total_followers|floatformat:0 }} seguidores">{{ selected_user_metrics.formatted_followers }}</span>
+                <span class="badge-pill badge-superadmin" style="font-size:0.68rem; background:rgba(34,197,94,0.12); color:#22c55e; border-color:rgba(34,197,94,0.25);">seguidores</span>
             </div>
         </div>
 
         <!-- Prompts IA -->
-        <div class="glass-card" style="padding:20px; position:relative; overflow:hidden;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                <span style="font-size:0.75rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-secondary);">Prompts IA Creados</span>
-                <div style="width:34px; height:34px; border-radius:8px; background:rgba(59,130,246,0.12); display:flex; align-items:center; justify-content:center;">
-                    <i data-lucide="clapperboard" style="width:16px; height:16px; color:#60a5fa;"></i>
+        <div class="metric-card-shadcn">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px;">
+                <span style="font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-muted);">Prompts IA Creados</span>
+                <div style="width:34px; height:34px; border-radius:9999px; background:rgba(59,130,246,0.12); display:flex; align-items:center; justify-content:center; color:#3b82f6;">
+                    <i data-lucide="clapperboard" style="width:16px; height:16px;"></i>
                 </div>
             </div>
             <div style="display:flex; align-items:baseline; gap:8px;">
-                <span class="metric-value" style="color:var(--text-primary);">{{ selected_user_metrics.total_prompts }}</span>
-                <span style="font-size:0.78rem; color:var(--text-muted);">completados</span>
+                <span class="metric-value-huge" style="color:var(--text-primary);">{{ selected_user_metrics.total_prompts }}</span>
+                <span class="badge-pill badge-admin" style="font-size:0.68rem;">completados</span>
             </div>
         </div>
 
         <!-- Fanpages IA -->
-        <div class="glass-card" style="padding:20px; position:relative; overflow:hidden;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                <span style="font-size:0.75rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-secondary);">Fanpages IA Creadas</span>
-                <div style="width:34px; height:34px; border-radius:8px; background:rgba(234,179,8,0.12); display:flex; align-items:center; justify-content:center;">
-                    <i data-lucide="sparkles" style="width:16px; height:16px; color:#facc15;"></i>
+        <div class="metric-card-shadcn">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px;">
+                <span style="font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-muted);">Fanpages IA Creadas</span>
+                <div style="width:34px; height:34px; border-radius:9999px; background:rgba(250,204,21,0.12); display:flex; align-items:center; justify-content:center; color:#facc15;">
+                    <i data-lucide="sparkles" style="width:16px; height:16px;"></i>
                 </div>
             </div>
             <div style="display:flex; align-items:baseline; gap:8px;">
-                <span class="metric-value" style="color:var(--text-primary);">{{ selected_user_metrics.total_fanpages }}</span>
-                <span style="font-size:0.78rem; color:var(--text-muted);">perfiles</span>
+                <span class="metric-value-huge" style="color:var(--text-primary);">{{ selected_user_metrics.total_fanpages }}</span>
+                <span class="badge-pill badge-user" style="font-size:0.68rem;">perfiles</span>
             </div>
         </div>
 
     </div>
 
-    <!-- Tabla de Fanpages del Usuario Seleccionado con Historial de Crecimiento -->
-    <div class="glass-card" style="padding:0; overflow:hidden;">
-        <div style="padding:18px 24px; border-bottom:1px solid var(--border-glass); display:flex; justify-content:space-between; align-items:center;">
+    <!-- Tabla de Fanpages del Usuario Seleccionado -->
+    <div class="shadcn-card" style="padding:0; overflow:hidden;">
+        <div style="padding:16px 20px; border-bottom:1px solid var(--border-subtle); display:flex; justify-content:space-between; align-items:center;">
             <div style="display:flex; align-items:center; gap:10px;">
-                <i data-lucide="activity" style="width:18px; height:18px; color:#ef4444;"></i>
-                <h2 style="font-size:1.05rem; font-weight:600; color:var(--text-primary); margin:0;">
+                <h2 style="font-size:1rem; font-weight:700; color:var(--text-primary); margin:0;">
                     Fanpages Monitoreadas de {{ selected_user.username }}
                 </h2>
-                <span class="badge-admin" style="font-family:monospace; font-size:0.78rem;">{{ selected_user_pages.count }}</span>
+                <span class="badge-pill badge-user" style="font-family:monospace;">{{ selected_user_pages.count }}</span>
             </div>
         </div>
 
         <div style="overflow-x:auto;">
-            <table class="panel-table">
+            <table class="glass-table">
                 <thead>
                     <tr>
                         <th style="width:50px; text-align:center;">#</th>
@@ -261,28 +241,27 @@
                 <tbody>
                     {% for page in selected_user_pages %}
                     <tr>
-                        <td style="text-align:center; font-family:monospace; color:var(--text-muted);">{{ page.id }}</td>
+                        <td style="text-align:center; font-family:monospace; color:var(--text-muted); font-size:0.8rem;">{{ page.id }}</td>
                         <td>
                             <div style="font-weight:600; color:var(--text-primary); font-size:0.9rem;">{{ page.name }}</div>
-                            <a href="{{ page.url }}" target="_blank" rel="noopener noreferrer" style="font-size:0.76rem; color:var(--text-muted); font-family:monospace; text-decoration:none;" onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='var(--text-muted)'">
+                            <a href="{{ page.url }}" target="_blank" rel="noopener noreferrer" style="font-size:0.75rem; color:var(--text-muted); font-family:monospace; text-decoration:none;" onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='var(--text-muted)'">
                                 {{ page.url }}
                             </a>
                         </td>
                         <td style="text-align:right;">
-                            <span class="badge-active" title="{{ page.followers|floatformat:0 }} seguidores" style="font-family:monospace; font-weight:700; font-size:0.88rem; background:rgba(34,197,94,0.12); padding:4px 10px; border-radius:6px; border:1px solid rgba(34,197,94,0.25); cursor:help;">
+                            <span class="badge-pill badge-superadmin" title="{{ page.followers|floatformat:0 }} seguidores" style="font-family:monospace; font-weight:700; font-size:0.85rem; background:rgba(34,197,94,0.12); color:#22c55e; border-color:rgba(34,197,94,0.25);">
                                 {{ page.formatted_followers }}
                             </span>
                         </td>
                         <td style="text-align:center;">
                             {% with growth=page.growth_data %}
                                 {% if growth.is_positive %}
-                                    <span class="growth-badge-up" title="Crecimiento desde el primer registro: {{ growth.delta|floatformat:0 }} seguidores">
+                                    <span class="badge-pill" style="background:rgba(34,197,94,0.12); color:#22c55e; border:1px solid rgba(34,197,94,0.25); font-family:monospace;" title="Crecimiento: {{ growth.delta|floatformat:0 }} seguidores">
                                         <i data-lucide="trending-up" style="width:12px; height:12px;"></i>
-                                        {{ growth.formatted_delta }} ({{ growth.formatted_pct }})
+                                        +{{ growth.formatted_delta }} ({{ growth.formatted_pct }})
                                     </span>
                                 {% else %}
-                                    <span class="growth-badge-neutral" title="Sin variación registrada">
-                                        <i data-lucide="minus" style="width:12px; height:12px;"></i>
+                                    <span class="badge-pill badge-user" style="font-family:monospace;">
                                         0 (0%)
                                     </span>
                                 {% endif %}
@@ -290,23 +269,23 @@
                         </td>
                         <td style="text-align:center;">
                             {% if page.followers > 0 %}
-                            <span class="badge-active" style="font-size:0.75rem; padding:4px 10px; border-radius:999px; background:rgba(34,197,94,0.1); border:1px solid rgba(34,197,94,0.2);">
-                                <i data-lucide="check" style="width:12px; height:12px;"></i> Éxito
+                            <span class="badge-pill" style="background:rgba(34,197,94,0.12); color:#22c55e; border:1px solid rgba(34,197,94,0.25);">
+                                <i data-lucide="check" style="width:11px; height:11px;"></i> Activa
                             </span>
                             {% else %}
-                            <span class="badge-inactive" style="font-size:0.75rem; padding:4px 10px; border-radius:999px; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.2); color:#f87171;" title="{{ page.status }}">
-                                <i data-lucide="alert-triangle" style="width:12px; height:12px;"></i> {{ page.status|truncatechars:18 }}
+                            <span class="badge-pill badge-superadmin" title="{{ page.status }}">
+                                <i data-lucide="alert-triangle" style="width:11px; height:11px;"></i> {{ page.status|truncatechars:14 }}
                             </span>
                             {% endif %}
                         </td>
                         <td style="text-align:center;">
                             <div style="display:flex; align-items:center; justify-content:center; gap:6px;">
-                                <button type="button" class="btn-ghost" style="padding:4px 10px; font-size:0.75rem;" onclick="openGrowthModal({{ page.id }})" title="Ver tabla de evolución histórica">
-                                    <i data-lucide="line-chart" style="width:13px; height:13px; color:#22c55e;"></i>
+                                <button type="button" class="btn-ghost" style="padding:4px 10px; font-size:0.72rem;" onclick="openGrowthModal({{ page.id }})" title="Ver tabla de evolución">
+                                    <i data-lucide="line-chart" style="width:12px; height:12px; color:#22c55e;"></i>
                                     Historial
                                 </button>
-                                <a href="{{ page.url }}" target="_blank" rel="noopener noreferrer" class="action-btn action-btn-edit" title="Abrir en Facebook">
-                                    <i data-lucide="external-link"></i>
+                                <a href="{{ page.url }}" target="_blank" rel="noopener noreferrer" class="action-pill-btn" style="width:28px; height:28px;" title="Abrir en Facebook">
+                                    <i data-lucide="external-link" style="width:13px; height:13px;"></i>
                                 </a>
                             </div>
                         </td>
@@ -327,47 +306,47 @@
 
 </div>
 
-<!-- ═════════ MODAL GLASSMORPHISM: HISTORIAL DE CRECIMIENTO ═════════ -->
-<div id="growthHistoryModal" style="display:none; position:fixed; inset:0; z-index:10000; background:rgba(2, 6, 23, 0.85); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); align-items:center; justify-content:center; padding:16px;">
-    <div class="glass-card" style="width:100%; max-width:680px; max-height:85vh; display:flex; flex-direction:column; border:1px solid var(--border-glass); box-shadow:0 25px 50px -12px rgba(0,0,0,0.8); animation:modalIn 0.22s ease-out; overflow:hidden;">
+<!-- ═════════ MODAL SHADCN / RADIX: HISTORIAL DE CRECIMIENTO ═════════ -->
+<div id="growthHistoryModal" style="display:none; position:fixed; inset:0; z-index:100000; background:var(--modal-backdrop); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); align-items:center; justify-content:center; padding:16px;">
+    <div class="shadcn-card" style="width:100%; max-width:680px; max-height:85vh; display:flex; flex-direction:column; animation:modalIn 0.22s ease-out; overflow:hidden;">
         
         <!-- Modal Header -->
-        <div style="padding:18px 24px; border-bottom:1px solid var(--border-glass); display:flex; justify-content:space-between; align-items:center;">
+        <div style="padding:18px 24px; border-bottom:1px solid var(--border-subtle); display:flex; justify-content:space-between; align-items:center;">
             <div style="display:flex; align-items:center; gap:12px;">
-                <div style="width:38px; height:38px; border-radius:10px; background:rgba(34,197,94,0.12); border:1px solid rgba(34,197,94,0.25); display:flex; align-items:center; justify-content:center; color:#22c55e;">
-                    <i data-lucide="trending-up" style="width:20px; height:20px;"></i>
+                <div style="width:36px; height:36px; border-radius:9999px; background:rgba(34,197,94,0.12); border:1px solid rgba(34,197,94,0.25); display:flex; align-items:center; justify-content:center; color:#22c55e;">
+                    <i data-lucide="trending-up" style="width:18px; height:18px;"></i>
                 </div>
                 <div>
-                    <h3 id="growthModalTitle" style="font-size:1.1rem; font-weight:700; color:var(--text-primary); margin:0;">Historial de Crecimiento</h3>
+                    <h3 id="growthModalTitle" style="font-size:1.05rem; font-weight:700; color:var(--text-primary); margin:0;">Historial de Crecimiento</h3>
                     <span id="growthModalUrl" style="font-size:0.75rem; color:var(--text-muted); font-family:monospace;"></span>
                 </div>
             </div>
-            <button type="button" class="action-btn" onclick="closeGrowthModal()" style="width:32px; height:32px;">
+            <button type="button" class="action-pill-btn" onclick="closeGrowthModal()">
                 <i data-lucide="x"></i>
             </button>
         </div>
 
         <!-- Growth Summary Highlights -->
-        <div style="padding:16px 24px; background:var(--bg-glass-input); border-bottom:1px solid var(--border-glass); display:grid; grid-template-columns:repeat(3, 1fr); gap:12px;">
-            <div style="text-align:center; padding:8px; background:rgba(255,255,255,0.02); border-radius:8px;">
-                <div style="font-size:0.7rem; color:var(--text-secondary); text-transform:uppercase;">Seguidores Iniciales</div>
+        <div style="padding:14px 24px; background:var(--bg-muted); border-bottom:1px solid var(--border-subtle); display:grid; grid-template-columns:repeat(3, 1fr); gap:12px;">
+            <div style="text-align:center; padding:8px; background:var(--bg-card); border-radius:0.75rem; border:1px solid var(--border-subtle);">
+                <div style="font-size:0.7rem; color:var(--text-muted); text-transform:uppercase; font-weight:700;">Seguidores Iniciales</div>
                 <div id="growthModalInitial" style="font-size:1.1rem; font-weight:700; color:var(--text-primary); font-family:monospace;">-</div>
             </div>
-            <div style="text-align:center; padding:8px; background:rgba(255,255,255,0.02); border-radius:8px;">
-                <div style="font-size:0.7rem; color:var(--text-secondary); text-transform:uppercase;">Seguidores Actuales</div>
+            <div style="text-align:center; padding:8px; background:var(--bg-card); border-radius:0.75rem; border:1px solid var(--border-subtle);">
+                <div style="font-size:0.7rem; color:var(--text-muted); text-transform:uppercase; font-weight:700;">Seguidores Actuales</div>
                 <div id="growthModalCurrent" style="font-size:1.1rem; font-weight:700; color:#22c55e; font-family:monospace;">-</div>
             </div>
-            <div style="text-align:center; padding:8px; background:rgba(255,255,255,0.02); border-radius:8px;">
-                <div style="font-size:0.7rem; color:var(--text-secondary); text-transform:uppercase;">Crecimiento Total</div>
+            <div style="text-align:center; padding:8px; background:var(--bg-card); border-radius:0.75rem; border:1px solid var(--border-subtle);">
+                <div style="font-size:0.7rem; color:var(--text-muted); text-transform:uppercase; font-weight:700;">Crecimiento Total</div>
                 <div id="growthModalTotalDelta" style="font-size:1.1rem; font-weight:700; color:#22c55e; font-family:monospace;">-</div>
             </div>
         </div>
 
         <!-- Interactive Chart Visualizer -->
-        <div style="padding:14px 20px; border-bottom:1px solid var(--border-glass); background:rgba(0,0,0,0.12);">
+        <div style="padding:14px 20px; border-bottom:1px solid var(--border-subtle); background:var(--bg-card);">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                <span style="font-size:0.75rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-secondary);">Curva de Evolución de Seguidores</span>
-                <span class="badge-admin" style="font-size:0.7rem; padding:2px 8px;">Tendencia</span>
+                <span style="font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-muted);">Curva de Evolución</span>
+                <span class="badge-pill badge-admin" style="font-size:0.7rem;">Tendencia</span>
             </div>
             <div style="height:150px; position:relative; width:100%;">
                 <canvas id="growthChartCanvas"></canvas>
@@ -376,7 +355,7 @@
 
         <!-- Snapshots Table with Scroll -->
         <div style="overflow-y:auto; max-height:220px; flex:1; padding:0;">
-            <table class="panel-table" style="margin:0;">
+            <table class="glass-table" style="margin:0;">
                 <thead>
                     <tr>
                         <th>Fecha / Hora</th>
@@ -395,7 +374,7 @@
         </div>
 
         <!-- Modal Footer -->
-        <div style="padding:14px 24px; border-top:1px solid var(--border-glass); display:flex; justify-content:flex-end;">
+        <div style="padding:14px 24px; border-top:1px solid var(--border-subtle); display:flex; justify-content:flex-end;">
             <button type="button" class="btn-ghost" onclick="closeGrowthModal()">Cerrar</button>
         </div>
     </div>
@@ -451,8 +430,8 @@
                 plugins: {
                     legend: { display: false },
                     tooltip: {
-                        backgroundColor: 'rgba(15, 23, 42, 0.95)',
-                        titleColor: '#e2e8f0',
+                        backgroundColor: 'rgba(24, 24, 27, 0.95)',
+                        titleColor: '#fafafa',
                         bodyColor: '#4ade80',
                         borderColor: 'rgba(255, 255, 255, 0.1)',
                         borderWidth: 1,
@@ -468,12 +447,12 @@
                 scales: {
                     x: {
                         grid: { color: 'rgba(255, 255, 255, 0.04)' },
-                        ticks: { color: '#64748b', font: { size: 10 } }
+                        ticks: { color: '#71717a', font: { size: 10 } }
                     },
                     y: {
                         grid: { color: 'rgba(255, 255, 255, 0.04)' },
                         ticks: {
-                            color: '#64748b',
+                            color: '#71717a',
                             font: { size: 10 }
                         }
                     }
@@ -531,18 +510,17 @@
                             </td>
                             <td style="text-align:right;">
                                 ${item.is_positive ? `
-                                    <span class="growth-badge-up">
+                                    <span class="badge-pill" style="background:rgba(34,197,94,0.12); color:#22c55e; border:1px solid rgba(34,197,94,0.25); font-family:monospace;">
                                         <i data-lucide="trending-up" style="width:11px; height:11px;"></i>
                                         ${item.formatted_delta}
                                     </span>
                                 ` : item.is_negative ? `
-                                    <span style="background:rgba(239,68,68,0.12); color:#f87171; border:1px solid rgba(239,68,68,0.25); padding:3px 8px; border-radius:6px; font-size:0.75rem; font-weight:600; display:inline-flex; align-items:center; gap:4px; font-family:monospace;">
+                                    <span class="badge-pill" style="background:rgba(239,68,68,0.12); color:#f87171; border:1px solid rgba(239,68,68,0.25); font-family:monospace;">
                                         <i data-lucide="trending-down" style="width:11px; height:11px;"></i>
                                         ${item.formatted_delta}
                                     </span>
                                 ` : `
-                                    <span class="growth-badge-neutral">
-                                        <i data-lucide="minus" style="width:11px; height:11px;"></i>
+                                    <span class="badge-pill badge-user" style="font-family:monospace;">
                                         0
                                     </span>
                                 `}

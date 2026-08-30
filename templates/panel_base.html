@@ -404,13 +404,13 @@
             border: 1px solid var(--border-subtle);
         }
 
-        /* ── Tablas Shadcn ── */
-        .glass-table {
+        /* ── Tablas Shadcn & Panel Table ── */
+        .glass-table, .panel-table {
             width: 100%;
             border-collapse: separate;
             border-spacing: 0;
         }
-        .glass-table th {
+        .glass-table th, .panel-table th {
             padding: 12px 16px;
             font-size: 0.75rem;
             font-weight: 600;
@@ -420,18 +420,158 @@
             border-bottom: 1px solid var(--border-subtle);
             text-align: left;
         }
-        .glass-table td {
+        .glass-table td, .panel-table td {
             padding: 14px 16px;
             font-size: 0.85rem;
             color: var(--text-primary);
             border-bottom: 1px solid var(--border-subtle);
             vertical-align: middle;
         }
-        .glass-table tr:last-child td {
+        .glass-table tr:last-child td, .panel-table tr:last-child td {
             border-bottom: none;
         }
-        .glass-table tr:hover td {
+        .glass-table tr:hover td, .panel-table tr:hover td {
             background-color: var(--bg-muted);
+        }
+
+        /* ── Componentes de Administración (Avatar, Badges, Botones) ── */
+        .avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 9999px;
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: #ffffff;
+            font-weight: 700;
+            font-size: 0.78rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .badge-active {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 3px 10px;
+            border-radius: 9999px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            background-color: rgba(34, 197, 94, 0.12);
+            color: #22c55e;
+            border: 1px solid rgba(34, 197, 94, 0.25);
+        }
+
+        .badge-inactive {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 3px 10px;
+            border-radius: 9999px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            background-color: rgba(239, 68, 68, 0.12);
+            color: #f87171;
+            border: 1px solid rgba(239, 68, 68, 0.25);
+        }
+
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 9999px;
+            display: inline-block;
+            flex-shrink: 0;
+        }
+
+        .action-btn {
+            background-color: var(--action-btn-bg);
+            border: 1px solid var(--action-btn-border);
+            border-radius: 9999px;
+            width: 32px;
+            height: 32px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.16s ease;
+            color: var(--text-secondary);
+            text-decoration: none;
+        }
+        .action-btn:hover {
+            background-color: var(--bg-muted);
+            color: var(--text-primary);
+            border-color: var(--border-highlight);
+            transform: translateY(-1px);
+        }
+        .action-btn [data-lucide], .action-btn i {
+            width: 14px;
+            height: 14px;
+        }
+        .action-btn-edit:hover {
+            color: #38bdf8;
+        }
+        .action-btn-delete:hover {
+            color: #ef4444;
+        }
+        .action-btn-toggle:hover {
+            color: #facc15;
+        }
+
+        /* ── Role Card & Permissions ── */
+        .role-card {
+            border: 1px solid var(--border-subtle);
+            border-radius: 1rem;
+            padding: 14px 16px;
+            cursor: pointer;
+            transition: all 0.18s ease;
+            background-color: var(--bg-card);
+            position: relative;
+        }
+        .role-card:hover {
+            border-color: var(--border-highlight);
+            background-color: var(--bg-muted);
+        }
+        .role-card.selected {
+            border-color: #ef4444;
+            background-color: var(--primary-brand-soft);
+        }
+
+        .perm-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 14px;
+            border-radius: 0.75rem;
+            background-color: var(--bg-muted);
+            border: 1px solid var(--border-subtle);
+            transition: all 0.15s ease;
+        }
+        .perm-row:hover {
+            border-color: var(--border-highlight);
+        }
+
+        /* ── Mensajes Flash / Alerts ── */
+        .alert-success {
+            background-color: rgba(34, 197, 94, 0.12);
+            border: 1px solid rgba(34, 197, 94, 0.25);
+            color: #4ade80;
+            padding: 10px 16px;
+            border-radius: 9999px;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .alert-error {
+            background-color: rgba(239, 68, 68, 0.12);
+            border: 1px solid rgba(239, 68, 68, 0.25);
+            color: #f87171;
+            padding: 10px 16px;
+            border-radius: 9999px;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
         /* ── Scrollbar Minimalista ── */

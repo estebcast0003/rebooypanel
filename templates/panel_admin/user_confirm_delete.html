@@ -2,38 +2,37 @@
 
 {% block title %}Eliminar Usuario — Rebooy Panel{% endblock %}
 {% block breadcrumb %}
-    <a href="{% url 'user_list' %}" style="color:#475569;text-decoration:none;">Usuarios</a>
-    <span style="margin:0 6px;color:#334155;">/</span>
-    <span style="color:#f87171;">Eliminar</span>
+    <a href="{% url 'user_list' %}" style="color:var(--text-secondary); text-decoration:none;">Usuarios</a>
+    <span style="margin:0 6px; color:var(--text-muted);">/</span>
+    <span style="color:#ef4444; font-weight:600;">Eliminar</span>
 {% endblock %}
 
 {% block content %}
-
-<div style="display:flex;align-items:center;justify-content:center;min-height:60vh;">
-    <div class="glass-card" style="padding:36px;max-width:420px;width:100%;text-align:center;">
+<div style="display:flex; align-items:center; justify-content:center; min-height:60vh;">
+    <div class="shadcn-card" style="padding:36px; max-width:440px; width:100%; text-align:center;">
 
         <!-- Danger icon -->
-        <div style="width:56px;height:56px;border-radius:16px;background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.2);display:flex;align-items:center;justify-content:center;margin:0 auto 20px;">
-            <i data-lucide="trash-2" style="width:24px;height:24px;color:#f87171;"></i>
+        <div style="width:52px; height:52px; border-radius:9999px; background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.25); display:flex; align-items:center; justify-content:center; margin:0 auto 20px; color:#ef4444;">
+            <i data-lucide="trash-2" style="width:24px; height:24px;"></i>
         </div>
 
-        <h2 style="font-size:1.25rem;font-weight:700;color:#f1f5f9;margin:0 0 8px;">Eliminar usuario</h2>
-        <p style="font-size:0.875rem;color:#64748b;margin:0 0 6px;">Esta acción es permanente e irreversible.</p>
-        <p style="font-size:1rem;color:#e2e8f0;margin:0 0 28px;">
-            ¿Eliminás a <span style="color:#f87171;font-weight:700;">{{ target.username }}</span>?
-        </p>
+        <h2 style="font-size:1.35rem; font-weight:800; letter-spacing:-0.02em; color:var(--text-primary); margin:0 0 8px;">¿Eliminar usuario?</h2>
+        <p style="font-size:0.875rem; color:var(--text-muted); margin:0 0 16px;">Esta acción es permanente e irreversible.</p>
+        
+        <div style="margin-bottom:28px;">
+            <span class="badge-pill badge-superadmin" style="font-size:1rem; padding:6px 16px;">{{ target.username }}</span>
+        </div>
 
-        <div style="display:flex;gap:10px;">
-            <form method="post" style="flex:1;">
+        <div style="display:flex; gap:10px; justify-content:center;">
+            <a href="{% url 'user_list' %}" class="btn-ghost" style="flex:1; justify-content:center;">Cancelar</a>
+            <form method="post" style="flex:1; margin:0;">
                 {% csrf_token %}
-                <button type="submit" class="btn-danger" style="width:100%;justify-content:center;">
-                    <i data-lucide="trash-2"></i>
+                <button type="submit" class="btn-danger" style="width:100%; justify-content:center;">
+                    <i data-lucide="trash-2" style="width:14px; height:14px;"></i>
                     Sí, eliminar
                 </button>
             </form>
-            <a href="{% url 'user_list' %}" class="btn-ghost">Cancelar</a>
         </div>
     </div>
 </div>
-
 {% endblock %}
