@@ -284,7 +284,7 @@
             background: #f1f5f9 !important;
         }
 
-        /* ── Botones Principales de Marca ── */
+        /* ── Sistema Universal de Botones Glassmorphism ── */
         .btn-brand,
         html[data-theme="light"] .btn-brand,
         html[data-theme="dark"] .btn-brand {
@@ -293,31 +293,158 @@
             color: #ffffff !important;
             font-weight: 600 !important;
             border-radius: 10px !important;
-            padding: 10px 22px !important;
-            font-size: 0.875rem !important;
+            padding: 8px 18px !important;
+            font-size: 0.85rem !important;
+            height: 38px !important;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 8px !important;
+            text-decoration: none !important;
+            border: 1px solid rgba(239, 68, 68, 0.4) !important;
+            cursor: pointer !important;
+            white-space: nowrap !important;
+        }
+        .btn-brand:hover,
+        html[data-theme="light"] .btn-brand:hover,
+        html[data-theme="dark"] .btn-brand:hover {
+            transform: translateY(-1px) !important;
+            box-shadow: 0 6px 22px rgba(239, 68, 68, 0.5) !important;
+            background: linear-gradient(135deg, #b91c1c, #dc2626) !important;
+            color: #ffffff !important;
+        }
+        .btn-brand [data-lucide], .btn-brand i { 
+            color: #ffffff !important;
+            width: 15px !important; 
+            height: 15px !important; 
+        }
+
+        /* Botón Secundario / Ghost (Alertas, Excel, CSV, Gestionar Cuentas, etc.) */
+        .btn-ghost,
+        html[data-theme="dark"] .btn-ghost {
+            background: rgba(30, 41, 59, 0.70) !important;
+            backdrop-filter: blur(12px) !important;
+            -webkit-backdrop-filter: blur(12px) !important;
+            border: 1px solid rgba(255, 255, 255, 0.14) !important;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+            color: #e2e8f0 !important;
+            font-weight: 500 !important;
+            border-radius: 10px !important;
+            padding: 8px 16px !important;
+            font-size: 0.85rem !important;
+            height: 38px !important;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 8px !important;
+            text-decoration: none !important;
+            cursor: pointer !important;
+            white-space: nowrap !important;
+        }
+        .btn-ghost:hover,
+        html[data-theme="dark"] .btn-ghost:hover {
+            background: rgba(51, 65, 85, 0.90) !important;
+            border-color: rgba(255, 255, 255, 0.25) !important;
+            color: #ffffff !important;
+            transform: translateY(-1px) !important;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3) !important;
+        }
+        .btn-ghost:active,
+        html[data-theme="dark"] .btn-ghost:active {
+            transform: translateY(0) !important;
+        }
+        .btn-ghost [data-lucide], .btn-ghost i {
+            width: 15px !important;
+            height: 15px !important;
+            flex-shrink: 0 !important;
+        }
+
+        html[data-theme="light"] .btn-ghost {
+            background: #ffffff !important;
+            border: 1px solid #cbd5e1 !important;
+            color: #334155 !important;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+            font-weight: 500 !important;
+            border-radius: 10px !important;
+            padding: 8px 16px !important;
+            font-size: 0.85rem !important;
+            height: 38px !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 8px !important;
+            text-decoration: none !important;
+            cursor: pointer !important;
+            white-space: nowrap !important;
+        }
+        html[data-theme="light"] .btn-ghost:hover {
+            background: #f1f5f9 !important;
+            border-color: #94a3b8 !important;
+            color: #0f172a !important;
+            transform: translateY(-1px) !important;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+        }
+
+        /* Botón Secundario con Tinte Azul */
+        .btn-secondary,
+        html[data-theme="dark"] .btn-secondary {
+            background: rgba(59, 130, 246, 0.12) !important;
+            border: 1px solid rgba(59, 130, 246, 0.3) !important;
+            color: #60a5fa !important;
+            font-weight: 600 !important;
+            border-radius: 10px !important;
+            padding: 8px 16px !important;
+            font-size: 0.85rem !important;
+            height: 38px !important;
             transition: all 0.2s ease !important;
             display: inline-flex !important;
             align-items: center !important;
             justify-content: center !important;
             gap: 8px !important;
             text-decoration: none !important;
-            border: none !important;
             cursor: pointer !important;
+            white-space: nowrap !important;
         }
-        .btn-brand:hover,
-        html[data-theme="light"] .btn-brand:hover,
-        html[data-theme="dark"] .btn-brand:hover {
+        .btn-secondary:hover,
+        html[data-theme="dark"] .btn-secondary:hover {
+            background: rgba(59, 130, 246, 0.22) !important;
+            border-color: rgba(59, 130, 246, 0.45) !important;
+            color: #93c5fd !important;
             transform: translateY(-1px) !important;
-            box-shadow: 0 6px 24px rgba(239, 68, 68, 0.5) !important;
-            background: linear-gradient(135deg, #b91c1c, #dc2626) !important;
-            color: #ffffff !important;
+            box-shadow: 0 4px 14px rgba(59, 130, 246, 0.25) !important;
         }
-        .btn-brand [data-lucide], .btn-brand i { 
-            color: #ffffff !important;
-            width: 16px !important; 
-            height: 16px !important; 
+        .btn-secondary [data-lucide], .btn-secondary i {
+            width: 15px !important;
+            height: 15px !important;
         }
 
+        html[data-theme="light"] .btn-secondary {
+            background: #eff6ff !important;
+            border: 1px solid #bfdbfe !important;
+            color: #2563eb !important;
+            font-weight: 600 !important;
+            border-radius: 10px !important;
+            padding: 8px 16px !important;
+            font-size: 0.85rem !important;
+            height: 38px !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 8px !important;
+            text-decoration: none !important;
+            cursor: pointer !important;
+            white-space: nowrap !important;
+        }
+        html[data-theme="light"] .btn-secondary:hover {
+            background: #dbeafe !important;
+            border-color: #93c5fd !important;
+            color: #1d4ed8 !important;
+            transform: translateY(-1px) !important;
+        }
+
+        /* Botón Peligro */
         .btn-danger,
         html[data-theme="light"] .btn-danger,
         html[data-theme="dark"] .btn-danger {
@@ -326,8 +453,9 @@
             color: #ffffff !important;
             font-weight: 600 !important;
             border-radius: 10px !important;
-            padding: 10px 20px !important;
-            font-size: 0.875rem !important;
+            padding: 8px 18px !important;
+            font-size: 0.85rem !important;
+            height: 38px !important;
             transition: all 0.2s ease !important;
             display: inline-flex !important;
             align-items: center !important;
@@ -335,6 +463,7 @@
             gap: 8px !important;
             border: none !important;
             cursor: pointer !important;
+            white-space: nowrap !important;
         }
         .btn-danger:hover,
         html[data-theme="light"] .btn-danger:hover,
@@ -345,8 +474,8 @@
         }
         .btn-danger [data-lucide], .btn-danger i { 
             color: #ffffff !important;
-            width: 16px !important; 
-            height: 16px !important; 
+            width: 15px !important; 
+            height: 15px !important; 
         }
 
         /* Overrides para textos oscuros y contenedores en Light Mode */
