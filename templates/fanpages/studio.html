@@ -3,45 +3,95 @@
 {% block title %}Fanpage Creator Studio — Rebooy Panel{% endblock %}
 {% block breadcrumb %}Herramientas IA / Fanpage Creator{% endblock %}
 
-{% block content %}
-<!-- Contenedor Maestro Centrado y Armonioso -->
-<div style="max-width:1080px; margin:0 auto; display:flex; flex-direction:column; gap:28px;">
+{% block extra_css %}
+<style>
+    .segmented-pill-container {
+        display: inline-flex;
+        background: var(--pill-bg);
+        border: 1px solid var(--border-subtle);
+        border-radius: 9999px;
+        padding: 4px;
+        gap: 4px;
+    }
+    .pill-tab-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 16px;
+        border-radius: 9999px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    .pill-tab-btn:hover {
+        color: var(--text-primary);
+    }
+    .pill-tab-btn.active {
+        background: var(--bg-card);
+        color: var(--text-primary);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        border: 1px solid var(--border-subtle);
+    }
+    .fp-card-shadcn {
+        background-color: var(--bg-card);
+        border: 1px solid var(--border-subtle);
+        border-radius: 1.25rem;
+        padding: 20px;
+        transition: all 0.2s ease;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        position: relative;
+        overflow: hidden;
+    }
+    .fp-card-shadcn:hover {
+        border-color: var(--border-highlight);
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+    }
+</style>
+{% endblock %}
 
-    <!-- Header principal alineado -->
-    <div>
-        <h1 style="font-size:1.6rem; font-weight:700; color:var(--text-primary); margin:0 0 4px; display:flex; align-items:center; gap:10px;">
-            <div style="width:34px; height:34px; border-radius:10px; background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.25); display:flex; align-items:center; justify-content:center;">
-                <i data-lucide="sparkles" style="color:#ef4444; width:20px; height:20px;"></i>
-            </div>
-            Fanpage Creator Studio
-        </h1>
-        <p style="font-size:0.875rem; color:var(--text-muted); margin:0;">
-            Genera identidades completas para Fanpages con IA, prompts de perfil 1:1 y portadas 16:5 con motor anti-repetición.
-        </p>
+{% block content %}
+<div style="max-width:1120px; margin:0 auto; display:flex; flex-direction:column; gap:28px;">
+
+    <!-- ═════════ HEADER ═════════ -->
+    <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px;">
+        <div>
+            <h1 style="font-size:1.85rem; font-weight:800; letter-spacing:-0.03em; color:var(--text-primary); margin:0 0 6px; display:flex; align-items:center; gap:10px;">
+                Fanpage Creator Studio
+            </h1>
+            <p style="font-size:0.875rem; color:var(--text-muted); margin:0;">
+                Genera identidades completas para Fanpages con IA, prompts de perfil 1:1 y portadas 16:5 con motor anti-repetición.
+            </p>
+        </div>
     </div>
 
     <!-- ═════════ 1. TARJETA DE GENERACIÓN CON IA ═════════ -->
-    <div class="glass-card" style="padding:28px 32px; position:relative; overflow:hidden;">
-        <div style="position:absolute; top:-30px; right:-30px; width:120px; height:120px; background:rgba(239,68,68,0.05); border-radius:50%; pointer-events:none;"></div>
-
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; flex-wrap:wrap; gap:10px;">
-            <h2 style="font-size:1.1rem; font-weight:600; color:var(--text-primary); margin:0; display:flex; align-items:center; gap:8px;">
+    <div class="shadcn-card" style="padding:28px 32px; position:relative; overflow:hidden;">
+        
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
+            <h2 style="font-size:1.15rem; font-weight:700; color:var(--text-primary); margin:0; display:flex; align-items:center; gap:8px;">
                 <i data-lucide="wand-2" style="width:18px; height:18px; color:#ef4444;"></i>
                 Generar Nueva Fanpage
             </h2>
-            <span class="badge-admin" style="font-size:0.75rem; padding:4px 10px; display:inline-flex; align-items:center; gap:5px;">
-                <i data-lucide="cpu" style="width:12px; height:12px;"></i>
-                Modelo: Gemini 2.5 Flash
+            <span class="badge-pill badge-admin" style="font-size:0.75rem; display:inline-flex; align-items:center; gap:5px;">
+                <i data-lucide="cpu" style="width:12px; height:12px; color:#3b82f6;"></i>
+                Gemini 2.5 Flash
             </span>
         </div>
 
-        <!-- Selector de Modo: Automático Rápido vs Guiado / Personalizado -->
-        <div style="display:flex; background:rgba(0,0,0,0.25); border-radius:10px; padding:4px; margin-bottom:20px; border:1px solid var(--border-glass); max-width:420px;">
-            <button type="button" id="modeQuickBtn" class="nav-link active" style="flex:1; justify-content:center; padding:8px; font-size:0.82rem; border-radius:8px;" onclick="switchGenMode('quick')">
+        <!-- Selector de Modo Segmented Pills: Automático vs Personalizado -->
+        <div class="segmented-pill-container" style="margin-bottom:20px;">
+            <button type="button" id="modeQuickBtn" class="pill-tab-btn active" onclick="switchGenMode('quick')">
                 <i data-lucide="zap" style="width:14px; height:14px;"></i>
                 Generación Rápida
             </button>
-            <button type="button" id="modeCustomBtn" class="nav-link" style="flex:1; justify-content:center; padding:8px; font-size:0.82rem; border-radius:8px;" onclick="switchGenMode('custom')">
+            <button type="button" id="modeCustomBtn" class="pill-tab-btn" onclick="switchGenMode('custom')">
                 <i data-lucide="sliders" style="width:14px; height:14px;"></i>
                 Personalizar Temática
             </button>
@@ -54,16 +104,16 @@
             <div id="customOptionsSection" style="display:none; margin-bottom:18px;">
                 <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:16px;">
                     <div>
-                        <label style="display:block; font-size:0.78rem; font-weight:600; color:var(--text-secondary); margin-bottom:8px; text-transform:uppercase; letter-spacing:0.05em;">
+                        <label style="display:block; font-size:0.75rem; font-weight:700; color:var(--text-muted); margin-bottom:8px; text-transform:uppercase; letter-spacing:0.05em;">
                             Subtema o Nicho Específico (Opcional)
                         </label>
-                        <input type="text" name="custom_subtema" id="customSubtemaInput" placeholder="Ej: Películas de terror psicológico de los 90s..." class="glass-input" style="width:100%; padding:10px 14px; border-radius:10px; font-size:0.875rem;">
+                        <input type="text" name="custom_subtema" id="customSubtemaInput" placeholder="Ej: Películas de terror psicológico de los 90s..." class="shadcn-input" style="width:100%;">
                     </div>
                     <div>
-                        <label style="display:block; font-size:0.78rem; font-weight:600; color:var(--text-secondary); margin-bottom:8px; text-transform:uppercase; letter-spacing:0.05em;">
+                        <label style="display:block; font-size:0.75rem; font-weight:700; color:var(--text-muted); margin-bottom:8px; text-transform:uppercase; letter-spacing:0.05em;">
                             Estilo Visual Preferido (Opcional)
                         </label>
-                        <select name="custom_estilo" id="customEstiloSelect" class="glass-input" style="width:100%; padding:10px 14px; border-radius:10px; font-size:0.875rem;">
+                        <select name="custom_estilo" id="customEstiloSelect" class="shadcn-input" style="width:100%;">
                             <option value="">Aleatorio / Seleccionado por IA (Recomendado)</option>
                             {% for estilo in estilos_sugeridos %}
                                 <option value="{{ estilo }}">{{ estilo }}</option>
@@ -75,22 +125,22 @@
 
             <!-- Botón Principal de Generación -->
             <button type="submit" id="generateBtn" class="btn-brand" style="width:100%; justify-content:center; padding:12px; font-size:0.92rem;">
-                <i data-lucide="sparkles"></i>
+                <i data-lucide="sparkles" style="width:16px; height:16px;"></i>
                 <span id="genBtnText">Generar Fanpage con IA</span>
             </button>
         </form>
 
-        <!-- Indicador de Carga / Animación de Generación -->
-        <div id="fanpageLoadingCard" style="display:none; margin-top:20px; padding:18px; border-radius:12px; background:rgba(239,68,68,0.06); border:1px solid rgba(239,68,68,0.25);">
+        <!-- Indicador de Carga -->
+        <div id="fanpageLoadingCard" style="display:none; margin-top:20px; padding:18px; border-radius:1rem; background:rgba(239,68,68,0.06); border:1px solid rgba(239,68,68,0.25);">
             <div style="display:flex; align-items:center; gap:12px; margin-bottom:10px;">
-                <div style="width:24px; height:24px; border-radius:50%; border:2px solid #ef4444; border-top-color:transparent; animation:spin 1s linear infinite; flex-shrink:0;"></div>
+                <div style="width:22px; height:22px; border-radius:50%; border:2px solid #ef4444; border-top-color:transparent; animation:spin 1s linear infinite; flex-shrink:0;"></div>
                 <div style="flex:1; min-width:0;">
-                    <div style="font-size:0.875rem; font-weight:600; color:var(--text-primary);">Diseñando identidad de Fanpage...</div>
+                    <div style="font-size:0.875rem; font-weight:700; color:var(--text-primary);">Diseñando identidad de Fanpage...</div>
                     <div style="font-size:0.75rem; color:var(--text-muted);">Consultando motor anti-repetición y estructurando prompts cinematográficos</div>
                 </div>
             </div>
-            <div style="height:4px; background:rgba(255,255,255,0.08); border-radius:4px; overflow:hidden;">
-                <div id="fanpageProgressBar" style="height:100%; width:45%; background:linear-gradient(90deg, #ef4444, #dc2626); border-radius:4px; transition:width 0.5s;"></div>
+            <div style="height:5px; background:var(--border-subtle); border-radius:9999px; overflow:hidden;">
+                <div id="fanpageProgressBar" style="height:100%; width:45%; background:linear-gradient(90deg, #ef4444, #dc2626); border-radius:9999px; transition:width 0.5s;"></div>
             </div>
         </div>
     </div>
@@ -99,26 +149,25 @@
     <div>
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; flex-wrap:wrap; gap:12px;">
             <div style="display:flex; align-items:center; gap:10px;">
-                <h2 style="font-size:1.15rem; font-weight:700; color:var(--text-primary); margin:0; display:flex; align-items:center; gap:8px;">
-                    <i data-lucide="layers" style="width:18px; height:18px; color:#ef4444;"></i>
+                <h2 style="font-size:1.25rem; font-weight:800; letter-spacing:-0.02em; color:var(--text-primary); margin:0; display:flex; align-items:center; gap:8px;">
                     Fanpages Registradas
                 </h2>
             </div>
 
             {% if user.role == 'superadmin' %}
-            <!-- Selector de Pestañas Superadmin -->
-            <div style="display:flex; background:rgba(0,0,0,0.25); border-radius:10px; padding:3px; border:1px solid var(--border-glass);">
-                <button type="button" id="tabMyFpBtn" class="nav-link active" style="padding:6px 14px; font-size:0.78rem; border-radius:7px;" onclick="switchFpTab('my')">
+            <!-- Segmented Pill Tabs Superadmin -->
+            <div class="segmented-pill-container">
+                <button type="button" id="tabMyFpBtn" class="pill-tab-btn active" onclick="switchFpTab('my')">
                     <i data-lucide="user" style="width:13px; height:13px;"></i>
                     Mis Fanpages (<span id="myFpCountText">{{ my_count }}</span>)
                 </button>
-                <button type="button" id="tabAllFpBtn" class="nav-link" style="padding:6px 14px; font-size:0.78rem; border-radius:7px;" onclick="switchFpTab('all')">
+                <button type="button" id="tabAllFpBtn" class="pill-tab-btn" onclick="switchFpTab('all')">
                     <i data-lucide="globe" style="width:13px; height:13px;"></i>
                     Otras Fanpages (<span id="allFpCountText">{{ all_count }}</span>)
                 </button>
             </div>
             {% else %}
-            <span style="font-size:0.8rem; color:var(--text-muted);"><span id="myFpCountText">{{ my_count }}</span> registro{{ my_count|pluralize }}</span>
+            <span class="badge-pill badge-user" style="font-size:0.75rem;"><span id="myFpCountText">{{ my_count }}</span> registro{{ my_count|pluralize }}</span>
             {% endif %}
         </div>
 
@@ -126,15 +175,15 @@
         <div id="myFpSection">
             <div id="myFpGrid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(320px, 1fr)); gap:18px;">
                 {% for fp in my_fanpages %}
-                <div class="glass-card fp-card" id="fp-item-{{ fp.id }}" style="padding:20px; display:flex; flex-direction:column; justify-content:space-between; transition:all 0.2s;">
+                <div class="fp-card-shadcn" id="fp-item-{{ fp.id }}">
                     <div>
                         <!-- Badges de Estilo y Nicho -->
                         <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-bottom:12px;">
-                            <span class="badge-admin" style="font-size:0.68rem; padding:3px 8px; border-radius:6px; display:inline-flex; align-items:center; gap:4px;">
-                                <i data-lucide="palette" style="width:11px; height:11px;"></i>
+                            <span class="badge-pill badge-admin" style="font-size:0.68rem; display:inline-flex; align-items:center; gap:4px;">
+                                <i data-lucide="palette" style="width:11px; height:11px; color:#3b82f6;"></i>
                                 {{ fp.estilo_visual|truncatechars:28 }}
                             </span>
-                            <span class="badge-user" style="font-size:0.68rem; padding:3px 8px; border-radius:6px; display:inline-flex; align-items:center; gap:4px;">
+                            <span class="badge-pill badge-user" style="font-size:0.68rem; display:inline-flex; align-items:center; gap:4px;">
                                 <i data-lucide="tag" style="width:11px; height:11px;"></i>
                                 {{ fp.subtema|truncatechars:25 }}
                             </span>
@@ -145,23 +194,23 @@
                             <h3 style="font-size:1.05rem; font-weight:700; color:var(--text-primary); margin:0;">
                                 {{ fp.nombre }}
                             </h3>
-                            <button type="button" class="btn-ghost" style="padding:2px 8px; font-size:0.68rem; border-radius:5px; display:inline-flex; align-items:center; gap:4px; flex-shrink:0;" title="Copiar nombre" onclick="copyTextDirect(`{{ fp.nombre|escapejs }}`, this)">
+                            <button type="button" class="btn-ghost" style="padding:2px 8px; font-size:0.68rem; display:inline-flex; align-items:center; gap:4px; flex-shrink:0;" title="Copiar nombre" onclick="copyTextDirect(`{{ fp.nombre|escapejs }}`, this)">
                                 <i data-lucide="copy" style="width:10px; height:10px;"></i>
                                 <span>Copiar</span>
                             </button>
                         </div>
-                        <p style="font-size:0.8rem; color:var(--text-secondary); line-height:1.45; margin:0 0 14px;">
+                        <p style="font-size:0.82rem; color:var(--text-secondary); line-height:1.5; margin:0 0 14px;">
                             {{ fp.descripcion|truncatechars:120 }}
                         </p>
                     </div>
 
                     <!-- Prompts Preview & Acciones -->
                     <div>
-                        <div style="background:var(--bg-glass-input); border:1px solid var(--border-glass); border-radius:8px; padding:10px 12px; margin-bottom:12px;">
+                        <div style="background:var(--bg-muted); border:1px solid var(--border-subtle); border-radius:0.75rem; padding:10px 12px; margin-bottom:12px;">
                             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
                                 <span style="font-size:0.7rem; font-weight:700; color:#ef4444; text-transform:uppercase;">Prompt Perfil (1:1)</span>
-                                <button type="button" class="btn-ghost" style="padding:3px 9px; font-size:0.7rem; border-radius:5px; display:inline-flex; align-items:center; gap:5px; cursor:pointer;" onclick="copyTextDirect(`{{ fp.prompt_foto_perfil|escapejs }}`, this)">
-                                    <i data-lucide="copy" style="width:11px; height:11px;"></i>
+                                <button type="button" class="btn-ghost" style="padding:2px 8px; font-size:0.68rem; display:inline-flex; align-items:center; gap:4px;" onclick="copyTextDirect(`{{ fp.prompt_foto_perfil|escapejs }}`, this)">
+                                    <i data-lucide="copy" style="width:10px; height:10px;"></i>
                                     <span>Copiar</span>
                                 </button>
                             </div>
@@ -170,10 +219,10 @@
                             </div>
                         </div>
 
-                        <div style="display:flex; align-items:center; justify-content:space-between; border-top:1px solid var(--border-glass); padding-top:12px;">
+                        <div style="display:flex; align-items:center; justify-content:space-between; border-top:1px solid var(--border-subtle); padding-top:12px;">
                             <span style="font-size:0.72rem; color:var(--text-muted);">{{ fp.fecha_creacion|date:"d M Y, H:i" }}</span>
                             <div style="display:flex; align-items:center; gap:6px;">
-                                <button type="button" class="btn-ghost" style="padding:5px 12px; font-size:0.75rem; border-radius:6px; display:inline-flex; align-items:center; gap:5px; cursor:pointer;" onclick="openFanpageModal({{ fp.id }})">
+                                <button type="button" class="btn-ghost" style="padding:4px 10px; font-size:0.75rem; display:inline-flex; align-items:center; gap:4px;" onclick="openFanpageModal({{ fp.id }})">
                                     <i data-lucide="eye" style="width:13px; height:13px;"></i>
                                     Ver Ficha
                                 </button>
@@ -185,7 +234,7 @@
                     </div>
                 </div>
                 {% empty %}
-                <div id="noMyFpMsg" class="glass-card" style="grid-column:1 / -1; text-align:center; padding:48px 20px; color:var(--text-muted);">
+                <div id="noMyFpMsg" class="shadcn-card" style="grid-column:1 / -1; text-align:center; padding:48px 20px; color:var(--text-muted);">
                     <i data-lucide="sparkles" style="width:40px; height:40px; margin:0 auto 12px; opacity:0.3; color:#ef4444;"></i>
                     <p style="font-size:0.9rem; margin:0;">Aún no has generado ninguna fanpage. ¡Haz clic en "Generar Fanpage con IA" arriba!</p>
                 </div>
@@ -198,15 +247,15 @@
         <div id="allFpSection" style="display:none;">
             <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(320px, 1fr)); gap:18px;">
                 {% for fp in all_fanpages %}
-                <div class="glass-card fp-card" id="fp-item-{{ fp.id }}" style="padding:20px; display:flex; flex-direction:column; justify-content:space-between; transition:all 0.2s;">
+                <div class="fp-card-shadcn" id="fp-item-{{ fp.id }}">
                     <div>
                         <!-- Autor y Badges -->
                         <div style="display:flex; align-items:center; justify-content:space-between; gap:6px; margin-bottom:10px;">
-                            <span class="badge-superadmin" style="font-size:0.68rem; padding:2px 7px; display:inline-flex; align-items:center; gap:4px;">
+                            <span class="badge-pill badge-superadmin" style="font-size:0.68rem; display:inline-flex; align-items:center; gap:4px;">
                                 <i data-lucide="user" style="width:11px; height:11px;"></i>
                                 @{{ fp.user.username }}
                             </span>
-                            <span class="badge-admin" style="font-size:0.68rem; padding:2px 7px; border-radius:6px;">
+                            <span class="badge-pill badge-admin" style="font-size:0.68rem;">
                                 {{ fp.estilo_visual|truncatechars:22 }}
                             </span>
                         </div>
@@ -216,21 +265,21 @@
                             <h3 style="font-size:1.05rem; font-weight:700; color:var(--text-primary); margin:0;">
                                 {{ fp.nombre }}
                             </h3>
-                            <button type="button" class="btn-ghost" style="padding:2px 8px; font-size:0.68rem; border-radius:5px; display:inline-flex; align-items:center; gap:4px; flex-shrink:0;" title="Copiar nombre" onclick="copyTextDirect(`{{ fp.nombre|escapejs }}`, this)">
+                            <button type="button" class="btn-ghost" style="padding:2px 8px; font-size:0.68rem; display:inline-flex; align-items:center; gap:4px; flex-shrink:0;" title="Copiar nombre" onclick="copyTextDirect(`{{ fp.nombre|escapejs }}`, this)">
                                 <i data-lucide="copy" style="width:10px; height:10px;"></i>
                                 <span>Copiar</span>
                             </button>
                         </div>
-                        <p style="font-size:0.8rem; color:var(--text-secondary); line-height:1.45; margin:0 0 14px;">
+                        <p style="font-size:0.82rem; color:var(--text-secondary); line-height:1.5; margin:0 0 14px;">
                             {{ fp.descripcion|truncatechars:120 }}
                         </p>
                     </div>
 
                     <div>
-                        <div style="display:flex; align-items:center; justify-content:space-between; border-top:1px solid var(--border-glass); padding-top:12px;">
+                        <div style="display:flex; align-items:center; justify-content:space-between; border-top:1px solid var(--border-subtle); padding-top:12px;">
                             <span style="font-size:0.72rem; color:var(--text-muted);">{{ fp.fecha_creacion|date:"d M Y, H:i" }}</span>
                             <div style="display:flex; align-items:center; gap:6px;">
-                                <button type="button" class="btn-ghost" style="padding:5px 12px; font-size:0.75rem; border-radius:6px; display:inline-flex; align-items:center; gap:5px; cursor:pointer;" onclick="openFanpageModal({{ fp.id }})">
+                                <button type="button" class="btn-ghost" style="padding:4px 10px; font-size:0.75rem; display:inline-flex; align-items:center; gap:4px;" onclick="openFanpageModal({{ fp.id }})">
                                     <i data-lucide="eye" style="width:13px; height:13px;"></i>
                                     Ver Ficha
                                 </button>
@@ -242,7 +291,7 @@
                     </div>
                 </div>
                 {% empty %}
-                <div class="glass-card" style="grid-column:1 / -1; text-align:center; padding:48px 20px; color:var(--text-muted);">
+                <div class="shadcn-card" style="grid-column:1 / -1; text-align:center; padding:48px 20px; color:var(--text-muted);">
                     <i data-lucide="users" style="width:40px; height:40px; margin:0 auto 12px; opacity:0.3;"></i>
                     <p style="font-size:0.9rem; margin:0;">Aún no hay fanpages creadas por otros usuarios.</p>
                 </div>
@@ -254,32 +303,32 @@
 
 </div>
 
-<!-- ═════════ 3. MODAL GLASSMORPHISM: DETALLES DE FANPAGE ═════════ -->
-<div id="fanpageModal" style="display:none; position:fixed; inset:0; z-index:9999; background:rgba(2, 6, 23, 0.85); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); align-items:center; justify-content:center; padding:16px;">
-    <div class="glass-card" style="width:100%; max-width:880px; max-height:90vh; display:flex; flex-direction:column; border:1px solid var(--border-glass); box-shadow:0 25px 50px -12px rgba(0,0,0,0.6); overflow:hidden; animation:modalIn 0.25s ease-out;">
+<!-- ═════════ 3. MODAL RADIX / SHADCN: DETALLES DE FANPAGE ═════════ -->
+<div id="fanpageModal" style="display:none; position:fixed; inset:0; z-index:100000; background:var(--modal-backdrop); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); align-items:center; justify-content:center; padding:16px;">
+    <div class="shadcn-card" style="width:100%; max-width:880px; max-height:90vh; display:flex; flex-direction:column; animation:modalIn 0.22s ease-out; overflow:hidden;">
         
         <!-- Modal Header -->
-        <div style="padding:18px 24px; border-bottom:1px solid var(--border-glass); display:flex; justify-content:space-between; align-items:center; background:var(--topbar-bg); flex-shrink:0; gap:16px;">
+        <div style="padding:18px 24px; border-bottom:1px solid var(--border-subtle); display:flex; justify-content:space-between; align-items:center; flex-shrink:0; gap:16px;">
             <div style="display:flex; align-items:center; gap:12px; min-width:0; flex:1;">
-                <div style="width:40px; height:40px; border-radius:10px; background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.25); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
-                    <i data-lucide="sparkles" style="width:20px; height:20px; color:#ef4444;"></i>
+                <div style="width:38px; height:38px; border-radius:9999px; background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.25); display:flex; align-items:center; justify-content:center; flex-shrink:0; color:#ef4444;">
+                    <i data-lucide="sparkles" style="width:18px; height:18px;"></i>
                 </div>
                 <div style="min-width:0; flex:1;">
-                    <h3 id="modalFpName" style="font-size:1.2rem; font-weight:700; color:var(--text-primary); margin:0 0 4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Nombre Fanpage</h3>
-                    <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-                        <span id="modalFpStyle" class="badge-admin" style="font-size:0.72rem; padding:2px 8px; border-radius:6px; max-width:300px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:inline-block;"></span>
-                        <span id="modalFpTheme" class="badge-user" style="font-size:0.72rem; padding:2px 8px; border-radius:6px; max-width:240px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:inline-block;"></span>
+                    <h3 id="modalFpName" style="font-size:1.15rem; font-weight:800; color:var(--text-primary); margin:0 0 4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Nombre Fanpage</h3>
+                    <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                        <span id="modalFpStyle" class="badge-pill badge-admin" style="font-size:0.72rem;"></span>
+                        <span id="modalFpTheme" class="badge-pill badge-user" style="font-size:0.72rem;"></span>
                     </div>
                 </div>
             </div>
 
-            <div style="display:flex; align-items:center; gap:10px; flex-shrink:0;">
-                <button type="button" class="btn-brand" style="padding:8px 18px; font-size:0.82rem; display:inline-flex; align-items:center; gap:8px; white-space:nowrap; cursor:pointer;" onclick="copyFullFanpageMarkdown()">
-                    <i data-lucide="copy" id="copyFullFpIcon" style="width:15px; height:15px;"></i>
+            <div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
+                <button type="button" class="btn-brand" style="padding:6px 16px; font-size:0.8rem;" onclick="copyFullFanpageMarkdown()">
+                    <i data-lucide="copy" id="copyFullFpIcon" style="width:13px; height:13px;"></i>
                     <span id="copyFullFpText">Copiar Identidad</span>
                 </button>
-                <button type="button" class="action-btn" style="width:36px; height:36px; background:var(--action-btn-bg); border:1px solid var(--action-btn-border); border-radius:8px; display:inline-flex; align-items:center; justify-content:center; cursor:pointer;" onclick="closeFanpageModal()">
-                    <i data-lucide="x" style="width:18px; height:18px; color:var(--text-secondary);"></i>
+                <button type="button" class="action-pill-btn" onclick="closeFanpageModal()">
+                    <i data-lucide="x"></i>
                 </button>
             </div>
         </div>
@@ -288,34 +337,34 @@
         <div style="padding:24px; overflow-y:auto; flex:1; display:flex; flex-direction:column; gap:20px;">
             
             <!-- 1. Nombre Oficial de la Fanpage -->
-            <div class="glass-card" style="padding:18px 22px; background:var(--bg-glass-card); border-left:4px solid #ef4444;">
+            <div style="background:var(--bg-muted); border:1px solid var(--border-subtle); border-radius:1rem; padding:18px 22px; border-left:4px solid #ef4444;">
                 <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
                     <div>
-                        <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
-                            <i data-lucide="tag" style="width:15px; height:15px; color:#ef4444;"></i>
+                        <div style="display:flex; align-items:center; gap:6px; margin-bottom:4px;">
+                            <i data-lucide="tag" style="width:14px; height:14px; color:#ef4444;"></i>
                             <h4 style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; margin:0; letter-spacing:0.06em;">
-                                Nombre Sugerido para la Fanpage
+                                Nombre Sugerido
                             </h4>
                         </div>
                         <div id="modalFpNameBody" style="font-size:1.35rem; font-weight:800; color:var(--text-primary); letter-spacing:-0.02em;"></div>
                     </div>
-                    <button type="button" class="btn-ghost" style="padding:6px 14px; font-size:0.78rem; border-radius:7px; display:inline-flex; align-items:center; gap:6px; cursor:pointer;" onclick="copyTextDirect(currentFpData.nombre, this)">
-                        <i data-lucide="copy" style="width:13px; height:13px;"></i>
+                    <button type="button" class="btn-ghost" style="padding:4px 12px; font-size:0.75rem;" onclick="copyTextDirect(currentFpData.nombre, this)">
+                        <i data-lucide="copy" style="width:12px; height:12px;"></i>
                         <span>Copiar Nombre</span>
                     </button>
                 </div>
             </div>
 
             <!-- 2. Descripción Conceptual -->
-            <div class="glass-card" style="padding:18px 22px; background:var(--bg-glass-card);">
+            <div style="background:var(--bg-muted); border:1px solid var(--border-subtle); border-radius:1rem; padding:18px 22px;">
                 <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:8px;">
-                    <div style="display:flex; align-items:center; gap:8px;">
-                        <i data-lucide="quote" style="width:15px; height:15px; color:#ef4444;"></i>
+                    <div style="display:flex; align-items:center; gap:6px;">
+                        <i data-lucide="quote" style="width:14px; height:14px; color:#ef4444;"></i>
                         <h4 style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; margin:0; letter-spacing:0.06em;">
                             Descripción Conceptual y Gancho
                         </h4>
                     </div>
-                    <button type="button" class="btn-ghost" style="padding:4px 10px; font-size:0.75rem; border-radius:6px; display:inline-flex; align-items:center; gap:5px; cursor:pointer;" onclick="copyTextDirect(currentFpData.descripcion, this)">
+                    <button type="button" class="btn-ghost" style="padding:4px 10px; font-size:0.75rem;" onclick="copyTextDirect(currentFpData.descripcion, this)">
                         <i data-lucide="copy" style="width:12px; height:12px;"></i>
                         <span>Copiar Descripción</span>
                     </button>
@@ -324,11 +373,11 @@
             </div>
 
             <!-- 3. Prompt: Foto de Perfil (1:1) -->
-            <div class="glass-card" style="padding:20px; background:var(--bg-glass-card);">
+            <div style="background:var(--bg-muted); border:1px solid var(--border-subtle); border-radius:1rem; padding:20px;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
                     <div style="display:flex; align-items:center; gap:10px;">
-                        <div style="width:28px; height:28px; border-radius:8px; background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.25); display:flex; align-items:center; justify-content:center;">
-                            <i data-lucide="user" style="width:15px; height:15px; color:#ef4444;"></i>
+                        <div style="width:28px; height:28px; border-radius:9999px; background:rgba(239,68,68,0.12); display:flex; align-items:center; justify-content:center; color:#ef4444;">
+                            <i data-lucide="user" style="width:14px; height:14px;"></i>
                         </div>
                         <div>
                             <h4 style="font-size:0.9rem; font-weight:700; color:var(--text-primary); margin:0;">
@@ -337,20 +386,20 @@
                             <span style="font-size:0.72rem; color:var(--text-muted);">Formato cuadrado (1:1 Aspect Ratio)</span>
                         </div>
                     </div>
-                    <button type="button" class="btn-ghost" style="padding:6px 14px; font-size:0.78rem; border-radius:7px; display:inline-flex; align-items:center; gap:6px; cursor:pointer;" onclick="copyTextDirect(currentFpData.prompt_foto_perfil, this)">
-                        <i data-lucide="copy" style="width:13px; height:13px;"></i>
+                    <button type="button" class="btn-ghost" style="padding:4px 12px; font-size:0.75rem;" onclick="copyTextDirect(currentFpData.prompt_foto_perfil, this)">
+                        <i data-lucide="copy" style="width:12px; height:12px;"></i>
                         <span>Copiar Prompt</span>
                     </button>
                 </div>
-                <div id="modalFpAvatarPrompt" style="background:var(--bg-glass-input); border:1px solid var(--border-glass); border-radius:10px; padding:16px; font-size:0.84rem; color:var(--text-primary); font-family:'JetBrains Mono', 'Fira Code', monospace, sans-serif; line-height:1.6; white-space:pre-wrap; word-break:break-word;"></div>
+                <div id="modalFpAvatarPrompt" style="background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:0.75rem; padding:14px; font-size:0.84rem; color:var(--text-primary); font-family:monospace; line-height:1.6; white-space:pre-wrap; word-break:break-word;"></div>
             </div>
 
             <!-- 4. Prompt: Portada Panorámica (16:5) -->
-            <div class="glass-card" style="padding:20px; background:var(--bg-glass-card);">
+            <div style="background:var(--bg-muted); border:1px solid var(--border-subtle); border-radius:1rem; padding:20px;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
                     <div style="display:flex; align-items:center; gap:10px;">
-                        <div style="width:28px; height:28px; border-radius:8px; background:rgba(96,165,250,0.12); border:1px solid rgba(96,165,250,0.25); display:flex; align-items:center; justify-content:center;">
-                            <i data-lucide="image" style="width:15px; height:15px; color:#60a5fa;"></i>
+                        <div style="width:28px; height:28px; border-radius:9999px; background:rgba(59,130,246,0.12); display:flex; align-items:center; justify-content:center; color:#3b82f6;">
+                            <i data-lucide="image" style="width:14px; height:14px;"></i>
                         </div>
                         <div>
                             <h4 style="font-size:0.9rem; font-weight:700; color:var(--text-primary); margin:0;">
@@ -359,40 +408,39 @@
                             <span style="font-size:0.72rem; color:var(--text-muted);">Formato panorámico (16:5 / Facebook Banner)</span>
                         </div>
                     </div>
-                    <button type="button" class="btn-ghost" style="padding:6px 14px; font-size:0.78rem; border-radius:7px; display:inline-flex; align-items:center; gap:6px; cursor:pointer;" onclick="copyTextDirect(currentFpData.prompt_foto_portada, this)">
-                        <i data-lucide="copy" style="width:13px; height:13px;"></i>
+                    <button type="button" class="btn-ghost" style="padding:4px 12px; font-size:0.75rem;" onclick="copyTextDirect(currentFpData.prompt_foto_portada, this)">
+                        <i data-lucide="copy" style="width:12px; height:12px;"></i>
                         <span>Copiar Prompt</span>
                     </button>
                 </div>
-                <div id="modalFpCoverPrompt" style="background:var(--bg-glass-input); border:1px solid var(--border-glass); border-radius:10px; padding:16px; font-size:0.84rem; color:var(--text-primary); font-family:'JetBrains Mono', 'Fira Code', monospace, sans-serif; line-height:1.6; white-space:pre-wrap; word-break:break-word;"></div>
+                <div id="modalFpCoverPrompt" style="background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:0.75rem; padding:14px; font-size:0.84rem; color:var(--text-primary); font-family:monospace; line-height:1.6; white-space:pre-wrap; word-break:break-word;"></div>
             </div>
 
         </div>
     </div>
 </div>
 
-<!-- ═════════ 4. MODAL GLASSMORPHISM: CONFIRMAR ELIMINACIÓN ═════════ -->
-<div id="deleteFanpageModal" style="display:none; position:fixed; inset:0; z-index:99999; background:rgba(2, 6, 23, 0.8); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); align-items:center; justify-content:center; padding:16px;">
-    <div class="glass-card" style="width:100%; max-width:440px; padding:28px; border:1px solid var(--border-glass); box-shadow:0 25px 50px -12px rgba(0,0,0,0.6); animation:modalIn 0.2s ease-out; text-align:center;">
-        <div style="width:52px; height:52px; border-radius:50%; background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.25); display:flex; align-items:center; justify-content:center; margin:0 auto 16px;">
-            <i data-lucide="trash-2" style="width:24px; height:24px; color:#ef4444;"></i>
+<!-- ═════════ 4. MODAL RADIX / SHADCN: CONFIRMAR ELIMINACIÓN ═════════ -->
+<div id="deleteFanpageModal" style="display:none; position:fixed; inset:0; z-index:100000; background:var(--modal-backdrop); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); align-items:center; justify-content:center; padding:16px;">
+    <div class="shadcn-card" style="width:100%; max-width:440px; padding:28px; animation:modalIn 0.22s ease-out; text-align:center; position:relative; overflow:hidden;">
+        <div style="width:48px; height:48px; border-radius:9999px; background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.3); display:flex; align-items:center; justify-content:center; margin:0 auto 16px; color:#ef4444;">
+            <i data-lucide="trash-2" style="width:22px; height:22px;"></i>
         </div>
         <h3 style="font-size:1.15rem; font-weight:700; color:var(--text-primary); margin:0 0 8px;">¿Eliminar Fanpage?</h3>
-        <p style="font-size:0.85rem; color:var(--text-muted); line-height:1.5; margin:0 0 24px;">
-            Esta acción eliminará permanentemente la identidad y los prompts generados para esta fanpage. No se puede deshacer.
+        <p style="font-size:0.85rem; color:var(--text-secondary); line-height:1.5; margin:0 0 24px;">
+            Esta acción eliminará permanentemente la identidad y los prompts generados para esta fanpage.
         </p>
-        <div style="display:flex; justify-content:center; gap:12px;">
-            <button type="button" class="btn-ghost" style="padding:9px 20px;" onclick="closeDeleteFpModal()">
+        <div style="display:flex; justify-content:center; gap:10px;">
+            <button type="button" class="btn-ghost" style="flex:1; justify-content:center;" onclick="closeDeleteFpModal()">
                 Cancelar
             </button>
-            <button type="button" id="confirmDeleteFpBtn" class="btn-danger" style="padding:9px 20px;" onclick="executeDeleteFp()">
-                <i data-lucide="trash-2"></i>
+            <button type="button" id="confirmDeleteFpBtn" class="btn-danger" style="flex:1; justify-content:center;" onclick="executeDeleteFp()">
+                <i data-lucide="trash-2" style="width:14px; height:14px;"></i>
                 Eliminar
             </button>
         </div>
     </div>
 </div>
-
 {% endblock %}
 
 {% block extra_js %}
@@ -400,7 +448,6 @@
 let currentFpData = null;
 let fpIdToDelete = null;
 
-// Alternar entre modo rápido y personalizado
 function switchGenMode(mode) {
     const isCustom = mode === 'custom';
     document.getElementById('customOptionsSection').style.display = isCustom ? 'block' : 'none';
@@ -409,7 +456,6 @@ function switchGenMode(mode) {
     lucide.createIcons();
 }
 
-// Alternar entre Mis Fanpages y Otras Fanpages
 function switchFpTab(tab) {
     const isMy = tab === 'my';
     const mySec = document.getElementById('myFpSection');
@@ -425,7 +471,6 @@ function switchFpTab(tab) {
     lucide.createIcons();
 }
 
-// Formulario AJAX de Generación
 document.getElementById('fanpageGenForm').addEventListener('submit', async function(e) {
     e.preventDefault();
     const btn = document.getElementById('generateBtn');
@@ -463,11 +508,8 @@ document.getElementById('fanpageGenForm').addEventListener('submit', async funct
         const data = await response.json();
 
         if (response.ok && data.success) {
-            // Insertar la nueva fanpage en la galería
             insertNewFanpageCard(data.fanpage);
-            // Abrir automáticamente el modal con la nueva fanpage
             openFanpageModalWithData(data.fanpage);
-            // Limpiar inputs
             document.getElementById('customSubtemaInput').value = '';
             document.getElementById('customEstiloSelect').value = '';
         } else {
@@ -499,43 +541,42 @@ function insertNewFanpageCard(fp) {
     }
 
     const card = document.createElement('div');
-    card.className = 'glass-card fp-card';
+    card.className = 'fp-card-shadcn';
     card.id = `fp-item-${fp.id}`;
-    card.style.cssText = 'padding:20px; display:flex; flex-direction:column; justify-content:space-between; animation:modalIn 0.3s ease-out;';
+    card.style.animation = 'modalIn 0.22s ease-out';
 
     card.innerHTML = `
         <div>
             <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-bottom:12px;">
-                <span class="badge-admin" style="font-size:0.68rem; padding:3px 8px; border-radius:6px; display:inline-flex; align-items:center; gap:4px;">
-                    <i data-lucide="palette" style="width:11px; height:11px;"></i>
+                <span class="badge-pill badge-admin" style="font-size:0.68rem; display:inline-flex; align-items:center; gap:4px;">
+                    <i data-lucide="palette" style="width:11px; height:11px; color:#3b82f6;"></i>
                     ${escapeHtml(fp.estilo_visual)}
                 </span>
-                <span class="badge-user" style="font-size:0.68rem; padding:3px 8px; border-radius:6px; display:inline-flex; align-items:center; gap:4px;">
+                <span class="badge-pill badge-user" style="font-size:0.68rem; display:inline-flex; align-items:center; gap:4px;">
                     <i data-lucide="tag" style="width:11px; height:11px;"></i>
                     ${escapeHtml(fp.subtema)}
                 </span>
             </div>
 
-            <!-- Título y Botón Copiar Nombre -->
             <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px; margin-bottom:6px;">
                 <h3 style="font-size:1.05rem; font-weight:700; color:var(--text-primary); margin:0;">
                     ${escapeHtml(fp.nombre)}
                 </h3>
-                <button type="button" class="btn-ghost" style="padding:2px 8px; font-size:0.68rem; border-radius:5px; display:inline-flex; align-items:center; gap:4px; flex-shrink:0;" title="Copiar nombre" onclick="copyTextDirect(\`${escapeJs(fp.nombre)}\`, this)">
+                <button type="button" class="btn-ghost" style="padding:2px 8px; font-size:0.68rem; display:inline-flex; align-items:center; gap:4px; flex-shrink:0;" title="Copiar nombre" onclick="copyTextDirect(\`${escapeJs(fp.nombre)}\`, this)">
                     <i data-lucide="copy" style="width:10px; height:10px;"></i>
                     <span>Copiar</span>
                 </button>
             </div>
-            <p style="font-size:0.8rem; color:var(--text-secondary); line-height:1.45; margin:0 0 14px;">
+            <p style="font-size:0.82rem; color:var(--text-secondary); line-height:1.5; margin:0 0 14px;">
                 ${escapeHtml(fp.descripcion)}
             </p>
         </div>
 
         <div>
-            <div style="background:var(--bg-glass-input); border:1px solid var(--border-glass); border-radius:8px; padding:10px 12px; margin-bottom:12px;">
+            <div style="background:var(--bg-muted); border:1px solid var(--border-subtle); border-radius:0.75rem; padding:10px 12px; margin-bottom:12px;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
                     <span style="font-size:0.7rem; font-weight:700; color:#ef4444; text-transform:uppercase;">Prompt Perfil (1:1)</span>
-                    <button type="button" class="btn-ghost" style="padding:2px 8px; font-size:0.68rem; border-radius:5px;" onclick="copyTextDirect(\`${escapeJs(fp.prompt_foto_perfil)}\`, this)">
+                    <button type="button" class="btn-ghost" style="padding:2px 8px; font-size:0.68rem;" onclick="copyTextDirect(\`${escapeJs(fp.prompt_foto_perfil)}\`, this)">
                         <i data-lucide="copy" style="width:10px; height:10px;"></i>
                         <span>Copiar</span>
                     </button>
@@ -545,10 +586,10 @@ function insertNewFanpageCard(fp) {
                 </div>
             </div>
 
-            <div style="display:flex; align-items:center; justify-content:space-between; border-top:1px solid var(--border-glass); padding-top:12px;">
+            <div style="display:flex; align-items:center; justify-content:space-between; border-top:1px solid var(--border-subtle); padding-top:12px;">
                 <span style="font-size:0.72rem; color:var(--text-muted);">${fp.fecha_creacion}</span>
                 <div style="display:flex; align-items:center; gap:6px;">
-                    <button type="button" class="btn-ghost" style="padding:4px 10px; font-size:0.75rem; border-radius:6px;" onclick="openFanpageModal(${fp.id})">
+                    <button type="button" class="btn-ghost" style="padding:4px 10px; font-size:0.75rem;" onclick="openFanpageModal(${fp.id})">
                         <i data-lucide="eye" style="width:12px; height:12px;"></i>
                         Ver Ficha
                     </button>
@@ -564,7 +605,6 @@ function insertNewFanpageCard(fp) {
     lucide.createIcons();
 }
 
-// Modal de Detalles
 async function openFanpageModal(id) {
     try {
         const res = await fetch(`/fanpages/detail-ajax/${id}/`);
@@ -639,7 +679,6 @@ function copyTextDirect(text, btn) {
     });
 }
 
-// Modal de Eliminación
 function openDeleteFpModal(id) {
     fpIdToDelete = id;
     const modal = document.getElementById('deleteFanpageModal');
@@ -659,7 +698,8 @@ async function executeDeleteFp() {
     if (!fpIdToDelete) return;
     const btn = document.getElementById('confirmDeleteFpBtn');
     btn.disabled = true;
-    btn.innerHTML = '<div style="width:14px; height:14px; border:2px solid white; border-top-color:transparent; border-radius:50%; animation:spin 1s linear infinite;"></div> Eliminando...';
+    btn.innerHTML = '<i data-lucide="loader-2" class="animate-spin" style="width:14px; height:14px;"></i> Eliminando...';
+    lucide.createIcons();
 
     try {
         const res = await fetch(`/fanpages/delete-ajax/${fpIdToDelete}/`, {
@@ -681,12 +721,11 @@ async function executeDeleteFp() {
         alert('Error al conectar con el servidor.');
     } finally {
         btn.disabled = false;
-        btn.innerHTML = '<i data-lucide="trash-2"></i> Eliminar';
+        btn.innerHTML = '<i data-lucide="trash-2" style="width:14px; height:14px;"></i> Eliminar';
         lucide.createIcons();
     }
 }
 
-// Cierre con Escape o clic exterior
 window.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
         closeFanpageModal();
