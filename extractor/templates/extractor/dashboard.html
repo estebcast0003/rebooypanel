@@ -1,70 +1,71 @@
 {% extends 'panel_base.html' %}
 {% load static %}
 
-{% block title %}Dashboard — Rebooy Panel{% endblock %}
-{% block breadcrumb %}Vista General / Métricas de Crecimiento{% endblock %}
+{% block title %}Fan Extractor — Rebooy Panel{% endblock %}
+{% block breadcrumb %}Herramientas IA / Fan Extractor{% endblock %}
 
 {% block extra_css %}
 <style>
-    @keyframes modalIn {
-        from { opacity: 0; transform: scale(0.96); }
-        to { opacity: 1; transform: scale(1); }
+    .metric-card-shadcn {
+        background-color: var(--bg-card);
+        border: 1px solid var(--border-subtle);
+        border-radius: 1.25rem;
+        padding: 22px 24px;
+        transition: all 0.2s ease;
+        position: relative;
+        overflow: hidden;
     }
-    .fb-icon-box {
-        width: 38px;
-        height: 38px;
-        border-radius: 10px;
-        background: rgba(239, 68, 68, 0.12);
-        border: 1px solid rgba(239, 68, 68, 0.25);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #ef4444;
+    .metric-card-shadcn:hover {
+        border-color: var(--border-highlight);
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
     }
-    .metric-value {
-        font-size: 1.85rem;
+    .metric-value-huge {
+        font-size: 2rem;
         font-weight: 800;
+        letter-spacing: -0.03em;
         line-height: 1.1;
-        letter-spacing: -0.02em;
     }
-    .drop-zone {
-        border: 2px dashed var(--border-glass);
-        border-radius: 12px;
-        padding: 14px;
+    .pill-tab {
+        padding: 6px 18px;
+        border-radius: 9999px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.15s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border: 1px solid transparent;
+    }
+    .pill-tab.active {
+        background-color: var(--pill-active-bg);
+        color: var(--pill-active-text);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+    .pill-tab:not(.active) {
+        background-color: var(--pill-bg);
+        color: var(--text-secondary);
+        border-color: var(--border-subtle);
+    }
+    .pill-tab:not(.active):hover {
+        background-color: var(--bg-muted);
+        color: var(--text-primary);
+        border-color: var(--border-highlight);
+    }
+    .drop-zone-shadcn {
+        border: 2px dashed var(--border-highlight);
+        border-radius: 1rem;
+        padding: 16px;
         text-align: center;
         transition: all 0.2s ease;
         cursor: pointer;
-        background: rgba(0,0,0,0.2);
+        background: var(--bg-muted);
     }
-    .drop-zone:hover, .drop-zone.dragover {
-        border-color: rgba(239, 68, 68, 0.5);
-        background: rgba(239, 68, 68, 0.08);
-    }
-    .growth-badge-up {
-        background: rgba(34, 197, 94, 0.12);
-        color: #4ade80;
-        border: 1px solid rgba(34, 197, 94, 0.25);
-        padding: 3px 8px;
-        border-radius: 6px;
-        font-size: 0.75rem;
-        font-weight: 600;
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        font-family: monospace;
-    }
-    .growth-badge-neutral {
-        background: rgba(148, 163, 184, 0.08);
-        color: #94a3b8;
-        border: 1px solid rgba(148, 163, 184, 0.15);
-        padding: 3px 8px;
-        border-radius: 6px;
-        font-size: 0.75rem;
-        font-weight: 600;
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        font-family: monospace;
+    .drop-zone-shadcn:hover, .drop-zone-shadcn.dragover {
+        border-color: #ef4444;
+        background: var(--primary-brand-soft);
     }
 </style>
 {% endblock %}
@@ -73,26 +74,24 @@
 <div id="dashboardApp" style="display:flex; flex-direction:column; gap:24px;">
     {% csrf_token %}
 
-    <!-- ═════════ HEADER PRINCIPAL ═════════ -->
-    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
+    <!-- ═════════ HERO / ENCABEZADO SHADCN ═════════ -->
+    <div style="display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:16px;">
         <div>
-            <h1 style="font-size:1.6rem; font-weight:700; color:var(--text-primary); margin:0 0 4px; display:flex; align-items:center; gap:10px;">
-                <div class="fb-icon-box">
-                    <i data-lucide="activity" style="width:22px; height:22px; color:#ef4444;"></i>
-                </div>
-                Dashboard de Crecimiento & Métricas
+            <h1 style="font-size:1.85rem; font-weight:800; letter-spacing:-0.03em; color:var(--text-primary); margin:0 0 6px;">
+                Fan Extractor & Métricas
             </h1>
             <p style="font-size:0.875rem; color:var(--text-muted); margin:0;">
-                Seguimiento global de páginas, métricas de seguidores y volumen de trabajo generado.
+                Extracción en tiempo real, análisis de audiencia y monitoreo recurrente.
             </p>
         </div>
 
-        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+        <!-- Acciones Rápidas Header -->
+        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
             <button type="button" class="btn-brand" onclick="openExtractionModal()">
-                <i data-lucide="plus"></i>
+                <i data-lucide="plus" style="width:15px; height:15px;"></i>
                 Extraer Nuevas URLs
             </button>
-            <button type="button" class="btn-ghost" onclick="openAlertsModal()" title="Configurar Alertas & Webhooks de Crecimiento">
+            <button type="button" class="btn-ghost" onclick="openAlertsModal()" title="Configurar Alertas & Webhooks">
                 <i data-lucide="bell" style="width:14px; height:14px; color:#facc15;"></i>
                 Alertas
             </button>
@@ -107,89 +106,105 @@
         </div>
     </div>
 
-    <!-- ═════════ TARJETAS KPI DE RESUMEN ═════════ -->
-    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:16px;">
+    <!-- ═════════ TARJETAS KPI (SHADCN 2XL CARDS) ═════════ -->
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(230px, 1fr)); gap:16px;">
         
         <!-- Total Fanpages Monitoreadas -->
-        <div class="glass-card" style="padding:20px; position:relative; overflow:hidden;">
-            <div style="position:absolute; top:-20px; right:-20px; width:85px; height:85px; background:rgba(239,68,68,0.08); border-radius:50%; pointer-events:none;"></div>
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                <span style="font-size:0.75rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-secondary);">Fanpages Monitoreadas</span>
-                <div style="width:34px; height:34px; border-radius:8px; background:rgba(239,68,68,0.12); display:flex; align-items:center; justify-content:center;">
-                    <i data-lucide="layers" style="width:16px; height:16px; color:#ef4444;"></i>
+        <div class="metric-card-shadcn">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px;">
+                <span style="font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-muted);">
+                    Fanpages Monitoreadas
+                </span>
+                <div style="width:34px; height:34px; border-radius:9999px; background:rgba(239,68,68,0.12); display:flex; align-items:center; justify-content:center; color:#ef4444;">
+                    <i data-lucide="layers" style="width:16px; height:16px;"></i>
                 </div>
             </div>
             <div style="display:flex; align-items:baseline; gap:8px;">
-                <span id="metricTotalPages" class="metric-value" style="color:var(--text-primary);">{{ total_pages }}</span>
-                <span style="font-size:0.78rem; color:var(--text-muted);">activas</span>
+                <span id="metricTotalPages" class="metric-value-huge" style="color:var(--text-primary);">{{ total_pages }}</span>
+                <span class="badge-pill badge-user" style="font-size:0.68rem;">activas</span>
             </div>
         </div>
 
         <!-- Total Seguidores Acumulados -->
-        <div class="glass-card" style="padding:20px; position:relative; overflow:hidden;">
-            <div style="position:absolute; top:-20px; right:-20px; width:85px; height:85px; background:rgba(34,197,94,0.08); border-radius:50%; pointer-events:none;"></div>
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                <span style="font-size:0.75rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-secondary);">Total Seguidores</span>
-                <div style="width:34px; height:34px; border-radius:8px; background:rgba(34,197,94,0.12); display:flex; align-items:center; justify-content:center;">
-                    <i data-lucide="users" style="width:16px; height:16px; color:#22c55e;"></i>
+        <div class="metric-card-shadcn">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px;">
+                <span style="font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-muted);">
+                    Total Audiencia
+                </span>
+                <div style="width:34px; height:34px; border-radius:9999px; background:rgba(34,197,94,0.12); display:flex; align-items:center; justify-content:center; color:#22c55e;">
+                    <i data-lucide="users" style="width:16px; height:16px;"></i>
                 </div>
             </div>
             <div style="display:flex; align-items:baseline; gap:8px;">
-                <span id="metricTotalFollowers" class="metric-value" style="color:#22c55e;" title="{{ total_followers|floatformat:0 }} seguidores">{{ formatted_total_followers }}</span>
-                <span style="font-size:0.78rem; color:var(--text-muted);">acumulados</span>
+                <span id="metricTotalFollowers" class="metric-value-huge" style="color:#22c55e;" title="{{ total_followers|floatformat:0 }} seguidores">
+                    {{ formatted_total_followers }}
+                </span>
+                <span class="badge-pill badge-superadmin" style="font-size:0.68rem; background:rgba(34,197,94,0.12); color:#22c55e; border-color:rgba(34,197,94,0.25);">
+                    acumulados
+                </span>
             </div>
         </div>
 
         <!-- Crecimiento de Seguidores -->
-        <div class="glass-card" style="padding:20px; position:relative; overflow:hidden;">
-            <div style="position:absolute; top:-20px; right:-20px; width:85px; height:85px; background:rgba(59,130,246,0.08); border-radius:50%; pointer-events:none;"></div>
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                <span style="font-size:0.75rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-secondary);">Crecimiento de Seguidores</span>
-                <div style="width:34px; height:34px; border-radius:8px; background:rgba(59,130,246,0.12); display:flex; align-items:center; justify-content:center;">
-                    <i data-lucide="trending-up" style="width:16px; height:16px; color:#60a5fa;"></i>
+        <div class="metric-card-shadcn">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px;">
+                <span style="font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-muted);">
+                    Crecimiento Neto
+                </span>
+                <div style="width:34px; height:34px; border-radius:9999px; background:rgba(59,130,246,0.12); display:flex; align-items:center; justify-content:center; color:#3b82f6;">
+                    <i data-lucide="trending-up" style="width:16px; height:16px;"></i>
                 </div>
             </div>
             <div style="display:flex; align-items:baseline; gap:8px;">
-                <span id="metricNetGrowth" class="metric-value" style="color:#60a5fa;" title="Crecimiento neto total: {{ total_net_growth|floatformat:0 }} seguidores">{{ formatted_net_growth }}</span>
-                <span id="metricGrowthPct" style="font-size:0.78rem; color:var(--text-muted);">({{ formatted_growth_percentage }})</span>
+                <span id="metricNetGrowth" class="metric-value-huge" style="color:#60a5fa;" title="Crecimiento neto: {{ total_net_growth|floatformat:0 }} seguidores">
+                    {{ formatted_net_growth }}
+                </span>
+                <span id="metricGrowthPct" class="badge-pill badge-admin" style="font-size:0.68rem;">
+                    {{ formatted_growth_percentage }}
+                </span>
             </div>
         </div>
 
         <!-- Promedio por Fanpage -->
-        <div class="glass-card" style="padding:20px; position:relative; overflow:hidden;">
-            <div style="position:absolute; top:-20px; right:-20px; width:85px; height:85px; background:rgba(234,179,8,0.08); border-radius:50%; pointer-events:none;"></div>
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                <span style="font-size:0.75rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-secondary);">Promedio por Fanpage</span>
-                <div style="width:34px; height:34px; border-radius:8px; background:rgba(234,179,8,0.12); display:flex; align-items:center; justify-content:center;">
-                    <i data-lucide="bar-chart-2" style="width:16px; height:16px; color:#facc15;"></i>
+        <div class="metric-card-shadcn">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px;">
+                <span style="font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-muted);">
+                    Promedio / Página
+                </span>
+                <div style="width:34px; height:34px; border-radius:9999px; background:rgba(250,204,21,0.12); display:flex; align-items:center; justify-content:center; color:#facc15;">
+                    <i data-lucide="bar-chart-2" style="width:16px; height:16px;"></i>
                 </div>
             </div>
             <div style="display:flex; align-items:baseline; gap:8px;">
-                <span id="metricAvgFollowers" class="metric-value" style="color:var(--text-primary);" title="Promedio exacto: {{ avg_followers|floatformat:0 }} seguidores">{{ formatted_avg_followers }}</span>
-                <span id="metricGrowingCount" style="font-size:0.78rem; color:#4ade80; font-weight:600;">{{ growing_pages_count }} en subida</span>
+                <span id="metricAvgFollowers" class="metric-value-huge" style="color:var(--text-primary);" title="Promedio exacto: {{ avg_followers|floatformat:0 }} seguidores">
+                    {{ formatted_avg_followers }}
+                </span>
+                <span id="metricGrowingCount" class="badge-pill" style="font-size:0.68rem; background:rgba(34,197,94,0.12); color:#22c55e; border-color:rgba(34,197,94,0.25);">
+                    {{ growing_pages_count }} en subida
+                </span>
             </div>
         </div>
 
     </div>
 
-    <!-- ═════════ BARRA DE AUTO-REFRESH & ACTUALIZACIÓN AUTOMÁTICA ═════════ -->
-    <div class="glass-card" style="padding:16px 22px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px; border:1px solid var(--border-glass);">
+    <!-- ═════════ BARRA DE AUTO-REFRESH & SCHEDULER (SHADCN CARD) ═════════ -->
+    <div class="shadcn-card" style="padding:16px 22px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px;">
         <div style="display:flex; align-items:center; gap:14px;">
-            <div style="width:40px; height:40px; border-radius:10px; background:rgba(59,130,246,0.12); border:1px solid rgba(59,130,246,0.25); display:flex; align-items:center; justify-content:center; color:#60a5fa;">
-                <i data-lucide="refresh-cw" id="schedulerStatusIcon" style="width:18px; height:18px;"></i>
+            <div style="width:38px; height:38px; border-radius:9999px; background:rgba(59,130,246,0.12); border:1px solid rgba(59,130,246,0.25); display:flex; align-items:center; justify-content:center; color:#60a5fa; flex-shrink:0;">
+                <i data-lucide="refresh-cw" id="schedulerStatusIcon" style="width:17px; height:17px;"></i>
             </div>
             <div>
                 <div style="display:flex; align-items:center; gap:10px;">
                     <span style="font-size:0.92rem; font-weight:700; color:var(--text-primary);">Actualización Automática (Auto-Refresh)</span>
                     <label style="position:relative; display:inline-flex; align-items:center; cursor:pointer;" title="Activar / Pausar Auto-Refresh">
                         <input type="checkbox" id="schedulerToggle" style="position:absolute; opacity:0; width:0; height:0;" {% if scheduler.enabled %}checked{% endif %}>
-                        <div id="schedulerToggleTrack" style="width:38px; height:20px; background:{% if scheduler.enabled %}#3b82f6{% else %}rgba(255,255,255,0.15){% endif %}; border-radius:999px; transition:all 0.2s; position:relative;">
+                        <div id="schedulerToggleTrack" style="width:38px; height:20px; background:{% if scheduler.enabled %}#ef4444{% else %}var(--border-highlight){% endif %}; border-radius:9999px; transition:all 0.2s; position:relative;">
                             <div id="schedulerToggleThumb" style="width:16px; height:16px; background:#ffffff; border-radius:50%; position:absolute; top:2px; left:{% if scheduler.enabled %}20px{% else %}2px{% endif %}; transition:all 0.2s;"></div>
                         </div>
                     </label>
                 </div>
                 <div style="font-size:0.78rem; color:var(--text-muted); display:flex; align-items:center; gap:8px; margin-top:2px;">
-                    <span>Próxima ejecución: <strong id="schedulerCountdown" style="color:#60a5fa; font-family:monospace;">{% if scheduler.enabled %}Calculando...{% else %}Pausado{% endif %}</strong></span>
+                    <span>Próxima ejecución: <strong id="schedulerCountdown" style="color:#ef4444; font-family:monospace;">{% if scheduler.enabled %}Calculando...{% else %}Pausado{% endif %}</strong></span>
                 </div>
             </div>
         </div>
@@ -197,8 +212,8 @@
         <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
             <!-- Selector de Frecuencia -->
             <div style="display:flex; align-items:center; gap:6px;">
-                <span style="font-size:0.75rem; color:var(--text-secondary); text-transform:uppercase; font-weight:600;">Frecuencia:</span>
-                <select id="schedulerIntervalSelect" class="glass-input" style="padding:6px 12px; border-radius:8px; font-size:0.8rem; cursor:pointer;">
+                <span style="font-size:0.75rem; color:var(--text-secondary); text-transform:uppercase; font-weight:700; letter-spacing:0.04em;">Frecuencia:</span>
+                <select id="schedulerIntervalSelect" class="shadcn-input" style="padding:6px 14px !important; font-size:0.8rem; cursor:pointer; height:36px;">
                     <option value="15" {% if scheduler.interval_minutes == 15 %}selected{% endif %}>Cada 15 min</option>
                     <option value="30" {% if scheduler.interval_minutes == 30 %}selected{% endif %}>Cada 30 min</option>
                     <option value="60" {% if scheduler.interval_minutes == 60 %}selected{% endif %}>Cada 1 hora</option>
@@ -210,47 +225,67 @@
             </div>
 
             <!-- Botón Actualizar Ahora -->
-            <button type="button" id="btnTriggerScheduledNow" class="btn-brand" style="padding:7px 14px; font-size:0.8rem;" title="Actualizar todas tus fanpages ahora">
+            <button type="button" id="btnTriggerScheduledNow" class="btn-brand" style="font-size:0.82rem;" title="Actualizar todas tus fanpages ahora">
                 <i data-lucide="rotate-cw" id="btnTriggerSchedulerIcon" style="width:14px; height:14px;"></i>
                 <span id="btnTriggerSchedulerText">Actualizar Ahora</span>
             </button>
         </div>
     </div>
 
-    <!-- ═════════ TABLA DE RESULTADOS & MONITOREO ═════════ -->
-    <div class="glass-card" style="padding:0; overflow:hidden;">
+    <!-- ═════════ FILTROS PÍLDORA & BÚSQUEDA ═════════ -->
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px;">
         
-        <!-- Table Header -->
-        <div style="padding:18px 24px; border-bottom:1px solid var(--border-glass); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+        <!-- Segmented Tabs -->
+        <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+            <button type="button" class="pill-tab active" onclick="filterTableCategory('all', this)">
+                <i data-lucide="layout-grid" style="width:13px; height:13px;"></i>
+                Todos
+            </button>
+            <button type="button" class="pill-tab" onclick="filterTableCategory('growth', this)">
+                <i data-lucide="trending-up" style="width:13px; height:13px; color:#22c55e;"></i>
+                Con Crecimiento
+            </button>
+            <button type="button" class="pill-tab" onclick="filterTableCategory('major', this)">
+                <i data-lucide="zap" style="width:13px; height:13px; color:#facc15;"></i>
+                Audiencia (+100K)
+            </button>
+        </div>
+
+        <!-- Search Bar Pill -->
+        <div style="position:relative; width:100%; max-width:280px;">
+            <i data-lucide="search" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); width:15px; height:15px; color:var(--text-muted);"></i>
+            <input 
+                type="text" 
+                id="tableSearchInput" 
+                placeholder="Buscar por nombre o enlace..." 
+                class="shadcn-input" 
+                style="width:100%; padding-left:36px !important;"
+            >
+        </div>
+    </div>
+
+    <!-- ═════════ TABLA DE RESULTADOS & MONITOREO ═════════ -->
+    <div class="shadcn-card" style="padding:0; overflow:hidden;">
+        
+        <!-- Table Header Info Bar -->
+        <div style="padding:16px 20px; border-bottom:1px solid var(--border-subtle); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
             <div style="display:flex; align-items:center; gap:10px;">
-                <i data-lucide="table" style="width:18px; height:18px; color:#ef4444;"></i>
-                <h2 style="font-size:1.05rem; font-weight:600; color:var(--text-primary); margin:0;">
+                <h2 style="font-size:1rem; font-weight:700; color:var(--text-primary); margin:0;">
                     Registro de Fanpages & Métricas
                 </h2>
-                <span id="tableCountBadge" class="badge-admin" style="font-family:monospace; font-size:0.78rem;">{{ pages.count }}</span>
+                <span id="tableCountBadge" class="badge-pill badge-user" style="font-family:monospace;">{{ pages.count }}</span>
             </div>
 
-            <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-                <div style="position:relative;">
-                    <i data-lucide="search" style="position:absolute; left:10px; top:50%; transform:translateY(-50%); width:14px; height:14px; color:var(--text-muted);"></i>
-                    <input 
-                        type="text" 
-                        id="tableSearchInput" 
-                        placeholder="Filtrar por nombre o URL..." 
-                        class="glass-input" 
-                        style="padding:7px 12px 7px 32px; border-radius:8px; font-size:0.8rem; width:220px;"
-                    >
-                </div>
-                
-                <button type="button" class="btn-brand" style="padding:7px 14px; font-size:0.8rem;" onclick="openExtractionModal()">
-                    <i data-lucide="plus" style="width:14px; height:14px;"></i>
+            <div style="display:flex; align-items:center; gap:8px;">
+                <button type="button" class="btn-ghost" style="padding:5px 14px; font-size:0.78rem;" onclick="openExtractionModal()">
+                    <i data-lucide="plus" style="width:13px; height:13px;"></i>
                     Agregar URLs
                 </button>
             </div>
         </div>
 
         <!-- Live Progress Bar (Hidden por defecto) -->
-        <div id="liveProgressContainer" class="liveProgressContainer" style="display:none; padding:12px 24px; background:rgba(239,68,68,0.08); border-bottom:1px solid rgba(239,68,68,0.2);">
+        <div id="liveProgressContainer" class="liveProgressContainer" style="display:none; padding:12px 20px; background:var(--primary-brand-soft); border-bottom:1px solid rgba(239,68,68,0.2);">
             <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.8rem; color:#f87171; margin-bottom:6px;">
                 <span class="progressStatusLabel" style="display:flex; align-items:center; gap:6px;">
                     <i data-lucide="loader-2" class="animate-spin" style="width:14px; height:14px;"></i>
@@ -258,14 +293,14 @@
                 </span>
                 <span class="progressCounterLabel" style="font-family:monospace; font-weight:700;">0 / 0 (0%)</span>
             </div>
-            <div style="width:100%; height:6px; background:rgba(0,0,0,0.3); border-radius:999px; overflow:hidden;">
+            <div style="width:100%; height:6px; background:rgba(0,0,0,0.3); border-radius:9999px; overflow:hidden;">
                 <div class="progressBarFill" style="height:100%; background:#ef4444; width:0%; transition:width 0.3s ease;"></div>
             </div>
         </div>
 
         <!-- Table Container -->
         <div style="overflow-x:auto; max-height:600px; overflow-y:auto;">
-            <table class="panel-table">
+            <table class="glass-table">
                 <thead>
                     <tr>
                         <th style="width:50px; text-align:center;">#</th>
@@ -273,39 +308,38 @@
                         <th style="text-align:right;">Seguidores</th>
                         <th style="text-align:center;">Crecimiento</th>
                         <th style="text-align:center;">Estado</th>
-                        <th style="text-align:center; width:140px;">Acciones</th>
+                        <th style="text-align:center; width:150px;">Acciones</th>
                     </tr>
                 </thead>
                 <tbody id="pagesTableBody">
                     {% for page in pages %}
-                    <tr id="row-page-{{ page.id }}">
-                        <td style="text-align:center; font-family:monospace; color:var(--text-muted);">{{ page.id }}</td>
+                    <tr id="row-page-{{ page.id }}" class="fanpage-row" data-followers="{{ page.followers }}" data-has-growth="{% if page.growth_data.is_positive %}true{% else %}false{% endif %}">
+                        <td style="text-align:center; font-family:monospace; color:var(--text-muted); font-size:0.8rem;">{{ page.id }}</td>
                         <td>
                             <div style="font-weight:600; color:var(--text-primary); font-size:0.9rem;">{{ page.name }}</div>
-                            <a href="{{ page.url }}" target="_blank" rel="noopener noreferrer" style="font-size:0.76rem; color:var(--text-muted); font-family:monospace; text-decoration:none;" onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='var(--text-muted)'">
+                            <a href="{{ page.url }}" target="_blank" rel="noopener noreferrer" style="font-size:0.75rem; color:var(--text-muted); font-family:monospace; text-decoration:none;" onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='var(--text-muted)'">
                                 {{ page.url }}
                             </a>
                         </td>
                         <td style="text-align:right;">
-                            <span class="badge-active" title="{{ page.followers|floatformat:0 }} seguidores" style="font-family:monospace; font-weight:700; font-size:0.88rem; background:rgba(34,197,94,0.12); padding:4px 10px; border-radius:6px; border:1px solid rgba(34,197,94,0.25); cursor:help;">
+                            <span class="badge-pill badge-superadmin" title="{{ page.followers|floatformat:0 }} seguidores" style="font-family:monospace; font-weight:700; font-size:0.85rem; background:rgba(34,197,94,0.12); color:#22c55e; border-color:rgba(34,197,94,0.25);">
                                 {{ page.formatted_followers }}
                             </span>
                         </td>
                         <td style="text-align:center;">
                             {% with growth=page.growth_data %}
                                 {% if growth.is_positive %}
-                                    <span class="growth-badge-up" title="Crecimiento desde el primer registro: {{ growth.delta|floatformat:0 }} seguidores">
+                                    <span class="badge-pill" style="background:rgba(34,197,94,0.12); color:#22c55e; border:1px solid rgba(34,197,94,0.25); font-family:monospace;" title="Crecimiento: {{ growth.delta|floatformat:0 }} seguidores">
                                         <i data-lucide="trending-up" style="width:12px; height:12px;"></i>
-                                        {{ growth.formatted_delta }} ({{ growth.formatted_pct }})
+                                        +{{ growth.formatted_delta }} ({{ growth.formatted_pct }})
                                     </span>
                                 {% elif growth.is_negative %}
-                                    <span style="background:rgba(239,68,68,0.12); color:#f87171; border:1px solid rgba(239,68,68,0.25); padding:3px 8px; border-radius:6px; font-size:0.75rem; font-weight:600; display:inline-flex; align-items:center; gap:4px; font-family:monospace;">
+                                    <span class="badge-pill" style="background:rgba(239,68,68,0.12); color:#f87171; border:1px solid rgba(239,68,68,0.25); font-family:monospace;">
                                         <i data-lucide="trending-down" style="width:12px; height:12px;"></i>
                                         {{ growth.formatted_delta }}
                                     </span>
                                 {% else %}
-                                    <span class="growth-badge-neutral" title="Sin variación registrada">
-                                        <i data-lucide="minus" style="width:12px; height:12px;"></i>
+                                    <span class="badge-pill badge-user" style="font-family:monospace;">
                                         0 (0%)
                                     </span>
                                 {% endif %}
@@ -313,37 +347,37 @@
                         </td>
                         <td style="text-align:center;">
                             {% if page.followers > 0 %}
-                            <span class="badge-active" style="font-size:0.75rem; padding:4px 10px; border-radius:999px; background:rgba(34,197,94,0.1); border:1px solid rgba(34,197,94,0.2);">
-                                <i data-lucide="check" style="width:12px; height:12px;"></i> Éxito
+                            <span class="badge-pill" style="background:rgba(34,197,94,0.12); color:#22c55e; border:1px solid rgba(34,197,94,0.25);">
+                                <i data-lucide="check" style="width:11px; height:11px;"></i> Activa
                             </span>
                             {% else %}
-                            <span class="badge-inactive" style="font-size:0.75rem; padding:4px 10px; border-radius:999px; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.2); color:#f87171;" title="{{ page.status }}">
-                                <i data-lucide="alert-triangle" style="width:12px; height:12px;"></i> {{ page.status|truncatechars:18 }}
+                            <span class="badge-pill badge-superadmin" title="{{ page.status }}">
+                                <i data-lucide="alert-triangle" style="width:11px; height:11px;"></i> {{ page.status|truncatechars:14 }}
                             </span>
                             {% endif %}
                         </td>
                         <td style="text-align:center;">
                             <div style="display:flex; align-items:center; justify-content:center; gap:6px;">
-                                <button type="button" class="btn-ghost" style="padding:4px 8px; font-size:0.72rem;" onclick="openGrowthModal({{ page.id }})" title="Ver evolución de seguidores">
-                                    <i data-lucide="line-chart" style="width:13px; height:13px; color:#22c55e;"></i>
+                                <button type="button" class="btn-ghost" style="padding:4px 10px; font-size:0.72rem;" onclick="openGrowthModal({{ page.id }})" title="Ver evolución de seguidores">
+                                    <i data-lucide="line-chart" style="width:12px; height:12px; color:#22c55e;"></i>
                                     Historial
                                 </button>
-                                <a href="{{ page.url }}" target="_blank" rel="noopener noreferrer" class="action-btn action-btn-edit" title="Abrir en Facebook">
-                                    <i data-lucide="external-link"></i>
+                                <a href="{{ page.url }}" target="_blank" rel="noopener noreferrer" class="action-pill-btn" style="width:28px; height:28px;" title="Abrir en Facebook">
+                                    <i data-lucide="external-link" style="width:13px; height:13px;"></i>
                                 </a>
-                                <button type="button" onclick="openDeleteModal({{ page.id }}, '{{ page.name|escapejs }}')" class="action-btn action-btn-delete" title="Eliminar fila">
-                                    <i data-lucide="trash-2"></i>
+                                <button type="button" onclick="openDeleteModal({{ page.id }}, '{{ page.name|escapejs }}')" class="action-pill-btn" style="width:28px; height:28px; color:#f87171;" title="Eliminar fila">
+                                    <i data-lucide="trash-2" style="width:13px; height:13px;"></i>
                                 </button>
                             </div>
                         </td>
                     </tr>
                     {% empty %}
                     <tr id="emptyTableMessage">
-                        <td colspan="5" style="padding:56px 20px; text-align:center; color:var(--text-muted);">
+                        <td colspan="6" style="padding:56px 20px; text-align:center; color:var(--text-muted);">
                             <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px;">
                                 <i data-lucide="inbox" style="width:42px; height:42px; stroke-width:1; color:var(--text-muted);"></i>
-                                <div style="font-size:0.95rem; font-weight:500;">No hay fanpages registradas todavía</div>
-                                <div style="font-size:0.8rem; color:var(--text-secondary);">Hacé clic en <strong>Extraer Nuevas URLs</strong> para comenzar el escaneo</div>
+                                <div style="font-size:0.95rem; font-weight:600; color:var(--text-primary);">No hay fanpages registradas todavía</div>
+                                <div style="font-size:0.8rem; color:var(--text-muted);">Hacé clic en <strong>Extraer Nuevas URLs</strong> para iniciar el rastreo.</div>
                                 <button type="button" class="btn-brand" style="margin-top:8px; font-size:0.82rem;" onclick="openExtractionModal()">
                                     <i data-lucide="plus"></i> Extraer Primeras URLs
                                 </button>
@@ -354,37 +388,81 @@
                 </tbody>
             </table>
         </div>
-
     </div>
+
+    <!-- ═════════ RIBBON INFERIOR DE RENDIMIENTO & SERVICIOS ═════════ -->
+    <div class="shadcn-card" style="padding:20px 24px;">
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:20px;">
+            <div style="display:flex; align-items:center; gap:12px;">
+                <div style="width:36px; height:36px; border-radius:9999px; background:rgba(239,68,68,0.12); display:flex; align-items:center; justify-content:center; color:#ef4444; flex-shrink:0;">
+                    <i data-lucide="shield-check" style="width:18px; height:18px;"></i>
+                </div>
+                <div>
+                    <div style="font-size:0.85rem; font-weight:700; color:var(--text-primary);">Circuit Breaker</div>
+                    <div style="font-size:0.72rem; color:var(--text-muted);">Protección y cooldown automático</div>
+                </div>
+            </div>
+
+            <div style="display:flex; align-items:center; gap:12px;">
+                <div style="width:36px; height:36px; border-radius:9999px; background:rgba(250,204,21,0.12); display:flex; align-items:center; justify-content:center; color:#facc15; flex-shrink:0;">
+                    <i data-lucide="bell-ring" style="width:18px; height:18px;"></i>
+                </div>
+                <div>
+                    <div style="font-size:0.85rem; font-weight:700; color:var(--text-primary);">Alertas Webhooks</div>
+                    <div style="font-size:0.72rem; color:var(--text-muted);">Discord y Endpoints HTTP</div>
+                </div>
+            </div>
+
+            <div style="display:flex; align-items:center; gap:12px;">
+                <div style="width:36px; height:36px; border-radius:9999px; background:rgba(34,197,94,0.12); display:flex; align-items:center; justify-content:center; color:#22c55e; flex-shrink:0;">
+                    <i data-lucide="cpu" style="width:18px; height:18px;"></i>
+                </div>
+                <div>
+                    <div style="font-size:0.85rem; font-weight:700; color:var(--text-primary);">Async Workers</div>
+                    <div style="font-size:0.72rem; color:var(--text-muted);">Celery + Redis / Hilos resilientes</div>
+                </div>
+            </div>
+
+            <div style="display:flex; align-items:center; gap:12px;">
+                <div style="width:36px; height:36px; border-radius:9999px; background:rgba(59,130,246,0.12); display:flex; align-items:center; justify-content:center; color:#3b82f6; flex-shrink:0;">
+                    <i data-lucide="smartphone" style="width:18px; height:18px;"></i>
+                </div>
+                <div>
+                    <div style="font-size:0.85rem; font-weight:700; color:var(--text-primary);">Seguridad Activa</div>
+                    <div style="font-size:0.72rem; color:var(--text-muted);">Monitoreo y revocación remota</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </div>
 
-<!-- ═════════ MODAL GLASSMORPHISM: EXTRAER NUEVAS URLS ═════════ -->
-<div id="newExtractionModal" style="display:none; position:fixed; inset:0; z-index:100000; background:rgba(2, 6, 23, 0.85); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); align-items:center; justify-content:center; padding:16px;">
-    <div class="glass-card" style="width:100%; max-width:560px; padding:28px 32px; border:1px solid rgba(255,255,255,0.12); box-shadow:0 25px 50px -12px rgba(0,0,0,0.7); animation:modalIn 0.25s ease-out; position:relative; overflow:hidden;">
-        <div style="position:absolute; top:-30px; right:-30px; width:110px; height:110px; background:rgba(239,68,68,0.08); border-radius:50%; pointer-events:none;"></div>
-
+<!-- ═════════ MODAL SHADCN / RADIX: EXTRAER NUEVAS URLS ═════════ -->
+<div id="newExtractionModal" style="display:none; position:fixed; inset:0; z-index:100000; background:var(--modal-backdrop); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); align-items:center; justify-content:center; padding:16px;">
+    <div class="shadcn-card" style="width:100%; max-width:560px; padding:28px 32px; animation:modalIn 0.22s ease-out; position:relative; overflow:hidden;">
+        
         <!-- Modal Header -->
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;">
             <div style="display:flex; align-items:center; gap:10px;">
-                <div class="fb-icon-box" style="width:32px; height:32px;">
-                    <i data-lucide="list-plus" style="width:16px; height:16px; color:#ef4444;"></i>
+                <div style="width:36px; height:36px; border-radius:9999px; background:rgba(239,68,68,0.12); display:flex; align-items:center; justify-content:center; color:#ef4444;">
+                    <i data-lucide="list-plus" style="width:18px; height:18px;"></i>
                 </div>
                 <div>
-                    <h3 style="font-size:1.15rem; font-weight:700; color:#f1f5f9; margin:0;">
+                    <h3 style="font-size:1.15rem; font-weight:700; color:var(--text-primary); margin:0;">
                         Extraer Nuevas URLs
                     </h3>
                     <p style="font-size:0.75rem; color:var(--text-muted); margin:0;">
-                        Pegá URLs de páginas de Facebook o cargá un archivo .txt
+                        Pegá URLs de Facebook o cargá un archivo .txt
                     </p>
                 </div>
             </div>
-            <button type="button" class="action-btn" style="width:32px; height:32px; background:rgba(255,255,255,0.06); border-radius:8px;" onclick="closeExtractionModal()">
-                <i data-lucide="x" style="width:16px; height:16px; color:#cbd5e1;"></i>
+            <button type="button" class="action-pill-btn" onclick="closeExtractionModal()">
+                <i data-lucide="x"></i>
             </button>
         </div>
 
         <!-- Drag & Drop Zone -->
-        <div id="dropZone" class="drop-zone" style="margin-bottom:14px;">
+        <div id="dropZone" class="drop-zone-shadcn" style="margin-bottom:14px;">
             <input type="file" id="fileInput" accept=".txt" style="display:none;">
             <div style="display:flex; align-items:center; justify-content:center; gap:8px; font-size:0.8rem; color:var(--text-secondary);">
                 <i data-lucide="upload-cloud" style="width:18px; height:18px; color:#ef4444;"></i>
@@ -395,17 +473,17 @@
         <!-- URLs Textarea -->
         <div style="position:relative; margin-bottom:16px;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                <label style="font-size:0.75rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-secondary);">
+                <label style="font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-muted);">
                     Lista de Enlaces (Una por línea)
                 </label>
-                <span id="urlCountBadge" class="badge-user" style="font-family:monospace; font-size:0.72rem;">0 líneas</span>
+                <span id="urlCountBadge" class="badge-pill badge-user" style="font-family:monospace; font-size:0.72rem;">0 líneas</span>
             </div>
             <textarea 
                 id="urlsTextarea" 
-                rows="7" 
+                rows="6" 
                 placeholder="https://www.facebook.com/pagina1&#10;https://www.facebook.com/pagina2&#10;facebook.com/pagina3..."
-                class="glass-input" 
-                style="width:100%; padding:12px; border-radius:10px; font-family:monospace; font-size:0.82rem; line-height:1.4; resize:vertical;"
+                class="shadcn-input" 
+                style="width:100%; border-radius:0.875rem !important; padding:12px !important; font-family:monospace; font-size:0.82rem; line-height:1.4; resize:vertical;"
             >{{ cached_urls }}</textarea>
             <div id="cacheSaveIndicator" style="position:absolute; bottom:8px; right:10px; font-size:0.68rem; color:var(--text-muted); opacity:0; transition:opacity 0.2s;">
                 Guardado
@@ -413,7 +491,7 @@
         </div>
 
         <!-- Live Progress Container in Modal -->
-        <div id="liveProgressContainer" style="display:none; padding:12px 16px; background:rgba(239,68,68,0.08); border:1px solid rgba(239,68,68,0.2); border-radius:10px; margin-bottom:16px;">
+        <div id="liveProgressContainer" style="display:none; padding:12px 16px; background:var(--primary-brand-soft); border:1px solid rgba(239,68,68,0.2); border-radius:0.875rem; margin-bottom:16px;">
             <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.78rem; color:#f87171; margin-bottom:6px;">
                 <span id="progressStatusLabel" style="display:flex; align-items:center; gap:6px;">
                     <i data-lucide="loader-2" class="animate-spin" style="width:14px; height:14px;"></i>
@@ -421,7 +499,7 @@
                 </span>
                 <span id="progressCounterLabel" style="font-family:monospace; font-weight:700;">0 / 0 (0%)</span>
             </div>
-            <div style="width:100%; height:6px; background:rgba(0,0,0,0.3); border-radius:999px; overflow:hidden;">
+            <div style="width:100%; height:6px; background:rgba(0,0,0,0.3); border-radius:9999px; overflow:hidden;">
                 <div id="progressBarFill" style="height:100%; background:#ef4444; width:0%; transition:width 0.3s ease;"></div>
             </div>
         </div>
@@ -435,7 +513,7 @@
             <div style="display:flex; gap:10px;">
                 <button type="button" class="btn-ghost" onclick="closeExtractionModal()">Cerrar</button>
                 <button type="button" id="btnStartExtraction" class="btn-brand">
-                    <i data-lucide="play" id="btnStartIcon"></i>
+                    <i data-lucide="play" id="btnStartIcon" style="width:14px; height:14px;"></i>
                     <span id="btnStartText">Iniciar Extracción</span>
                 </button>
             </div>
@@ -443,120 +521,47 @@
     </div>
 </div>
 
-<!-- ═════════ MODAL GLASSMORPHISM: CONFIRMAR ELIMINACIÓN INDIVIDUAL ═════════ -->
-<div id="deleteConfirmModal" style="display:none; position:fixed; inset:0; z-index:100000; background:rgba(2, 6, 23, 0.85); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); align-items:center; justify-content:center; padding:16px;">
-    <div class="glass-card" style="width:100%; max-width:440px; padding:28px; border:1px solid rgba(239,68,68,0.25); box-shadow:0 25px 50px -12px rgba(0,0,0,0.8); animation:modalIn 0.22s ease-out; text-align:center; position:relative; overflow:hidden;">
-        <div style="position:absolute; top:-30px; left:50%; transform:translateX(-50%); width:120px; height:120px; background:rgba(239,68,68,0.12); border-radius:50%; pointer-events:none; filter:blur(20px);"></div>
-
-        <div style="width:52px; height:52px; border-radius:14px; background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.3); display:flex; align-items:center; justify-content:center; margin:0 auto 16px;">
-            <i data-lucide="trash-2" style="width:24px; height:24px; color:#f87171;"></i>
-        </div>
-
-        <h3 style="font-size:1.15rem; font-weight:700; color:#f1f5f9; margin:0 0 8px;">¿Eliminar Fanpage?</h3>
-        <p style="font-size:0.85rem; color:#94a3b8; margin:0 0 14px; line-height:1.5;">
-            Esta acción no se puede deshacer. Se eliminará el registro de la página:
-        </p>
-        <div id="deleteModalTargetText" style="padding:8px 12px; background:rgba(0,0,0,0.3); border:1px solid var(--border-glass); border-radius:8px; font-family:monospace; font-size:0.8rem; color:#ef4444; word-break:break-all; margin-bottom:24px;"></div>
-
-        <div style="display:flex; gap:10px; justify-content:center;">
-            <button type="button" class="btn-ghost" style="flex:1; justify-content:center;" onclick="closeDeleteModal()">
-                Cancelar
-            </button>
-            <button type="button" id="confirmDeleteBtn" class="btn-danger" style="flex:1; justify-content:center;" onclick="executeDeletePage()">
-                <i data-lucide="trash-2" id="confirmDeleteIcon"></i>
-                <span id="confirmDeleteText">Eliminar</span>
-            </button>
-        </div>
-    </div>
-</div>
-
-<!-- ═════════ MODAL GLASSMORPHISM: CONFIRMAR LIMPIAR TODO ═════════ -->
-<div id="clearAllConfirmModal" style="display:none; position:fixed; inset:0; z-index:100000; background:rgba(2, 6, 23, 0.85); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); align-items:center; justify-content:center; padding:16px;">
-    <div class="glass-card" style="width:100%; max-width:440px; padding:28px; border:1px solid rgba(239,68,68,0.25); box-shadow:0 25px 50px -12px rgba(0,0,0,0.8); animation:modalIn 0.22s ease-out; text-align:center; position:relative; overflow:hidden;">
-        <div style="position:absolute; top:-30px; left:50%; transform:translateX(-50%); width:120px; height:120px; background:rgba(239,68,68,0.12); border-radius:50%; pointer-events:none; filter:blur(20px);"></div>
-
-        <div style="width:52px; height:52px; border-radius:14px; background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.3); display:flex; align-items:center; justify-content:center; margin:0 auto 16px;">
-            <i data-lucide="alert-octagon" style="width:24px; height:24px; color:#ef4444;"></i>
-        </div>
-
-        <h3 style="font-size:1.15rem; font-weight:700; color:#f1f5f9; margin:0 0 8px;">¿Eliminar todos los registros?</h3>
-        <p style="font-size:0.85rem; color:#94a3b8; margin:0 0 24px; line-height:1.5;">
-            Esta acción eliminará todas las fanpages y métricas acumuladas de forma permanente.
-        </p>
-
-        <div style="display:flex; gap:10px; justify-content:center;">
-            <button type="button" class="btn-ghost" style="flex:1; justify-content:center;" onclick="closeClearAllModal()">
-                Cancelar
-            </button>
-            <button type="button" id="confirmClearAllBtn" class="btn-danger" style="flex:1; justify-content:center;" onclick="executeClearAllPages()">
-                <i data-lucide="trash" id="confirmClearAllIcon"></i>
-                <span id="confirmClearAllText">Limpiar Todo</span>
-            </button>
-        </div>
-    </div>
-</div>
-
-<!-- ═════════ MODAL GLASSMORPHISM: HISTORIAL DE CRECIMIENTO ═════════ -->
-<div id="growthHistoryModal" style="display:none; position:fixed; inset:0; z-index:100000; background:rgba(2, 6, 23, 0.85); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); align-items:center; justify-content:center; padding:16px;">
-    <div class="glass-card" style="width:100%; max-width:680px; max-height:85vh; display:flex; flex-direction:column; border:1px solid var(--border-glass); box-shadow:0 25px 50px -12px rgba(0,0,0,0.8); animation:modalIn 0.22s ease-out; overflow:hidden;">
+<!-- ═════════ MODAL SHADCN: HISTORIAL DE CRECIMIENTO ═════════ -->
+<div id="growthHistoryModal" style="display:none; position:fixed; inset:0; z-index:100000; background:var(--modal-backdrop); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); align-items:center; justify-content:center; padding:16px;">
+    <div class="shadcn-card" style="width:100%; max-width:680px; padding:0; animation:modalIn 0.22s ease-out; position:relative; overflow:hidden;">
         
         <!-- Modal Header -->
-        <div style="padding:18px 24px; border-bottom:1px solid var(--border-glass); display:flex; justify-content:space-between; align-items:center;">
-            <div style="display:flex; align-items:center; gap:12px;">
-                <div style="width:38px; height:38px; border-radius:10px; background:rgba(34,197,94,0.12); border:1px solid rgba(34,197,94,0.25); display:flex; align-items:center; justify-content:center; color:#22c55e;">
-                    <i data-lucide="trending-up" style="width:20px; height:20px;"></i>
+        <div style="padding:18px 24px; border-bottom:1px solid var(--border-subtle); display:flex; justify-content:space-between; align-items:center;">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <div style="width:34px; height:34px; border-radius:9999px; background:rgba(34,197,94,0.12); display:flex; align-items:center; justify-content:center; color:#22c55e;">
+                    <i data-lucide="trending-up" style="width:18px; height:18px;"></i>
                 </div>
                 <div>
-                    <h3 id="growthModalTitle" style="font-size:1.1rem; font-weight:700; color:var(--text-primary); margin:0;">Historial de Crecimiento</h3>
-                    <span id="growthModalUrl" style="font-size:0.75rem; color:var(--text-muted); font-family:monospace;"></span>
+                    <h3 id="growthModalTitle" style="font-size:1.05rem; font-weight:700; color:var(--text-primary); margin:0;">Evolución de Seguidores</h3>
+                    <p id="growthModalSubtitle" style="font-size:0.75rem; color:var(--text-muted); margin:0;">Cargando historial...</p>
                 </div>
             </div>
-            <button type="button" class="action-btn" onclick="closeGrowthModal()" style="width:32px; height:32px;">
+            <button type="button" class="action-pill-btn" onclick="closeGrowthModal()">
                 <i data-lucide="x"></i>
             </button>
         </div>
 
-        <!-- Growth Summary Highlights -->
-        <div style="padding:16px 24px; background:var(--bg-glass-input); border-bottom:1px solid var(--border-glass); display:grid; grid-template-columns:repeat(3, 1fr); gap:12px;">
-            <div style="text-align:center; padding:8px; background:rgba(255,255,255,0.02); border-radius:8px;">
-                <div style="font-size:0.7rem; color:var(--text-secondary); text-transform:uppercase;">Seguidores Iniciales</div>
-                <div id="growthModalInitial" style="font-size:1.1rem; font-weight:700; color:var(--text-primary); font-family:monospace;">-</div>
-            </div>
-            <div style="text-align:center; padding:8px; background:rgba(255,255,255,0.02); border-radius:8px;">
-                <div style="font-size:0.7rem; color:var(--text-secondary); text-transform:uppercase;">Seguidores Actuales</div>
-                <div id="growthModalCurrent" style="font-size:1.1rem; font-weight:700; color:#22c55e; font-family:monospace;">-</div>
-            </div>
-            <div style="text-align:center; padding:8px; background:rgba(255,255,255,0.02); border-radius:8px;">
-                <div style="font-size:0.7rem; color:var(--text-secondary); text-transform:uppercase;">Crecimiento Total</div>
-                <div id="growthModalTotalDelta" style="font-size:1.1rem; font-weight:700; color:#22c55e; font-family:monospace;">-</div>
-            </div>
-        </div>
-
-        <!-- Interactive Chart Visualizer -->
-        <div style="padding:14px 20px; border-bottom:1px solid var(--border-glass); background:rgba(0,0,0,0.12);">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                <span style="font-size:0.75rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-secondary);">Curva de Evolución de Seguidores</span>
-                <span class="badge-admin" style="font-size:0.7rem; padding:2px 8px;">Tendencia</span>
-            </div>
-            <div style="height:150px; position:relative; width:100%;">
+        <!-- Modal Body -->
+        <div style="padding:20px 24px; max-height:450px; overflow-y:auto;">
+            <!-- Chart Container -->
+            <div style="position:relative; height:200px; width:100%; margin-bottom:20px;">
                 <canvas id="growthChartCanvas"></canvas>
             </div>
-        </div>
 
-        <!-- Snapshots Table with Scroll -->
-        <div style="overflow-y:auto; max-height:220px; flex:1; padding:0;">
-            <table class="panel-table" style="margin:0;">
+            <!-- Table of History Logs -->
+            <table class="glass-table">
                 <thead>
                     <tr>
-                        <th>Fecha / Hora</th>
+                        <th>Fecha & Hora</th>
                         <th style="text-align:right;">Seguidores</th>
                         <th style="text-align:right;">Variación</th>
                     </tr>
                 </thead>
-                <tbody id="growthSnapshotsBody">
+                <tbody id="growthHistoryTableBody">
                     <tr>
-                        <td colspan="3" style="text-align:center; padding:30px; color:var(--text-muted);">
-                            Cargando registros históricos...
+                        <td colspan="3" style="text-align:center; padding:24px; color:var(--text-muted);">
+                            <i data-lucide="loader-2" class="animate-spin" style="width:20px; height:20px; margin:0 auto 8px; display:block;"></i>
+                            Cargando datos del gráfico...
                         </td>
                     </tr>
                 </tbody>
@@ -564,8 +569,36 @@
         </div>
 
         <!-- Modal Footer -->
-        <div style="padding:14px 24px; border-top:1px solid var(--border-glass); display:flex; justify-content:flex-end;">
+        <div style="padding:14px 24px; border-top:1px solid var(--border-subtle); display:flex; justify-content:flex-end;">
             <button type="button" class="btn-ghost" onclick="closeGrowthModal()">Cerrar</button>
+        </div>
+    </div>
+</div>
+
+<!-- ═════════ MODAL SHADCN: CONFIRMAR ELIMINACIÓN INDIVIDUAL ═════════ -->
+<div id="deleteConfirmModal" style="display:none; position:fixed; inset:0; z-index:100000; background:var(--modal-backdrop); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); align-items:center; justify-content:center; padding:16px;">
+    <div class="shadcn-card" style="width:100%; max-width:440px; padding:24px; animation:modalIn 0.2s ease-out; position:relative; overflow:hidden;">
+        
+        <div style="display:flex; align-items:center; gap:12px; margin-bottom:14px;">
+            <div style="width:40px; height:40px; border-radius:9999px; background:rgba(239,68,68,0.12); display:flex; align-items:center; justify-content:center; color:#ef4444; flex-shrink:0;">
+                <i data-lucide="trash-2" style="width:20px; height:20px;"></i>
+            </div>
+            <div>
+                <h3 style="font-size:1.05rem; font-weight:700; color:var(--text-primary); margin:0;">¿Eliminar Fanpage?</h3>
+                <span id="deleteModalTargetText" style="font-size:0.78rem; color:var(--text-muted); font-weight:600;">Fanpage seleccionada</span>
+            </div>
+        </div>
+
+        <p style="font-size:0.85rem; color:var(--text-secondary); line-height:1.4; margin-bottom:20px;">
+            Esta acción eliminará el registro y todo su historial de métricas de la base de datos de forma permanente.
+        </p>
+
+        <div style="display:flex; justify-content:flex-end; gap:10px;">
+            <button type="button" class="btn-ghost" onclick="closeDeleteModal()">Cancelar</button>
+            <button type="button" id="confirmDeleteBtn" class="btn-danger" onclick="executeDeletePage()">
+                <i data-lucide="trash-2" style="width:14px; height:14px;"></i>
+                <span id="confirmDeleteText">Eliminar Definitivamente</span>
+            </button>
         </div>
     </div>
 </div>
@@ -599,8 +632,7 @@
         if (e.key === 'Escape') {
             closeExtractionModal();
             if (typeof closeDeleteModal === 'function') closeDeleteModal();
-            if (typeof closeClearAllModal === 'function') closeClearAllModal();
-            if (typeof closeAlertsModal === 'function') closeAlertsModal();
+            if (typeof closeGrowthModal === 'function') closeGrowthModal();
         }
     });
 
@@ -610,9 +642,29 @@
     document.getElementById('deleteConfirmModal')?.addEventListener('click', (e) => {
         if (e.target.id === 'deleteConfirmModal') closeDeleteModal();
     });
-    document.getElementById('clearAllConfirmModal')?.addEventListener('click', (e) => {
-        if (e.target.id === 'clearAllConfirmModal') closeClearAllModal();
+    document.getElementById('growthHistoryModal')?.addEventListener('click', (e) => {
+        if (e.target.id === 'growthHistoryModal') closeGrowthModal();
     });
+
+    // Helper de Filtros Píldora de Categoría
+    function filterTableCategory(category, btn) {
+        document.querySelectorAll('.pill-tab').forEach(el => el.classList.remove('active'));
+        if (btn) btn.classList.add('active');
+
+        const rows = document.querySelectorAll('.fanpage-row');
+        rows.forEach(row => {
+            const followers = parseFloat(row.getAttribute('data-followers')) || 0;
+            const hasGrowth = row.getAttribute('data-has-growth') === 'true';
+
+            if (category === 'all') {
+                row.style.display = '';
+            } else if (category === 'growth') {
+                row.style.display = hasGrowth ? '' : 'none';
+            } else if (category === 'major') {
+                row.style.display = followers >= 100000 ? '' : 'none';
+            }
+        });
+    }
 
     // Helper de Notificaciones Toast
     function showToast(message, type = 'info') {
@@ -622,10 +674,10 @@
         const toast = document.createElement('div');
         toast.style.cssText = `
             pointer-events: auto;
-            padding: 12px 18px;
-            border-radius: 12px;
+            padding: 10px 18px;
+            border-radius: 9999px;
             font-size: 0.85rem;
-            font-weight: 500;
+            font-weight: 600;
             display: flex;
             align-items: center;
             gap: 10px;
@@ -634,10 +686,10 @@
             transition: all 0.3s ease;
             transform: translateY(20px);
             opacity: 0;
-            ${type === 'success' ? 'background:rgba(22,101,52,0.92); border:1px solid #16a34a; color:#bbf7d0;' :
-              type === 'error' ? 'background:rgba(153,27,27,0.92); border:1px solid #dc2626; color:#fecaca;' :
-              type === 'warning' ? 'background:rgba(180,83,9,0.92); border:1px solid #d97706; color:#fef3c7;' :
-              'background:rgba(15,23,42,0.92); border:1px solid rgba(255,255,255,0.15); color:#f1f5f9;'}
+            ${type === 'success' ? 'background:rgba(22,101,52,0.95); border:1px solid #16a34a; color:#bbf7d0;' :
+              type === 'error' ? 'background:rgba(153,27,27,0.95); border:1px solid #dc2626; color:#fecaca;' :
+              type === 'warning' ? 'background:rgba(180,83,9,0.95); border:1px solid #d97706; color:#fef3c7;' :
+              'background:rgba(24,24,27,0.95); border:1px solid var(--border-subtle); color:#fafafa;'}
         `;
 
         const iconName = type === 'success' ? 'check-circle-2' : type === 'error' ? 'alert-circle' : type === 'warning' ? 'alert-triangle' : 'info';
@@ -657,5 +709,5 @@
         }, 3500);
     }
 </script>
-<script src="{% static 'extractor/js/dashboard.js' %}?v=2.3"></script>
+<script src="{% static 'extractor/js/dashboard.js' %}?v=2.4"></script>
 {% endblock %}
