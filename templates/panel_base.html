@@ -765,7 +765,7 @@
             {% if user.role == 'superadmin' or user.can_view_ig_downloader %}
             <a href="{% url 'igdownloader:index' %}"
                class="nav-link {% if '/ig-downloader/' in request.path %}active{% endif %}">
-                <i data-lucide="instagram"></i>
+                <i data-lucide="download"></i>
                 IG Downloader
             </a>
             {% endif %}

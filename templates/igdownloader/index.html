@@ -79,8 +79,12 @@
     <div class="shadcn-card" style="padding:24px 28px;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; flex-wrap:wrap; gap:12px;">
             <div style="display:flex; align-items:center; gap:12px;">
-                <div style="width:38px; height:38px; border-radius:10px; background:linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888); display:flex; align-items:center; justify-content:center; color:#ffffff; box-shadow:0 3px 12px rgba(225,48,108,0.35);">
-                    <i data-lucide="instagram" style="width:20px; height:20px;"></i>
+                <div style="width:38px; height:38px; border-radius:10px; background:linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888); display:flex; align-items:center; justify-content:center; color:#ffffff; box-shadow:0 3px 12px rgba(225,48,108,0.35); flex-shrink:0;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect width="20" height="20" x="2" y="2" rx="5" ry="5"></rect>
+                        <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                        <line x1="17.5" x2="17.51" y1="6.5" y2="6.5"></line>
+                    </svg>
                 </div>
                 <div>
                     <h2 style="font-size:1.15rem; font-weight:700; color:var(--text-primary); margin:0;">
@@ -190,7 +194,7 @@
                         <!-- Info -->
                         <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
                             <span class="ig-badge">
-                                <i data-lucide="instagram" style="width:11px; height:11px;"></i>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"></line></svg>
                                 @{{ item.uploader|default:'instagram' }}
                             </span>
                             <span style="font-size:0.7rem; color:var(--text-muted);">{{ item.created_at|date:"d M, H:i" }}</span>
@@ -261,7 +265,7 @@
                         <!-- Info -->
                         <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
                             <span class="ig-badge">
-                                <i data-lucide="instagram" style="width:11px; height:11px;"></i>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"></line></svg>
                                 @{{ item.uploader|default:'instagram' }}
                             </span>
                             <span style="font-size:0.7rem; color:var(--text-muted);">{{ item.created_at|date:"d M, H:i" }}</span>
@@ -304,7 +308,7 @@
         <div style="padding:18px 24px; border-bottom:1px solid var(--border-subtle); display:flex; justify-content:space-between; align-items:center; flex-shrink:0;">
             <div style="display:flex; align-items:center; gap:12px;">
                 <div style="width:36px; height:36px; border-radius:9999px; background:rgba(225,48,108,0.12); border:1px solid rgba(225,48,108,0.25); display:flex; align-items:center; justify-content:center; color:#e1306c;">
-                    <i data-lucide="instagram" style="width:18px; height:18px;"></i>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e1306c" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"></line></svg>
                 </div>
                 <div>
                     <h3 id="modalTitle" style="font-size:1.1rem; font-weight:700; color:var(--text-primary); margin:0;">Reel de Instagram</h3>
@@ -330,7 +334,7 @@
                 </div>
                 <div style="position:absolute; bottom:12px; left:12px;">
                     <span id="modalUploader" class="ig-badge" style="font-size:0.78rem; padding:4px 10px;">
-                        <i data-lucide="instagram" style="width:13px; height:13px;"></i>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"></line></svg>
                         @uploader
                     </span>
                 </div>
@@ -497,7 +501,7 @@ function insertCardIntoGrid(data) {
             </div>
             <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
                 <span class="ig-badge">
-                    <i data-lucide="instagram" style="width:11px; height:11px;"></i>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"></line></svg>
                     @${data.uploader || 'instagram'}
                 </span>
                 <span style="font-size:0.7rem; color:var(--text-muted);">${data.created_at}</span>
@@ -534,7 +538,7 @@ async function openIgModal(id) {
         currentModalUrl = data.instagram_url;
         document.getElementById('modalTitle').innerText = data.title || 'Reel de Instagram';
         document.getElementById('modalDate').innerText = data.created_at;
-        document.getElementById('modalUploader').innerHTML = `<i data-lucide="instagram" style="width:13px; height:13px;"></i> @${data.uploader}`;
+        document.getElementById('modalUploader').innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"></line></svg> @${data.uploader}`;
         document.getElementById('modalDescription').innerText = data.title || 'Sin descripción adicional disponible.';
         document.getElementById('modalDownloadBtn').href = data.download_url;
         document.getElementById('modalIgLink').href = data.instagram_url;
