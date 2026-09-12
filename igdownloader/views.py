@@ -10,6 +10,7 @@ from .services.instagram_service import (
     clean_instagram_url,
     extract_instagram_data,
     save_thumbnail_image,
+    extract_thumbnail_from_video,
     get_or_refresh_direct_url
 )
 
@@ -23,20 +24,15 @@ def index(request):
     if not can_access_ig_downloader(request.user):
         raise PermissionDenied("No tenés permiso para acceder al Descargador de Instagram.")
 
-    my_history = InstagramDownload.objects.filter(user=request.user)
-    my_history_count = my_history.count()
-
-    all_history = None
-    all_history_count = 0
-    if request.user.role == 'superadmin':
-        all_history = InstagramDownload.objects.exclude(user=request.user).select_related('user')
-        all_history_count = all_history.count()
+    my_history = InstagramDownload.objects.filter(user=request.user).order_by('-created_at')
+    all_history = InstagramDownload.objects.all().select_related('user').order_by('-created_at') if request.user.role == 'superadmin' else None
 
     context = {
         'my_history': my_history,
-        'my_history_count': my_history_count,
+        'my_history_count': my_history.count(),
         'all_history': all_history,
-        'all_history_count': all_history_count,
+        'all_history_count': all_history.count() if all_history else 0,
+        'active_tab': 'igdownloader',
     }
     return render(request, 'igdownloader/index.html', context)
 
@@ -69,11 +65,18 @@ def process_ajax(request):
         item.duration_seconds = data.get('duration')
         item.direct_video_url = data.get('direct_video_url')
 
+        # 1. Intentar descargar miniatura oficial de Instagram
         thumb_url = data.get('thumbnail_url')
+        saved_thumb = ''
         if thumb_url:
             saved_thumb = save_thumbnail_image(thumb_url, item.id)
-            if saved_thumb:
-                item.thumbnail = saved_thumb
+
+        # 2. Fallback con ffmpeg si la URL de miniatura falló o vino vacía
+        if not saved_thumb and item.direct_video_url:
+            saved_thumb = extract_thumbnail_from_video(item.direct_video_url, item.id)
+
+        if saved_thumb:
+            item.thumbnail = saved_thumb
 
         item.status = 'completed'
         item.save()
@@ -106,6 +109,18 @@ def status_ajax(request, pk):
     item = get_object_or_404(InstagramDownload, pk=pk)
     if request.user.role != 'superadmin' and item.user != request.user:
         raise PermissionDenied()
+
+    # Si no tiene miniatura o no existe el archivo en disco, intentar recuperarla
+    if not item.thumbnail or not (hasattr(item.thumbnail, 'path') and os.path.exists(item.thumbnail.path)):
+        try:
+            video_url = item.direct_video_url or get_or_refresh_direct_url(item)
+            if video_url:
+                recovered = extract_thumbnail_from_video(video_url, item.id)
+                if recovered:
+                    item.thumbnail = recovered
+                    item.save(update_fields=['thumbnail'])
+        except Exception:
+            pass
 
     return JsonResponse({
         'id': item.id,

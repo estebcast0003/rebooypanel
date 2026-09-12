@@ -549,6 +549,17 @@ async function openIgModal(id) {
             img.src = data.thumbnail_url;
             img.style.display = 'block';
             ph.style.display = 'none';
+
+            // Actualizar miniatura en la tarjeta del grid si estaba vacía
+            const card = document.getElementById(`history-item-${id}`);
+            if (card) {
+                const cardImg = card.querySelector('img');
+                if (cardImg) {
+                    cardImg.src = data.thumbnail_url;
+                    cardImg.style.display = 'block';
+                    if (cardImg.nextElementSibling) cardImg.nextElementSibling.style.display = 'none';
+                }
+            }
         } else {
             img.style.display = 'none';
             ph.style.display = 'flex';

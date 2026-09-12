@@ -1,5 +1,6 @@
 import os
 import re
+import subprocess
 import requests
 import yt_dlp
 from django.conf import settings
@@ -23,6 +24,7 @@ def extract_instagram_data(url: str) -> dict:
         'format': 'mp4/best',
         'http_headers': {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Referer': 'https://www.instagram.com/',
         }
     }
     
@@ -36,6 +38,11 @@ def extract_instagram_data(url: str) -> dict:
                 direct_url = video_formats[-1].get('url')
         
         thumbnail_url = info.get('thumbnail')
+        if not thumbnail_url and info.get('thumbnails'):
+            for t in reversed(info['thumbnails']):
+                if isinstance(t, dict) and t.get('url'):
+                    thumbnail_url = t['url']
+                    break
         
         title = info.get('title') or ''
         if not title or title.startswith('Video by') or title.startswith('Instagram post by'):
@@ -68,6 +75,8 @@ def save_thumbnail_image(thumbnail_url: str, record_id: int) -> str:
         
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Referer': 'https://www.instagram.com/',
+            'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
         }
         resp = requests.get(thumbnail_url, headers=headers, timeout=12)
         if resp.status_code == 200 and len(resp.content) > 500:
@@ -76,6 +85,42 @@ def save_thumbnail_image(thumbnail_url: str, record_id: int) -> str:
             return f'ig_thumbnails/{filename}'
     except Exception as e:
         print(f'Error guardando miniatura de Instagram #{record_id}:', e)
+        
+    return ''
+
+def extract_thumbnail_from_video(video_url: str, record_id: int) -> str:
+    """Extrae un fotograma del video directamente usando ffmpeg como fallback infalible."""
+    if not video_url:
+        return ''
+    
+    try:
+        thumb_dir = os.path.join(settings.MEDIA_ROOT, 'ig_thumbnails')
+        os.makedirs(thumb_dir, exist_ok=True)
+        filename = f'thumb_{record_id}.jpg'
+        full_path = os.path.join(thumb_dir, filename)
+        
+        user_agent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        
+        cmd = [
+            'ffmpeg', '-y',
+            '-headers', f'User-Agent: {user_agent}\r\nReferer: https://www.instagram.com/\r\n',
+            '-ss', '00:00:01',
+            '-i', video_url,
+            '-vframes', '1',
+            '-q:v', '2',
+            full_path
+        ]
+        subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=20)
+        if os.path.exists(full_path) and os.path.getsize(full_path) > 500:
+            return f'ig_thumbnails/{filename}'
+            
+        # Fallback a 0.2 segundos si el reel es muy corto
+        cmd[4] = '00:00:00.2'
+        subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=15)
+        if os.path.exists(full_path) and os.path.getsize(full_path) > 500:
+            return f'ig_thumbnails/{filename}'
+    except Exception as e:
+        print(f'Error extrayendo miniatura con ffmpeg para #{record_id}:', e)
         
     return ''
 
