@@ -60,57 +60,78 @@ from extractor.services.alerts import check_and_trigger_growth_alerts
 
 @sync_to_async
 def _save_item_to_db(job_id: str, result: ExtractionResult):
-    """Synchronous database persistence wrapped for async execution."""
-    with transaction.atomic():
-        job = ExtractionJob.objects.select_for_update().get(id=job_id)
-        
-        # Check previous followers before update
-        existing_page = FacebookPage.objects.filter(user=job.user, url=result.url).first()
-        prev_followers = existing_page.followers if existing_page else 0
+    """Synchronous database persistence wrapped for async execution with busy retry."""
+    import time
+    import random
+    from django.db import connection, close_old_connections
+    from django.db.utils import OperationalError
 
-        page, _ = FacebookPage.objects.update_or_create(
-            user=job.user,
-            url=result.url,
-            defaults={
-                "name": result.name,
-                "followers": result.followers,
-                "status": result.status,
-            },
-        )
+    max_retries = 5
+    page = None
+    item = None
 
-        if result.followers > 0:
-            PageGrowthSnapshot.objects.create(
-                page=page,
-                followers=result.followers,
-            )
-            if prev_followers > 0 and result.followers > prev_followers:
-                check_and_trigger_growth_alerts(page, prev_followers, result.followers)
+    for attempt in range(max_retries):
+        try:
+            close_old_connections()
+            with transaction.atomic():
+                if connection.vendor == "sqlite":
+                    job = ExtractionJob.objects.get(id=job_id)
+                else:
+                    job = ExtractionJob.objects.select_for_update().get(id=job_id)
 
-        item = ExtractionItem.objects.create(
-            job=job,
-            page=page,
-            url=result.url,
-            name=result.name,
-            followers=result.followers,
-            status=result.status,
-            is_success=result.is_success,
-        )
+                # Check previous followers before update
+                existing_page = FacebookPage.objects.filter(user=job.user, url=result.url).first()
+                prev_followers = existing_page.followers if existing_page else 0
 
-        job.processed_urls += 1
-        if result.is_success:
-            job.successful_urls += 1
-        else:
-            job.failed_urls += 1
-        job.save(
-            update_fields=[
-                "processed_urls",
-                "successful_urls",
-                "failed_urls",
-            ]
-        )
+                page, _ = FacebookPage.objects.update_or_create(
+                    user=job.user,
+                    url=result.url,
+                    defaults={
+                        "name": result.name,
+                        "followers": result.followers,
+                        "status": result.status,
+                    },
+                )
+
+                if result.followers > 0:
+                    PageGrowthSnapshot.objects.create(
+                        page=page,
+                        followers=result.followers,
+                    )
+                    if prev_followers > 0 and result.followers > prev_followers:
+                        check_and_trigger_growth_alerts(page, prev_followers, result.followers)
+
+                item = ExtractionItem.objects.create(
+                    job=job,
+                    page=page,
+                    url=result.url,
+                    name=result.name,
+                    followers=result.followers,
+                    status=result.status,
+                    is_success=result.is_success,
+                )
+
+                job.processed_urls += 1
+                if result.is_success:
+                    job.successful_urls += 1
+                else:
+                    job.failed_urls += 1
+                job.save(
+                    update_fields=[
+                        "processed_urls",
+                        "successful_urls",
+                        "failed_urls",
+                    ]
+                )
+            break
+        except OperationalError as err:
+            if "locked" in str(err).lower() and attempt < max_retries - 1:
+                time.sleep(0.1 * (2 ** attempt) + random.uniform(0.05, 0.15))
+                continue
+            raise
 
     # Emit live SSE event
-    growth_info = page.growth_data
+    growth_info = page.growth_data if page else {}
     event_manager.emit(
         job_id,
         "item",

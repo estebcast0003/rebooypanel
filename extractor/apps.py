@@ -2,6 +2,16 @@ import os
 import sys
 
 from django.apps import AppConfig
+from django.db.backends.signals import connection_created
+
+
+def configure_sqlite_pragmas(sender, connection, **kwargs):
+    """Enforces WAL mode, 60s busy timeout, and NORMAL synchronous on SQLite connections."""
+    if connection.vendor == "sqlite":
+        with connection.cursor() as cursor:
+            cursor.execute("PRAGMA journal_mode = WAL;")
+            cursor.execute("PRAGMA busy_timeout = 60000;")
+            cursor.execute("PRAGMA synchronous = NORMAL;")
 
 
 class ExtractorConfig(AppConfig):
@@ -10,6 +20,8 @@ class ExtractorConfig(AppConfig):
     verbose_name = "Facebook Follower Extractor"
 
     def ready(self):
+        connection_created.connect(configure_sqlite_pragmas)
+
         # Prevent starting scheduler loop during migrations, tests, or build commands
         is_manage_command = any(
             arg in sys.argv

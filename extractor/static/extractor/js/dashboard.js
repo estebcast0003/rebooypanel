@@ -588,18 +588,17 @@ function upsertTableRow(data) {
         </td>
         <td style="text-align:center;">
             ${growth.is_positive ? `
-                <span class="growth-badge-up" title="Crecimiento registrado: ${growth.formatted_delta}">
+                <span class="badge-pill" style="background:rgba(34,197,94,0.12); color:#22c55e; border:1px solid rgba(34,197,94,0.25); font-family:monospace;" title="Crecimiento registrado: ${growth.formatted_delta}">
                     <i data-lucide="trending-up" style="width:12px; height:12px;"></i>
                     ${growth.formatted_delta} (${growth.formatted_pct})
                 </span>
             ` : growth.is_negative ? `
-                <span style="background:rgba(239,68,68,0.12); color:#f87171; border:1px solid rgba(239,68,68,0.25); padding:3px 8px; border-radius:6px; font-size:0.75rem; font-weight:600; display:inline-flex; align-items:center; gap:4px; font-family:monospace;">
+                <span class="badge-pill" style="background:rgba(239,68,68,0.12); color:#f87171; border:1px solid rgba(239,68,68,0.25); padding:3px 8px; border-radius:6px; font-size:0.75rem; font-weight:600; display:inline-flex; align-items:center; gap:4px; font-family:monospace;">
                     <i data-lucide="trending-down" style="width:12px; height:12px;"></i>
                     ${growth.formatted_delta}
                 </span>
             ` : `
-                <span class="growth-badge-neutral" title="Sin variación registrada">
-                    <i data-lucide="minus" style="width:12px; height:12px;"></i>
+                <span class="badge-pill badge-user" style="font-family:monospace;" title="Sin variación registrada">
                     0 (0%)
                 </span>
             `}
@@ -674,73 +673,81 @@ function renderGrowthChart(historyList, pageName) {
     gradient.addColorStop(0, 'rgba(34, 197, 94, 0.35)');
     gradient.addColorStop(1, 'rgba(34, 197, 94, 0.0)');
 
-    activeGrowthChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Seguidores',
-                data: values,
-                borderColor: '#22c55e',
-                backgroundColor: gradient,
-                fill: true,
-                tension: 0.35,
-                borderWidth: 2,
-                pointRadius: values.length > 15 ? 2 : 4,
-                pointBackgroundColor: '#22c55e',
-                pointHoverRadius: 6,
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { display: false },
-                tooltip: {
-                    backgroundColor: 'rgba(15, 23, 42, 0.95)',
-                    titleColor: '#e2e8f0',
-                    bodyColor: '#4ade80',
-                    borderColor: 'rgba(255, 255, 255, 0.1)',
-                    borderWidth: 1,
-                    padding: 10,
-                    displayColors: false,
-                    callbacks: {
-                        label: function(context) {
-                            return `${Number(context.raw).toLocaleString()} seguidores`;
+    try {
+        activeGrowthChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Seguidores',
+                    data: values,
+                    borderColor: '#22c55e',
+                    backgroundColor: gradient,
+                    fill: true,
+                    tension: 0.35,
+                    borderWidth: 2,
+                    pointRadius: values.length === 1 ? 6 : (values.length > 15 ? 2 : 4),
+                    pointBackgroundColor: '#22c55e',
+                    pointHoverRadius: 6,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                        titleColor: '#e2e8f0',
+                        bodyColor: '#4ade80',
+                        borderColor: 'rgba(255, 255, 255, 0.1)',
+                        borderWidth: 1,
+                        padding: 10,
+                        displayColors: false,
+                        callbacks: {
+                            label: function(context) {
+                                return `${Number(context.raw).toLocaleString()} seguidores`;
+                            }
                         }
                     }
-                }
-            },
-            scales: {
-                x: {
-                    grid: { color: 'rgba(255, 255, 255, 0.04)' },
-                    ticks: { color: '#64748b', font: { size: 10 } }
                 },
-                y: {
-                    grid: { color: 'rgba(255, 255, 255, 0.04)' },
-                    ticks: {
-                        color: '#64748b',
-                        font: { size: 10 },
-                        callback: function(value) {
-                            return formatCompactNumber(value);
+                scales: {
+                    x: {
+                        grid: { color: 'rgba(255, 255, 255, 0.04)' },
+                        ticks: { color: '#64748b', font: { size: 10 } }
+                    },
+                    y: {
+                        grid: { color: 'rgba(255, 255, 255, 0.04)' },
+                        ticks: {
+                            color: '#64748b',
+                            font: { size: 10 },
+                            callback: function(value) {
+                                return formatCompactNumber(value);
+                            }
                         }
                     }
                 }
             }
-        }
-    });
+        });
+    } catch (chartErr) {
+        console.warn('Error rendering growth chart:', chartErr);
+    }
 }
 
 async function openGrowthModal(pageId) {
     const modal = document.getElementById('growthHistoryModal');
-    const tbody = document.getElementById('growthSnapshotsBody');
+    const tbody = document.getElementById('growthSnapshotsBody') || document.getElementById('growthHistoryTableBody');
     if (modal) {
         modal.style.display = 'flex';
         document.body.style.overflow = 'hidden';
         lucide.createIcons({ root: modal });
     }
 
-    if (!tbody) return;
+    if (!tbody) {
+        console.error('Growth modal table body not found in DOM.');
+        return;
+    }
+
     tbody.innerHTML = `
         <tr>
             <td colspan="3" style="text-align:center; padding:30px; color:var(--text-muted);">
@@ -760,10 +767,12 @@ async function openGrowthModal(pageId) {
         if (data.status === 'ok') {
             const titleEl = document.getElementById('growthModalTitle');
             const urlEl = document.getElementById('growthModalUrl');
+            const subtitleEl = document.getElementById('growthModalSubtitle');
             if (titleEl) titleEl.textContent = data.page_name || 'Historial de Fanpage';
             if (urlEl) urlEl.textContent = data.page_url || '';
+            if (subtitleEl) subtitleEl.textContent = data.page_url || '';
 
-            const initialFmt = Number(data.growth?.initial || data.current_followers).toLocaleString();
+            const initialFmt = Number(data.growth?.initial ?? data.current_followers).toLocaleString();
             const currentFmt = Number(data.current_followers).toLocaleString();
             const deltaFmt = data.growth?.formatted_delta || '0';
             const pctFmt = data.growth?.formatted_pct || '0%';
@@ -774,7 +783,16 @@ async function openGrowthModal(pageId) {
 
             if (initEl) initEl.textContent = initialFmt;
             if (currEl) currEl.textContent = currentFmt;
-            if (deltaEl) deltaEl.textContent = `${deltaFmt} (${pctFmt})`;
+            if (deltaEl) {
+                deltaEl.textContent = `${deltaFmt} (${pctFmt})`;
+                if (data.growth?.is_positive) {
+                    deltaEl.style.color = '#22c55e';
+                } else if (data.growth?.is_negative) {
+                    deltaEl.style.color = '#f87171';
+                } else {
+                    deltaEl.style.color = 'var(--text-muted)';
+                }
+            }
 
             renderGrowthChart(data.history, data.page_name);
 
@@ -787,18 +805,17 @@ async function openGrowthModal(pageId) {
                         </td>
                         <td style="text-align:right;">
                             ${item.is_positive ? `
-                                <span class="growth-badge-up">
+                                <span class="badge-pill" style="background:rgba(34,197,94,0.12); color:#22c55e; border:1px solid rgba(34,197,94,0.25); font-family:monospace;">
                                     <i data-lucide="trending-up" style="width:11px; height:11px;"></i>
                                     ${item.formatted_delta}
                                 </span>
                             ` : item.is_negative ? `
-                                <span style="background:rgba(239,68,68,0.12); color:#f87171; border:1px solid rgba(239,68,68,0.25); padding:3px 8px; border-radius:6px; font-size:0.75rem; font-weight:600; display:inline-flex; align-items:center; gap:4px; font-family:monospace;">
+                                <span class="badge-pill" style="background:rgba(239,68,68,0.12); color:#f87171; border:1px solid rgba(239,68,68,0.25); font-family:monospace;">
                                     <i data-lucide="trending-down" style="width:11px; height:11px;"></i>
                                     ${item.formatted_delta}
                                 </span>
                             ` : `
-                                <span class="growth-badge-neutral">
-                                    <i data-lucide="minus" style="width:11px; height:11px;"></i>
+                                <span class="badge-pill badge-user" style="font-family:monospace;">
                                     0
                                 </span>
                             `}
@@ -818,7 +835,7 @@ async function openGrowthModal(pageId) {
             tbody.innerHTML = `
                 <tr>
                     <td colspan="3" style="text-align:center; padding:24px; color:#f87171;">
-                        Error al cargar el historial.
+                        ${data.message || 'Error al cargar el historial.'}
                     </td>
                 </tr>
             `;
@@ -842,6 +859,10 @@ function closeGrowthModal() {
     if (modal) {
         modal.style.display = 'none';
         document.body.style.overflow = 'auto';
+    }
+    if (activeGrowthChart) {
+        activeGrowthChart.destroy();
+        activeGrowthChart = null;
     }
 }
 

@@ -355,6 +355,8 @@ def trigger_scheduler_now_api_view(request):
         return JsonResponse({"status": "error", "message": "Acceso denegado."}, status=403)
 
     try:
+        from django.db import close_old_connections
+        close_old_connections()
         target_user = request.user
         job_id = scheduler.trigger_now(user=target_user)
         if not job_id:

@@ -330,7 +330,10 @@
                         <!-- Miniatura de Video -->
                         <div style="width:100%; height:140px; border-radius:8px; background:var(--bg-muted); border:1px solid var(--border-subtle); overflow:hidden; position:relative; margin-bottom:12px; display:flex; align-items:center; justify-content:center;">
                             {% if item.thumbnail %}
-                                <img src="{{ item.thumbnail.url }}" style="width:100%; height:100%; object-fit:cover;">
+                                <img src="{{ item.thumbnail.url }}" alt="Miniatura Video" style="width:100%; height:100%; object-fit:cover;" onerror="this.onerror=null; this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='flex';">
+                                <div style="display:none; width:100%; height:100%; align-items:center; justify-content:center;">
+                                    <i data-lucide="film" style="width:36px; height:36px; color:var(--text-muted); opacity:0.5;"></i>
+                                </div>
                             {% else %}
                                 <i data-lucide="film" style="width:36px; height:36px; color:var(--text-muted); opacity:0.5;"></i>
                             {% endif %}
@@ -390,7 +393,10 @@
                         <!-- Miniatura con Badge Autor -->
                         <div style="width:100%; height:140px; border-radius:8px; background:var(--bg-muted); border:1px solid var(--border-subtle); overflow:hidden; position:relative; margin-bottom:12px; display:flex; align-items:center; justify-content:center;">
                             {% if item.thumbnail %}
-                                <img src="{{ item.thumbnail.url }}" style="width:100%; height:100%; object-fit:cover;">
+                                <img src="{{ item.thumbnail.url }}" alt="Miniatura Video" style="width:100%; height:100%; object-fit:cover;" onerror="this.onerror=null; this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='flex';">
+                                <div style="display:none; width:100%; height:100%; align-items:center; justify-content:center;">
+                                    <i data-lucide="film" style="width:36px; height:36px; color:var(--text-muted); opacity:0.5;"></i>
+                                </div>
                             {% else %}
                                 <i data-lucide="film" style="width:36px; height:36px; color:var(--text-muted); opacity:0.5;"></i>
                             {% endif %}
@@ -779,7 +785,7 @@ function startPolling(promptId) {
                         if (noHist) noHist.remove();
                         
                         const thumbImg = data.thumbnail_url 
-                            ? `<img src="${data.thumbnail_url}" style="width:100%; height:100%; object-fit:cover;">` 
+                            ? `<img src="${data.thumbnail_url}" alt="Miniatura Video" style="width:100%; height:100%; object-fit:cover;" onerror="this.onerror=null; this.outerHTML='<i data-lucide=\\\'film\\\' style=\\\'width:36px; height:36px; color:var(--text-muted); opacity:0.5;\\\'></i>'; lucide.createIcons();">` 
                             : `<i data-lucide="film" style="width:36px; height:36px; color:var(--text-muted); opacity:0.5;"></i>`;
                         
                         const linkInfo = data.video_url 

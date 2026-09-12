@@ -35,6 +35,8 @@ class AutoRefreshScheduler:
 
     def load_settings(self) -> dict:
         """Loads scheduler settings from database cache."""
+        from django.db import close_old_connections
+        close_old_connections()
         try:
             enabled_val = ExtractorSetting.objects.filter(key="auto_refresh_enabled").first()
             interval_val = ExtractorSetting.objects.filter(
@@ -115,6 +117,10 @@ class AutoRefreshScheduler:
 
     def trigger_now(self, user=None) -> Optional[str]:
         """Manually launches an extraction job on all stored fanpages (or user specific)."""
+        import time
+        from django.db import close_old_connections
+        close_old_connections()
+
         qs = FacebookPage.objects.filter(user=user) if user else FacebookPage.objects.all()
         urls = list(qs.values_list("url", flat=True).distinct())
         if not urls:
@@ -122,6 +128,29 @@ class AutoRefreshScheduler:
 
         raw_text = "\n".join(urls)
         timestamp_str = timezone.now().strftime("%Y-%m-%d %H:%M:%S")
+
+        now = timezone.now()
+        settings = self.load_settings()
+        interval = settings.get("interval_minutes", 60)
+        next_time = now + timedelta(minutes=interval)
+
+        # Update scheduler state timestamps first before starting async workers
+        for attempt in range(5):
+            try:
+                ExtractorSetting.objects.update_or_create(
+                    key="last_auto_refresh_at", defaults={"value": now.isoformat()}
+                )
+                if settings.get("enabled"):
+                    ExtractorSetting.objects.update_or_create(
+                        key="next_auto_refresh_at", defaults={"value": next_time.isoformat()}
+                    )
+                break
+            except Exception as lock_err:
+                if attempt < 4:
+                    time.sleep(0.15 * (attempt + 1))
+                    continue
+                logger.warning(f"Could not update scheduler settings timestamps: {lock_err}")
+
         job = start_extraction_job(
             urls=urls,
             raw_input=f"[SCHEDULED_REFRESH] {timestamp_str}\n{raw_text}",
@@ -129,25 +158,14 @@ class AutoRefreshScheduler:
             user=user,
         )
 
-        now = timezone.now()
-        settings = self.load_settings()
-        interval = settings.get("interval_minutes", 60)
-        next_time = now + timedelta(minutes=interval)
-
-        ExtractorSetting.objects.update_or_create(
-            key="last_auto_refresh_at", defaults={"value": now.isoformat()}
-        )
-        if settings.get("enabled"):
-            ExtractorSetting.objects.update_or_create(
-                key="next_auto_refresh_at", defaults={"value": next_time.isoformat()}
-            )
-
         return str(job.id)
 
     def _loop_worker(self):
         """Internal daemon loop checking schedule triggers every 5 seconds."""
+        from django.db import close_old_connections
         while not self._stop_event.is_set():
             try:
+                close_old_connections()
                 state = self.load_settings()
                 if state["enabled"] and state["next_run"]:
                     try:
@@ -159,6 +177,8 @@ class AutoRefreshScheduler:
                         logger.error(f"Error parsing next_run timestamp in scheduler: {parse_err}")
             except Exception as loop_err:
                 logger.error(f"Unexpected error in AutoRefreshScheduler loop: {loop_err}")
+            finally:
+                close_old_connections()
 
             self._stop_event.wait(timeout=5.0)
 
