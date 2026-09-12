@@ -56,6 +56,7 @@ INSTALLED_APPS = [
     'dashboard',
     'panel_admin',
     'videoprompt',
+    'igdownloader',
     'fanpages',
     'extractor.apps.ExtractorConfig',
 ]
@@ -132,6 +133,9 @@ else:
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
             'NAME': BASE_DIR / 'db.sqlite3',
+            'OPTIONS': {
+                'timeout': 60,
+            },
         }
     }
 

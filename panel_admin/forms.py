@@ -20,7 +20,7 @@ class UserCreateForm(forms.ModelForm):
         model = CustomUser
         fields = [
             'username', 'role', 'daily_prompt_limit', 'is_unlimited_prompts', 'is_active',
-            'can_view_videoprompt', 'can_view_fanpages', 'can_view_extractor', 'can_view_stats', 'can_view_dashboard', 'can_manage_api_keys', 'can_manage_users'
+            'can_view_videoprompt', 'can_view_ig_downloader', 'can_view_fanpages', 'can_view_extractor', 'can_view_stats', 'can_view_dashboard', 'can_manage_api_keys', 'can_manage_users'
         ]
         widgets = {
             'username': forms.TextInput(attrs={
@@ -41,6 +41,7 @@ class UserCreateForm(forms.ModelForm):
             'is_unlimited_prompts': forms.CheckboxInput(attrs={'style': 'display:none;'}),
             'is_active': forms.CheckboxInput(attrs={'style': 'display:none;'}),
             'can_view_videoprompt': forms.CheckboxInput(attrs={'style': 'display:none;'}),
+            'can_view_ig_downloader': forms.CheckboxInput(attrs={'style': 'display:none;'}),
             'can_view_fanpages': forms.CheckboxInput(attrs={'style': 'display:none;'}),
             'can_view_extractor': forms.CheckboxInput(attrs={'style': 'display:none;'}),
             'can_view_stats': forms.CheckboxInput(attrs={'style': 'display:none;'}),
@@ -55,6 +56,7 @@ class UserCreateForm(forms.ModelForm):
             'is_unlimited_prompts': 'Cuota Ilimitada',
             'is_active': 'Activo',
             'can_view_videoprompt': 'Acceso a Video to Prompt',
+            'can_view_ig_downloader': 'Acceso a IG Downloader',
             'can_view_fanpages': 'Acceso a Fanpage Creator',
             'can_view_extractor': 'Acceso a Fan Extractor',
             'can_view_stats': 'Acceso a Stats del Reel',
@@ -75,7 +77,7 @@ class UserEditForm(forms.ModelForm):
         model = CustomUser
         fields = [
             'username', 'role', 'daily_prompt_limit', 'is_unlimited_prompts', 'is_active',
-            'can_view_videoprompt', 'can_view_fanpages', 'can_view_extractor', 'can_view_stats', 'can_view_dashboard', 'can_manage_api_keys', 'can_manage_users'
+            'can_view_videoprompt', 'can_view_ig_downloader', 'can_view_fanpages', 'can_view_extractor', 'can_view_stats', 'can_view_dashboard', 'can_manage_api_keys', 'can_manage_users'
         ]
         widgets = {
             'username': forms.TextInput(attrs={
@@ -94,6 +96,7 @@ class UserEditForm(forms.ModelForm):
             'is_unlimited_prompts': forms.CheckboxInput(attrs={'style': 'display:none;'}),
             'is_active': forms.CheckboxInput(attrs={'style': 'display:none;'}),
             'can_view_videoprompt': forms.CheckboxInput(attrs={'style': 'display:none;'}),
+            'can_view_ig_downloader': forms.CheckboxInput(attrs={'style': 'display:none;'}),
             'can_view_fanpages': forms.CheckboxInput(attrs={'style': 'display:none;'}),
             'can_view_extractor': forms.CheckboxInput(attrs={'style': 'display:none;'}),
             'can_view_stats': forms.CheckboxInput(attrs={'style': 'display:none;'}),
@@ -108,6 +111,7 @@ class UserEditForm(forms.ModelForm):
             'is_unlimited_prompts': 'Cuota Ilimitada',
             'is_active': 'Activo',
             'can_view_videoprompt': 'Acceso a Video to Prompt',
+            'can_view_ig_downloader': 'Acceso a IG Downloader',
             'can_view_fanpages': 'Acceso a Fanpage Creator',
             'can_view_extractor': 'Acceso a Fan Extractor',
             'can_view_stats': 'Acceso a Stats del Reel',

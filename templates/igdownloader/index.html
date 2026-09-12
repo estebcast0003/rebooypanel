@@ -1,0 +1,653 @@
+{% extends 'panel_base.html' %}
+
+{% block title %}IG Downloader — Rebooy Panel{% endblock %}
+{% block breadcrumb %}Herramientas IA / IG Downloader{% endblock %}
+
+{% block extra_css %}
+<style>
+    .segmented-pill-container {
+        display: inline-flex;
+        background: var(--pill-bg);
+        border: 1px solid var(--border-subtle);
+        border-radius: 9999px;
+        padding: 4px;
+        gap: 4px;
+    }
+    .pill-tab-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 16px;
+        border-radius: 9999px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    .pill-tab-btn:hover { color: var(--text-primary); }
+    .pill-tab-btn.active {
+        background: var(--bg-card);
+        color: var(--text-primary);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        border: 1px solid var(--border-subtle);
+    }
+    .prompt-card-shadcn {
+        background-color: var(--bg-card);
+        border: 1px solid var(--border-subtle);
+        border-radius: 12px;
+        padding: 16px;
+        transition: all 0.2s ease;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+    }
+    .prompt-card-shadcn:hover {
+        border-color: var(--border-highlight);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px -4px rgba(0,0,0,0.12);
+    }
+    .ig-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 3px 8px;
+        border-radius: 9999px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        background: rgba(225, 48, 108, 0.12);
+        color: #e1306c;
+        border: 1px solid rgba(225, 48, 108, 0.25);
+    }
+    @media (max-width: 640px) {
+        .history-grid-responsive {
+            grid-template-columns: 1fr !important;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="max-width:1200px; margin:0 auto; display:flex; flex-direction:column; gap:28px;">
+
+    <!-- ═════════ 1. FORMULARIO DE DESCARGA SHADCN ═════════ -->
+    <div class="shadcn-card" style="padding:24px 28px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; flex-wrap:wrap; gap:12px;">
+            <div style="display:flex; align-items:center; gap:12px;">
+                <div style="width:38px; height:38px; border-radius:10px; background:linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888); display:flex; align-items:center; justify-content:center; color:#ffffff; box-shadow:0 3px 12px rgba(225,48,108,0.35);">
+                    <i data-lucide="instagram" style="width:20px; height:20px;"></i>
+                </div>
+                <div>
+                    <h2 style="font-size:1.15rem; font-weight:700; color:var(--text-primary); margin:0;">
+                        Descargar Video de Instagram
+                    </h2>
+                    <p style="font-size:0.75rem; color:var(--text-muted); margin:2px 0 0;">
+                        Descarga Reels y videos en alta resolución sin marca de agua al instante.
+                    </p>
+                </div>
+            </div>
+            <span class="badge-pill badge-admin" style="font-size:0.72rem;">
+                <i data-lucide="infinity" style="width:12px; height:12px;"></i>
+                Descargas Ilimitadas
+            </span>
+        </div>
+
+        <form id="igDownloadForm">
+            {% csrf_token %}
+            <div style="display:flex; flex-direction:column; gap:14px;">
+                <div>
+                    <label style="display:block; font-size:0.75rem; font-weight:700; color:var(--text-muted); margin-bottom:8px; text-transform:uppercase; letter-spacing:0.05em;">
+                        Enlace de Instagram (Reel o Video)
+                    </label>
+                    <div style="position:relative;">
+                        <i data-lucide="link" style="position:absolute; left:14px; top:50%; transform:translateY(-50%); width:16px; height:16px; color:var(--text-muted);"></i>
+                        <input type="url" name="instagram_url" id="igUrlInput" required placeholder="https://www.instagram.com/reel/... o https://www.instagram.com/p/..." class="shadcn-input" style="width:100%; padding-left:40px !important;">
+                    </div>
+                </div>
+
+                <button type="submit" id="submitBtn" class="btn-brand" style="justify-content:center; padding:12px; font-size:0.92rem;">
+                    <i data-lucide="download" style="width:16px; height:16px;"></i>
+                    Descargar Video Sin Marca de Agua
+                </button>
+            </div>
+        </form>
+
+        <!-- Loading State Card -->
+        <div id="processingCard" style="display:none; margin-top:20px; padding:18px; border-radius:8px; background:rgba(225,48,108,0.06); border:1px solid rgba(225,48,108,0.25);">
+            <div style="display:flex; align-items:center; gap:12px; margin-bottom:10px;">
+                <div style="width:22px; height:22px; border-radius:50%; border:2px solid #e1306c; border-top-color:transparent; animation:spin 1s linear infinite; flex-shrink:0;"></div>
+                <div style="flex:1; min-width:0;">
+                    <div id="processingTitle" style="font-size:0.875rem; font-weight:700; color:var(--text-primary);">Conectando con Instagram...</div>
+                    <div id="processingSub" style="font-size:0.75rem; color:var(--text-muted);">Extrayendo stream original sin marca de agua y miniatura</div>
+                </div>
+            </div>
+            <div style="height:5px; background:var(--border-subtle); border-radius:9999px; overflow:hidden;">
+                <div id="progressBar" style="height:100%; width:30%; background:linear-gradient(90deg, #f09433, #e1306c, #bc1888); border-radius:9999px; transition:width 0.4s;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═════════ 2. HISTORIAL DE DESCARGAS (CARDS) ═════════ -->
+    <div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; flex-wrap:wrap; gap:12px;">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <h2 style="font-size:1.25rem; font-weight:800; letter-spacing:-0.02em; color:var(--text-primary); margin:0; display:flex; align-items:center; gap:8px;">
+                    Historial de Descargas
+                </h2>
+            </div>
+
+            {% if user.role == 'superadmin' %}
+            <div class="segmented-pill-container">
+                <button type="button" id="tabMyBtn" class="pill-tab-btn active" onclick="switchHistoryTab('my')">
+                    <i data-lucide="user" style="width:13px; height:13px;"></i>
+                    Mis Descargas ({{ my_history_count }})
+                </button>
+                <button type="button" id="tabAllBtn" class="pill-tab-btn" onclick="switchHistoryTab('all')">
+                    <i data-lucide="globe" style="width:13px; height:13px;"></i>
+                    Todos los Usuarios ({{ all_history_count }})
+                </button>
+            </div>
+            {% else %}
+            <span class="badge-pill badge-user" style="font-size:0.75rem;">{{ my_history_count }} descarga{{ my_history_count|pluralize }}</span>
+            {% endif %}
+        </div>
+
+        <!-- SECCIÓN 1: MIS DESCARGAS -->
+        <div id="mySection">
+            <div id="myHistoryGrid" class="history-grid-responsive" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(270px, 1fr)); gap:18px;">
+                {% for item in my_history %}
+                <div class="prompt-card-shadcn" id="history-item-{{ item.id }}" onclick="openIgModal({{ item.id }})">
+                    <div>
+                        <!-- Miniatura -->
+                        <div style="width:100%; height:140px; border-radius:8px; background:var(--bg-muted); border:1px solid var(--border-subtle); overflow:hidden; position:relative; margin-bottom:12px; display:flex; align-items:center; justify-content:center;">
+                            {% if item.thumbnail %}
+                                <img src="{{ item.thumbnail.url }}" alt="Miniatura Reel" style="width:100%; height:100%; object-fit:cover;" onerror="this.onerror=null; this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='flex';">
+                                <div style="display:none; width:100%; height:100%; align-items:center; justify-content:center;">
+                                    <i data-lucide="film" style="width:36px; height:36px; color:var(--text-muted); opacity:0.5;"></i>
+                                </div>
+                            {% else %}
+                                <i data-lucide="film" style="width:36px; height:36px; color:var(--text-muted); opacity:0.5;"></i>
+                            {% endif %}
+
+                            {% if item.duration_seconds %}
+                            <div style="position:absolute; bottom:8px; right:8px; background:rgba(0,0,0,0.7); color:#fff; font-size:0.65rem; font-weight:700; padding:2px 6px; border-radius:4px;">
+                                {{ item.duration_seconds|floatformat:0 }}s
+                            </div>
+                            {% endif %}
+
+                            <div style="position:absolute; bottom:8px; left:8px;">
+                                <span class="badge-pill {% if item.status == 'completed' %}badge-admin{% elif item.status == 'processing' %}badge-superadmin{% else %}badge-user{% endif %}" style="font-size:0.65rem;">
+                                    {{ item.get_status_display }}
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Info -->
+                        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
+                            <span class="ig-badge">
+                                <i data-lucide="instagram" style="width:11px; height:11px;"></i>
+                                @{{ item.uploader|default:'instagram' }}
+                            </span>
+                            <span style="font-size:0.7rem; color:var(--text-muted);">{{ item.created_at|date:"d M, H:i" }}</span>
+                        </div>
+
+                        <h3 style="font-size:0.9rem; font-weight:700; color:var(--text-primary); margin:6px 0 6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="{{ item.title }}">
+                            {{ item.title|default:'Reel de Instagram' }}
+                        </h3>
+
+                        <div style="font-size:0.75rem; color:#e1306c; margin:0 0 10px; display:flex; align-items:center; gap:5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                            <i data-lucide="link" style="width:12px; height:12px; flex-shrink:0;"></i>
+                            <span style="overflow:hidden; text-overflow:ellipsis;" title="{{ item.instagram_url }}">{{ item.instagram_url }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Acciones Rápidas -->
+                    <div style="display:flex; align-items:center; justify-content:space-between; border-top:1px solid var(--border-subtle); padding-top:10px; margin-top:6px;">
+                        <a href="{% url 'igdownloader:download_video_stream' item.id %}" class="btn-brand" style="padding:5px 12px; font-size:0.75rem; text-decoration:none;" onclick="event.stopPropagation();">
+                            <i data-lucide="download" style="width:12px; height:12px;"></i>
+                            Descargar
+                        </a>
+                        <button type="button" class="action-btn action-btn-delete" title="Eliminar" onclick="event.stopPropagation(); openDeleteModal({{ item.id }})">
+                            <i data-lucide="trash-2" style="width:14px; height:14px;"></i>
+                        </button>
+                    </div>
+                </div>
+                {% empty %}
+                <div id="noHistoryMsg" class="shadcn-card" style="grid-column:1 / -1; text-align:center; padding:48px 20px; color:var(--text-muted);">
+                    <i data-lucide="film" style="width:40px; height:40px; margin:0 auto 12px; opacity:0.3;"></i>
+                    <p style="font-size:0.9rem; margin:0;">Aún no has descargado ningún reel. ¡Pega un enlace arriba para comenzar!</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        {% if user.role == 'superadmin' %}
+        <!-- SECCIÓN 2: TODOS LOS USUARIOS (SUPERADMIN) -->
+        <div id="allSection" style="display:none;">
+            <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(270px, 1fr)); gap:18px;">
+                {% for item in all_history %}
+                <div class="prompt-card-shadcn" id="history-item-{{ item.id }}" onclick="openIgModal({{ item.id }})">
+                    <div>
+                        <!-- Miniatura con Badge de Usuario -->
+                        <div style="width:100%; height:140px; border-radius:8px; background:var(--bg-muted); border:1px solid var(--border-subtle); overflow:hidden; position:relative; margin-bottom:12px; display:flex; align-items:center; justify-content:center;">
+                            {% if item.thumbnail %}
+                                <img src="{{ item.thumbnail.url }}" alt="Miniatura Reel" style="width:100%; height:100%; object-fit:cover;" onerror="this.onerror=null; this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='flex';">
+                                <div style="display:none; width:100%; height:100%; align-items:center; justify-content:center;">
+                                    <i data-lucide="film" style="width:36px; height:36px; color:var(--text-muted); opacity:0.5;"></i>
+                                </div>
+                            {% else %}
+                                <i data-lucide="film" style="width:36px; height:36px; color:var(--text-muted); opacity:0.5;"></i>
+                            {% endif %}
+
+                            <div style="position:absolute; top:8px; left:8px;">
+                                <span class="badge-pill badge-superadmin" style="font-size:0.68rem; display:inline-flex; align-items:center; gap:4px;">
+                                    <i data-lucide="user" style="width:11px; height:11px;"></i>
+                                    @{{ item.user.username }}
+                                </span>
+                            </div>
+
+                            {% if item.duration_seconds %}
+                            <div style="position:absolute; bottom:8px; right:8px; background:rgba(0,0,0,0.7); color:#fff; font-size:0.65rem; font-weight:700; padding:2px 6px; border-radius:4px;">
+                                {{ item.duration_seconds|floatformat:0 }}s
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Info -->
+                        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
+                            <span class="ig-badge">
+                                <i data-lucide="instagram" style="width:11px; height:11px;"></i>
+                                @{{ item.uploader|default:'instagram' }}
+                            </span>
+                            <span style="font-size:0.7rem; color:var(--text-muted);">{{ item.created_at|date:"d M, H:i" }}</span>
+                        </div>
+
+                        <h3 style="font-size:0.9rem; font-weight:700; color:var(--text-primary); margin:6px 0 6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="{{ item.title }}">
+                            {{ item.title|default:'Reel de Instagram' }}
+                        </h3>
+                    </div>
+
+                    <!-- Acciones Rápidas -->
+                    <div style="display:flex; align-items:center; justify-content:space-between; border-top:1px solid var(--border-subtle); padding-top:10px; margin-top:6px;">
+                        <a href="{% url 'igdownloader:download_video_stream' item.id %}" class="btn-brand" style="padding:5px 12px; font-size:0.75rem; text-decoration:none;" onclick="event.stopPropagation();">
+                            <i data-lucide="download" style="width:12px; height:12px;"></i>
+                            Descargar
+                        </a>
+                        <button type="button" class="action-btn action-btn-delete" title="Eliminar" onclick="event.stopPropagation(); openDeleteModal({{ item.id }})">
+                            <i data-lucide="trash-2" style="width:14px; height:14px;"></i>
+                        </button>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="shadcn-card" style="grid-column:1 / -1; text-align:center; padding:48px 20px; color:var(--text-muted);">
+                    <i data-lucide="users" style="width:40px; height:40px; margin:0 auto 12px; opacity:0.3;"></i>
+                    <p style="font-size:0.9rem; margin:0;">No hay descargas de otros usuarios aún.</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+</div>
+
+<!-- ═════════ 3. MODAL INTERACTIVO: VISOR DE REEL ═════════ -->
+<div id="igModal" style="display:none; position:fixed; inset:0; z-index:100000; background:var(--modal-backdrop); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); align-items:center; justify-content:center; padding:16px;">
+    <div class="shadcn-card" style="width:100%; max-width:680px; max-height:90vh; display:flex; flex-direction:column; animation:modalIn 0.22s ease-out; overflow:hidden;">
+        
+        <!-- Header -->
+        <div style="padding:18px 24px; border-bottom:1px solid var(--border-subtle); display:flex; justify-content:space-between; align-items:center; flex-shrink:0;">
+            <div style="display:flex; align-items:center; gap:12px;">
+                <div style="width:36px; height:36px; border-radius:9999px; background:rgba(225,48,108,0.12); border:1px solid rgba(225,48,108,0.25); display:flex; align-items:center; justify-content:center; color:#e1306c;">
+                    <i data-lucide="instagram" style="width:18px; height:18px;"></i>
+                </div>
+                <div>
+                    <h3 id="modalTitle" style="font-size:1.1rem; font-weight:700; color:var(--text-primary); margin:0;">Reel de Instagram</h3>
+                    <div style="display:flex; align-items:center; gap:8px; margin-top:2px;">
+                        <span id="modalStatus" class="badge-pill badge-admin">Completado</span>
+                        <span id="modalDate" style="font-size:0.75rem; color:var(--text-muted);"></span>
+                    </div>
+                </div>
+            </div>
+            <button type="button" class="action-pill-btn" onclick="closeIgModal()">
+                <i data-lucide="x"></i>
+            </button>
+        </div>
+
+        <!-- Body -->
+        <div style="padding:24px; overflow-y:auto; flex:1; display:flex; flex-direction:column; gap:20px;">
+            
+            <!-- Miniatura Grande con Overlay -->
+            <div style="width:100%; height:260px; border-radius:12px; background:var(--bg-muted); border:1px solid var(--border-subtle); overflow:hidden; position:relative; display:flex; align-items:center; justify-content:center;">
+                <img id="modalThumbnailImg" src="" alt="Miniatura Reel" style="width:100%; height:100%; object-fit:cover; display:none;">
+                <div id="modalThumbnailPlaceholder" style="display:flex; align-items:center; justify-content:center;">
+                    <i data-lucide="film" style="width:48px; height:48px; color:var(--text-muted); opacity:0.4;"></i>
+                </div>
+                <div style="position:absolute; bottom:12px; left:12px;">
+                    <span id="modalUploader" class="ig-badge" style="font-size:0.78rem; padding:4px 10px;">
+                        <i data-lucide="instagram" style="width:13px; height:13px;"></i>
+                        @uploader
+                    </span>
+                </div>
+                <div id="modalDurationBadge" style="display:none; position:absolute; bottom:12px; right:12px; background:rgba(0,0,0,0.75); color:#fff; font-size:0.75rem; font-weight:700; padding:4px 8px; border-radius:6px;">
+                </div>
+            </div>
+
+            <!-- Descripción / Título -->
+            <div style="background:var(--bg-muted); border:1px solid var(--border-subtle); border-radius:8px; padding:16px;">
+                <div style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; margin-bottom:6px;">
+                    Descripción / Pie de foto
+                </div>
+                <p id="modalDescription" style="font-size:0.88rem; color:var(--text-primary); margin:0; line-height:1.5; white-space:pre-wrap; word-break:break-word;"></p>
+            </div>
+
+            <!-- Botones de Acción -->
+            <div style="display:flex; flex-direction:column; gap:10px;">
+                <a id="modalDownloadBtn" href="#" class="btn-brand" style="justify-content:center; padding:12px 20px; font-size:0.92rem; text-decoration:none;">
+                    <i data-lucide="download" style="width:16px; height:16px;"></i>
+                    Descargar Video Sin Marca de Agua
+                </a>
+
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                    <a id="modalIgLink" href="#" target="_blank" rel="noopener noreferrer" class="btn-ghost" style="justify-content:center; text-decoration:none;">
+                        <i data-lucide="external-link" style="width:14px; height:14px;"></i>
+                        Abrir en Instagram
+                    </a>
+                    <button type="button" class="btn-ghost" style="justify-content:center;" onclick="copyModalUrl()">
+                        <i data-lucide="copy" style="width:14px; height:14px;"></i>
+                        <span id="copyBtnText">Copiar Enlace</span>
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- Modal Eliminar -->
+<div id="deleteModal" style="display:none; position:fixed; inset:0; z-index:100000; background:var(--modal-backdrop); backdrop-filter:blur(10px); align-items:center; justify-content:center; padding:16px;">
+    <div class="shadcn-card" style="width:100%; max-width:400px; padding:24px; text-align:center;">
+        <div style="width:44px; height:44px; border-radius:50%; background:rgba(239,68,68,0.12); color:#ef4444; display:flex; align-items:center; justify-content:center; margin:0 auto 16px;">
+            <i data-lucide="trash-2" style="width:22px; height:22px;"></i>
+        </div>
+        <h3 style="font-size:1.1rem; font-weight:700; margin:0 0 8px; color:var(--text-primary);">¿Eliminar registro?</h3>
+        <p style="font-size:0.82rem; color:var(--text-muted); margin:0 0 20px;">Esta acción eliminará la miniatura y el historial de descargas.</p>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+            <button type="button" class="btn-ghost" onclick="closeDeleteModal()">Cancelar</button>
+            <button type="button" id="confirmDeleteBtn" class="btn-brand" style="background:#ef4444; justify-content:center;" onclick="executeDelete()">Eliminar</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentModalUrl = '';
+let itemToDelete = null;
+
+// Form Submit
+document.getElementById('igDownloadForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const input = document.getElementById('igUrlInput');
+    const url = input.value.trim();
+    if (!url) return;
+
+    const btn = document.getElementById('submitBtn');
+    const procCard = document.getElementById('processingCard');
+    const progBar = document.getElementById('progressBar');
+    const procTitle = document.getElementById('processingTitle');
+    const procSub = document.getElementById('processingSub');
+
+    btn.disabled = true;
+    procCard.style.display = 'block';
+    progBar.style.width = '20%';
+    procTitle.innerText = 'Conectando con Instagram...';
+    procSub.innerText = 'Extrayendo stream original sin marca de agua y miniatura';
+
+    let progressInterval = setInterval(() => {
+        let currentW = parseInt(progBar.style.width) || 20;
+        if (currentW < 85) {
+            progBar.style.width = (currentW + 15) + '%';
+        }
+    }, 400);
+
+    try {
+        const formData = new FormData();
+        formData.append('instagram_url', url);
+        formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+        const res = await fetch("{% url 'igdownloader:process_ajax' %}", {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+
+        clearInterval(progressInterval);
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+            progBar.style.width = '100%';
+            procTitle.innerText = '¡Descarga lista!';
+            procSub.innerText = 'Abriendo opciones del Reel...';
+
+            setTimeout(() => {
+                input.value = '';
+                btn.disabled = false;
+                procCard.style.display = 'none';
+                progBar.style.width = '0%';
+
+                // Insert into grid
+                insertCardIntoGrid(data);
+
+                // Open modal with the new item
+                openIgModal(data.id);
+
+                // Auto-trigger browser download
+                window.location.href = data.download_url;
+            }, 600);
+        } else {
+            throw new Error(data.error || 'No se pudo procesar el video de Instagram.');
+        }
+    } catch (err) {
+        clearInterval(progressInterval);
+        btn.disabled = false;
+        progBar.style.width = '100%';
+        progBar.style.background = '#ef4444';
+        procTitle.innerHTML = '<span style="color:#ef4444;">Error en la descarga</span>';
+        procSub.innerText = err.message || 'Error de conexión con el servidor.';
+        setTimeout(() => {
+            alert(err.message || 'Error al procesar el video.');
+            procCard.style.display = 'none';
+            progBar.style.width = '0%';
+            progBar.style.background = 'linear-gradient(90deg, #f09433, #e1306c, #bc1888)';
+        }, 1200);
+    }
+});
+
+function insertCardIntoGrid(data) {
+    const grid = document.getElementById('myHistoryGrid');
+    const emptyMsg = document.getElementById('noHistoryMsg');
+    if (emptyMsg) emptyMsg.remove();
+
+    const durationHtml = data.duration_seconds 
+        ? `<div style="position:absolute; bottom:8px; right:8px; background:rgba(0,0,0,0.7); color:#fff; font-size:0.65rem; font-weight:700; padding:2px 6px; border-radius:4px;">${Math.round(data.duration_seconds)}s</div>` 
+        : '';
+
+    const thumbHtml = data.thumbnail_url 
+        ? `<img src="${data.thumbnail_url}" alt="Miniatura Reel" style="width:100%; height:100%; object-fit:cover;" onerror="this.onerror=null; this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='flex';">
+           <div style="display:none; width:100%; height:100%; align-items:center; justify-content:center;"><i data-lucide="film" style="width:36px; height:36px; color:var(--text-muted); opacity:0.5;"></i></div>` 
+        : `<i data-lucide="film" style="width:36px; height:36px; color:var(--text-muted); opacity:0.5;"></i>`;
+
+    const cardHtml = `
+    <div class="prompt-card-shadcn" id="history-item-${data.id}" onclick="openIgModal(${data.id})">
+        <div>
+            <div style="width:100%; height:140px; border-radius:8px; background:var(--bg-muted); border:1px solid var(--border-subtle); overflow:hidden; position:relative; margin-bottom:12px; display:flex; align-items:center; justify-content:center;">
+                ${thumbHtml}
+                ${durationHtml}
+                <div style="position:absolute; bottom:8px; left:8px;">
+                    <span class="badge-pill badge-admin" style="font-size:0.65rem;">${data.status_display}</span>
+                </div>
+            </div>
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
+                <span class="ig-badge">
+                    <i data-lucide="instagram" style="width:11px; height:11px;"></i>
+                    @${data.uploader || 'instagram'}
+                </span>
+                <span style="font-size:0.7rem; color:var(--text-muted);">${data.created_at}</span>
+            </div>
+            <h3 style="font-size:0.9rem; font-weight:700; color:var(--text-primary); margin:6px 0 6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${data.title}">
+                ${data.title || 'Reel de Instagram'}
+            </h3>
+            <div style="font-size:0.75rem; color:#e1306c; margin:0 0 10px; display:flex; align-items:center; gap:5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                <i data-lucide="link" style="width:12px; height:12px; flex-shrink:0;"></i>
+                <span style="overflow:hidden; text-overflow:ellipsis;">${data.instagram_url}</span>
+            </div>
+        </div>
+        <div style="display:flex; align-items:center; justify-content:space-between; border-top:1px solid var(--border-subtle); padding-top:10px; margin-top:6px;">
+            <a href="${data.download_url}" class="btn-brand" style="padding:5px 12px; font-size:0.75rem; text-decoration:none;" onclick="event.stopPropagation();">
+                <i data-lucide="download" style="width:12px; height:12px;"></i>
+                Descargar
+            </a>
+            <button type="button" class="action-btn action-btn-delete" title="Eliminar" onclick="event.stopPropagation(); openDeleteModal(${data.id})">
+                <i data-lucide="trash-2" style="width:14px; height:14px;"></i>
+            </button>
+        </div>
+    </div>`;
+
+    grid.insertAdjacentHTML('afterbegin', cardHtml);
+    lucide.createIcons();
+}
+
+async function openIgModal(id) {
+    try {
+        const res = await fetch(`/ig-downloader/status-ajax/${id}/`);
+        if (!res.ok) throw new Error();
+        const data = await res.json();
+
+        currentModalUrl = data.instagram_url;
+        document.getElementById('modalTitle').innerText = data.title || 'Reel de Instagram';
+        document.getElementById('modalDate').innerText = data.created_at;
+        document.getElementById('modalUploader').innerHTML = `<i data-lucide="instagram" style="width:13px; height:13px;"></i> @${data.uploader}`;
+        document.getElementById('modalDescription').innerText = data.title || 'Sin descripción adicional disponible.';
+        document.getElementById('modalDownloadBtn').href = data.download_url;
+        document.getElementById('modalIgLink').href = data.instagram_url;
+
+        const img = document.getElementById('modalThumbnailImg');
+        const ph = document.getElementById('modalThumbnailPlaceholder');
+        if (data.thumbnail_url) {
+            img.src = data.thumbnail_url;
+            img.style.display = 'block';
+            ph.style.display = 'none';
+        } else {
+            img.style.display = 'none';
+            ph.style.display = 'flex';
+        }
+
+        const durBadge = document.getElementById('modalDurationBadge');
+        if (data.duration_seconds) {
+            durBadge.innerText = Math.round(data.duration_seconds) + 's';
+            durBadge.style.display = 'block';
+        } else {
+            durBadge.style.display = 'none';
+        }
+
+        const modal = document.getElementById('igModal');
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+        lucide.createIcons();
+    } catch (e) {
+        alert('No se pudo cargar la información del reel.');
+    }
+}
+
+function closeIgModal() {
+    document.getElementById('igModal').style.display = 'none';
+    document.body.style.overflow = 'auto';
+}
+
+function copyModalUrl() {
+    if (currentModalUrl) {
+        navigator.clipboard.writeText(currentModalUrl);
+        const text = document.getElementById('copyBtnText');
+        text.innerText = '¡Copiado!';
+        setTimeout(() => text.innerText = 'Copiar Enlace', 2000);
+    }
+}
+
+function openDeleteModal(id) {
+    itemToDelete = id;
+    document.getElementById('deleteModal').style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    lucide.createIcons();
+}
+
+function closeDeleteModal() {
+    itemToDelete = null;
+    document.getElementById('deleteModal').style.display = 'none';
+    document.body.style.overflow = 'auto';
+}
+
+async function executeDelete() {
+    if (!itemToDelete) return;
+    const btn = document.getElementById('confirmDeleteBtn');
+    btn.disabled = true;
+    btn.innerText = 'Eliminando...';
+
+    try {
+        const res = await fetch(`/ig-downloader/delete-ajax/${itemToDelete}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+        if (res.ok) {
+            const card = document.getElementById('history-item-' + itemToDelete);
+            if (card) card.remove();
+            closeDeleteModal();
+        } else {
+            alert('No se pudo eliminar el elemento.');
+        }
+    } catch (e) {
+        alert('Error de conexión.');
+    } finally {
+        btn.disabled = false;
+        btn.innerText = 'Eliminar';
+    }
+}
+
+function switchHistoryTab(tab) {
+    const isMy = tab === 'my';
+    const mySection = document.getElementById('mySection');
+    const allSection = document.getElementById('allSection');
+    const tabMyBtn = document.getElementById('tabMyBtn');
+    const tabAllBtn = document.getElementById('tabAllBtn');
+
+    if (mySection) mySection.style.display = isMy ? 'block' : 'none';
+    if (allSection) allSection.style.display = isMy ? 'none' : 'block';
+
+    if (tabMyBtn) tabMyBtn.classList.toggle('active', isMy);
+    if (tabAllBtn) tabAllBtn.classList.toggle('active', !isMy);
+}
+
+window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        closeIgModal();
+        closeDeleteModal();
+    }
+});
+document.getElementById('igModal').addEventListener('click', (e) => {
+    if (e.target.id === 'igModal') closeIgModal();
+});
+document.getElementById('deleteModal').addEventListener('click', (e) => {
+    if (e.target.id === 'deleteModal') closeDeleteModal();
+});
+</script>
+{% endblock %}

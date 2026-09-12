@@ -35,6 +35,9 @@ urlpatterns = [
     # Video to Prompt Studio
     path('video-prompt/', include('videoprompt.urls')),
 
+    # Instagram Downloader
+    path('ig-downloader/', include('igdownloader.urls', namespace='igdownloader')),
+
     # Fanpage Creator Studio
     path('fanpages/', include('fanpages.urls')),
 

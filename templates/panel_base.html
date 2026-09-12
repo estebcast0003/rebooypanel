@@ -751,7 +751,7 @@
                 Dashboard
             </a>
 
-            {% if user.role == 'superadmin' or user.can_view_videoprompt or user.can_view_fanpages or user.can_view_extractor %}
+            {% if user.role == 'superadmin' or user.can_view_videoprompt or user.can_view_ig_downloader or user.can_view_fanpages or user.can_view_extractor %}
             <div class="section-label" style="margin-top:14px;">Herramientas IA</div>
 
             {% if user.role == 'superadmin' or user.can_view_videoprompt %}
@@ -759,6 +759,14 @@
                class="nav-link {% if '/video-prompt/' in request.path and '/api-keys/' not in request.path %}active{% endif %}">
                 <i data-lucide="video"></i>
                 Video to Prompt
+            </a>
+            {% endif %}
+
+            {% if user.role == 'superadmin' or user.can_view_ig_downloader %}
+            <a href="{% url 'igdownloader:index' %}"
+               class="nav-link {% if '/ig-downloader/' in request.path %}active{% endif %}">
+                <i data-lucide="instagram"></i>
+                IG Downloader
             </a>
             {% endif %}
 

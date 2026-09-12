@@ -22,6 +22,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 
     # Control Granular de Visibilidad de Módulos y Pestañas
     can_view_videoprompt = models.BooleanField(default=True, help_text="Acceso a Video to Prompt Studio")
+    can_view_ig_downloader = models.BooleanField(default=True, help_text="Acceso a IG Downloader")
     can_view_fanpages = models.BooleanField(default=True, help_text="Acceso a Fanpage Creator")
     can_view_extractor = models.BooleanField(default=True, help_text="Acceso a Facebook Fan Extractor")
     can_view_stats = models.BooleanField(default=True, help_text="Acceso a la pestaña de estadísticas y métricas del Reel")

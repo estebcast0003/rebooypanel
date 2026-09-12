@@ -207,7 +207,21 @@
                                 <input type="checkbox" name="can_view_videoprompt" id="id_can_view_videoprompt" {% if form.can_view_videoprompt.value %}checked{% endif %} style="width:18px; height:18px; accent-color:#ef4444; cursor:pointer;">
                             </label>
 
-                            <!-- 2. Fanpage Creator Studio -->
+                            <!-- 2. IG Downloader -->
+                            <label class="perm-row" for="id_can_view_ig_downloader">
+                                <div style="display:flex; align-items:center; gap:10px;">
+                                    <div style="width:30px; height:30px; border-radius:9999px; background:rgba(236,72,153,0.12); display:flex; align-items:center; justify-content:center; color:#ec4899;">
+                                        <i data-lucide="instagram" style="width:15px; height:15px;"></i>
+                                    </div>
+                                    <div>
+                                        <div style="font-size:0.85rem; font-weight:600; color:var(--text-primary);">IG Downloader</div>
+                                        <div style="font-size:0.7rem; color:var(--text-muted);">Descarga de videos de Instagram sin marca de agua</div>
+                                    </div>
+                                </div>
+                                <input type="checkbox" name="can_view_ig_downloader" id="id_can_view_ig_downloader" {% if form.can_view_ig_downloader.value %}checked{% endif %} style="width:18px; height:18px; accent-color:#ef4444; cursor:pointer;">
+                            </label>
+
+                            <!-- 3. Fanpage Creator Studio -->
                             <label class="perm-row" for="id_can_view_fanpages">
                                 <div style="display:flex; align-items:center; gap:10px;">
                                     <div style="width:30px; height:30px; border-radius:9999px; background:rgba(250,204,21,0.12); display:flex; align-items:center; justify-content:center; color:#facc15;">
@@ -328,7 +342,7 @@ function selectRole(role, isUserAction = true) {
 }
 
 function setAllPerms(val) {
-    ['id_can_view_videoprompt', 'id_can_view_fanpages', 'id_can_view_extractor', 'id_can_view_stats', 'id_can_view_dashboard', 'id_can_manage_api_keys', 'id_can_manage_users'].forEach(id => {
+    ['id_can_view_videoprompt', 'id_can_view_ig_downloader', 'id_can_view_fanpages', 'id_can_view_extractor', 'id_can_view_stats', 'id_can_view_dashboard', 'id_can_manage_api_keys', 'id_can_manage_users'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.checked = val;
     });
