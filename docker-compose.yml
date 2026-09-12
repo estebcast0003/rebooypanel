@@ -7,8 +7,11 @@ services:
     environment:
       - DEBUG=False
       - ALLOWED_HOSTS=*
+      - SQLITE_PATH=/app/data/db.sqlite3
     volumes:
       - media_volume:/app/media
+      - db_volume:/app/data
 
 volumes:
   media_volume:
+  db_volume:

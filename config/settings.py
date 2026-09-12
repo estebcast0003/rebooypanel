@@ -129,10 +129,17 @@ elif os.getenv('POSTGRES_DB'):
         }
     }
 else:
+    sqlite_path = os.getenv('SQLITE_PATH')
+    if sqlite_path:
+        db_path = Path(sqlite_path)
+        db_path.parent.mkdir(parents=True, exist_ok=True)
+    else:
+        db_path = BASE_DIR / 'db.sqlite3'
+
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
+            'NAME': db_path,
             'OPTIONS': {
                 'timeout': 60,
             },
