@@ -68,7 +68,11 @@
                         </label>
                         <div style="position:relative;">
                             <i data-lucide="lock" style="position:absolute; left:14px; top:50%; transform:translateY(-50%); width:16px; height:16px; color:var(--text-muted);"></i>
-                            <input type="password" name="password" id="id_password" required placeholder="••••••••" class="shadcn-input" style="width:100%; padding-left:40px !important;">
+                            <input type="password" name="password" id="id_password" required placeholder="••••••••" class="shadcn-input" style="width:100%; padding-left:40px !important; padding-right:42px !important;">
+                            <button type="button" onclick="toggleAdminPasswordVisibility('id_password', this)" style="position:absolute; right:12px; top:50%; transform:translateY(-50%); background:transparent; border:none; color:var(--text-muted); cursor:pointer; padding:4px; display:flex; align-items:center; justify-content:center;" title="Mostrar u ocultar contraseña">
+                                <i data-lucide="eye" class="eye-open" style="width:16px; height:16px;"></i>
+                                <i data-lucide="eye-off" class="eye-closed" style="width:16px; height:16px; display:none;"></i>
+                            </button>
                         </div>
                         {% if form.password.errors %}
                             <div style="margin-top:6px; font-size:0.78rem; color:#f87171;">{{ form.password.errors|join:", " }}</div>
@@ -436,5 +440,21 @@ document.addEventListener('DOMContentLoaded', () => {
     setUnlimited(isUnl);
     lucide.createIcons();
 });
+
+function toggleAdminPasswordVisibility(inputId, btn) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+    const eyeOpen = btn.querySelector('.eye-open');
+    const eyeClosed = btn.querySelector('.eye-closed');
+    if (input.type === 'password') {
+        input.type = 'text';
+        if (eyeOpen) eyeOpen.style.display = 'none';
+        if (eyeClosed) eyeClosed.style.display = 'block';
+    } else {
+        input.type = 'password';
+        if (eyeOpen) eyeOpen.style.display = 'block';
+        if (eyeClosed) eyeClosed.style.display = 'none';
+    }
+}
 </script>
 {% endblock %}

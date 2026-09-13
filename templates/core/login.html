@@ -83,6 +83,9 @@
         <div class="absolute -bottom-10 -left-10 w-32 h-32 bg-slate-500 rounded-full blur-3xl opacity-20 group-hover:opacity-40 transition duration-500"></div>
 
         <div class="relative z-10 text-center mb-8">
+            <div class="inline-flex p-1 rounded-2xl bg-gradient-to-tr from-brand-600 to-brand-400 shadow-xl shadow-brand-500/25 mb-4 border border-brand-400/40">
+                <img src="{% static 'img/id.jpg' %}" alt="Rebooy Creator Identity" class="w-16 h-16 rounded-xl object-cover">
+            </div>
             <h1 class="text-3xl font-bold text-white tracking-tight mb-2">Rebooy<span class="text-brand-500">Panel</span></h1>
             <p class="text-slate-400 text-sm">Acceso al sistema central</p>
         </div>
@@ -115,8 +118,22 @@
                 <label for="id_password" class="block text-sm font-medium text-slate-300 mb-2">Password</label>
                 <div class="relative">
                     <input type="password" name="password" id="id_password" required
-                        class="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all"
+                        class="w-full bg-slate-800/50 border border-slate-700 rounded-xl pl-4 pr-12 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all"
                         placeholder="••••••••">
+                    <button type="button" onclick="togglePasswordVisibility('id_password', this)"
+                        class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white p-1.5 rounded-lg focus:outline-none hover:bg-slate-700/40 transition-all"
+                        title="Mostrar u ocultar contraseña">
+                        <svg class="eye-open" xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
+                            <circle cx="12" cy="12" r="3"/>
+                        </svg>
+                        <svg class="eye-closed" style="display:none;" xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/>
+                            <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/>
+                            <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/>
+                            <line x1="2" x2="22" y1="2" y2="22"/>
+                        </svg>
+                    </button>
                 </div>
             </div>
 
@@ -188,5 +205,21 @@
     }
     draw();
 })();
+
+function togglePasswordVisibility(inputId, btn) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+    const eyeOpen = btn.querySelector('.eye-open');
+    const eyeClosed = btn.querySelector('.eye-closed');
+    if (input.type === 'password') {
+        input.type = 'text';
+        if (eyeOpen) eyeOpen.style.display = 'none';
+        if (eyeClosed) eyeClosed.style.display = 'block';
+    } else {
+        input.type = 'password';
+        if (eyeOpen) eyeOpen.style.display = 'block';
+        if (eyeClosed) eyeClosed.style.display = 'none';
+    }
+}
 </script>
 {% endblock %}
