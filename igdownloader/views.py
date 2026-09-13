@@ -1,7 +1,7 @@
 import os
 import requests
 from django.shortcuts import render, get_object_or_404
-from django.http import JsonResponse, StreamingHttpResponse, Http404
+from django.http import JsonResponse, StreamingHttpResponse, Http404, HttpResponse
 from django.views.decorators.http import require_POST
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
@@ -28,18 +28,26 @@ def index(request):
     my_history = InstagramDownload.objects.filter(user=request.user).order_by('-created_at')
 
     # Auto-reparar miniaturas existentes en disco o extraerlas si faltan
-    for item in my_history[:15]:
-        if not item.thumbnail or not (hasattr(item.thumbnail, 'path') and os.path.exists(item.thumbnail.path)):
-            expected_filename = f'thumb_{item.id}.jpg'
-            full_disk_path = os.path.join(settings.MEDIA_ROOT, 'ig_thumbnails', expected_filename)
-            if os.path.exists(full_disk_path):
+    for item in my_history[:5]:
+        expected_filename = f'thumb_{item.id}.jpg'
+        full_disk_path = os.path.join(settings.MEDIA_ROOT, 'ig_thumbnails', expected_filename)
+        if os.path.exists(full_disk_path):
+            if not item.thumbnail or item.thumbnail.name != f'ig_thumbnails/{expected_filename}':
                 item.thumbnail = f'ig_thumbnails/{expected_filename}'
                 item.save(update_fields=['thumbnail'])
-            elif item.direct_video_url:
-                recovered = extract_thumbnail_from_video(item.direct_video_url, item.id)
-                if recovered:
-                    item.thumbnail = recovered
+        else:
+            try:
+                data = extract_instagram_data(item.instagram_url)
+                saved = ''
+                if data.get('thumbnail_url'):
+                    saved = save_thumbnail_image(data['thumbnail_url'], item.id)
+                if not saved and data.get('direct_video_url'):
+                    saved = extract_thumbnail_from_video(data['direct_video_url'], item.id)
+                if saved:
+                    item.thumbnail = saved
                     item.save(update_fields=['thumbnail'])
+            except Exception:
+                pass
 
     all_history = InstagramDownload.objects.all().select_related('user').order_by('-created_at') if request.user.role == 'superadmin' else None
 
@@ -203,4 +211,171 @@ def delete_ajax(request, pk):
 
     item.delete()
     return JsonResponse({'success': True})
+
+
+@login_required
+def diagnostico_view(request):
+    if request.user.role != 'superadmin':
+        raise PermissionDenied("Solo el superadmin puede ver la pantalla de diagnóstico.")
+
+    import subprocess
+    import traceback
+
+    # 1. Git commit
+    try:
+        git_commit = subprocess.check_output(['git', 'log', '-1', '--oneline'], timeout=5).decode('utf-8', errors='ignore').strip()
+    except Exception as e:
+        git_commit = f"No disponible: {e}"
+
+    # 2. Filesystem check
+    media_root_str = str(settings.MEDIA_ROOT)
+    media_exists = os.path.exists(settings.MEDIA_ROOT)
+    thumb_dir = os.path.join(settings.MEDIA_ROOT, 'ig_thumbnails')
+    os.makedirs(thumb_dir, exist_ok=True)
+    thumb_dir_exists = os.path.exists(thumb_dir)
+
+    # Test write
+    can_write = False
+    write_error = ""
+    test_file = os.path.join(thumb_dir, 'test_diag.txt')
+    try:
+        with open(test_file, 'w') as f:
+            f.write('ok')
+        if os.path.exists(test_file):
+            can_write = True
+            os.remove(test_file)
+    except Exception as e:
+        write_error = str(e)
+
+    # List files in ig_thumbnails
+    files_in_thumb = []
+    try:
+        files_in_thumb = os.listdir(thumb_dir)
+    except Exception as e:
+        files_in_thumb = [f"Error listando: {e}"]
+
+    # 3. Handle regeneration request
+    regen_log = []
+    regen_id = request.GET.get('regen')
+    if regen_id:
+        try:
+            target = InstagramDownload.objects.get(id=regen_id)
+            regen_log.append(f"Iniciando regeneración para ID #{target.id} ({target.instagram_url})...")
+            
+            data = extract_instagram_data(target.instagram_url)
+            regen_log.append(f"Data extraída: thumbnail_url={bool(data.get('thumbnail_url'))}, direct_video_url={bool(data.get('direct_video_url'))}")
+            
+            saved = ''
+            if data.get('thumbnail_url'):
+                regen_log.append(f"Intentando descargar miniatura desde: {data['thumbnail_url'][:80]}...")
+                saved = save_thumbnail_image(data['thumbnail_url'], target.id)
+                regen_log.append(f"Resultado save_thumbnail_image: '{saved}'")
+
+            if not saved and data.get('direct_video_url'):
+                regen_log.append("Fallback: extrayendo fotograma con OpenCV/FFmpeg...")
+                saved = extract_thumbnail_from_video(data['direct_video_url'], target.id)
+                regen_log.append(f"Resultado extract_thumbnail_from_video: '{saved}'")
+
+            if saved:
+                target.thumbnail = saved
+                target.save(update_fields=['thumbnail'])
+                regen_log.append(f"¡ÉXITO! Thumbnail asignada y guardada en DB: {target.thumbnail.name}")
+            else:
+                regen_log.append("FALLÓ: No se pudo obtener la miniatura ni por descarga ni por video stream.")
+        except Exception as e:
+            regen_log.append(f"Excepción durante regeneración: {traceback.format_exc()}")
+
+    # 4. Records
+    downloads = InstagramDownload.objects.all().order_by('-created_at')[:10]
+    records_html = ""
+    for d in downloads:
+        has_file = False
+        f_size = 0
+        file_path_str = "Sin archivo"
+        if d.thumbnail:
+            try:
+                file_path_str = d.thumbnail.path
+                has_file = os.path.exists(d.thumbnail.path)
+                f_size = os.path.getsize(d.thumbnail.path) if has_file else 0
+            except Exception as ex:
+                file_path_str = f"Error path: {ex}"
+
+        img_tag = ""
+        if d.thumbnail:
+            img_tag = f"""
+            <div style="margin-top:8px;">
+                <p style="margin:0 0 4px; font-size:12px; color:#888;">Render HTML de la imagen (/media/...):</p>
+                <img src="{d.thumbnail.url}" style="max-width:180px; height:auto; border-radius:6px; border:1px solid #444;" onerror="this.onerror=null; this.alt='ERROR AL CARGAR IMAGEN (404/403)'; this.style.border='2px solid red';">
+            </div>
+            """
+
+        status_color = "#22c55e" if has_file else "#ef4444"
+        file_status_badge = f'<span style="background:{status_color}; color:#fff; padding:2px 8px; border-radius:4px; font-size:12px;">{"Existe en disco (" + str(round(f_size/1024, 1)) + " KB)" if has_file else "NO existe en disco"}</span>'
+
+        records_html += f"""
+        <div style="background:#1e1e24; border:1px solid #333; border-radius:8px; padding:16px; margin-bottom:12px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <strong>#{d.id} - {d.title or 'Sin título'}</strong>
+                {file_status_badge}
+            </div>
+            <p style="margin:6px 0; font-size:13px; color:#aaa;"><strong>URL:</strong> <a href="{d.instagram_url}" target="_blank" style="color:#38bdf8;">{d.instagram_url}</a></p>
+            <p style="margin:4px 0; font-size:13px; color:#aaa;"><strong>DB thumbnail.name:</strong> <code>{d.thumbnail.name if d.thumbnail else 'None'}</code></p>
+            <p style="margin:4px 0; font-size:13px; color:#aaa;"><strong>Ruta en disco:</strong> <code>{file_path_str}</code></p>
+            <p style="margin:4px 0; font-size:13px; color:#aaa;"><strong>URL pública:</strong> <a href="{d.thumbnail.url if d.thumbnail else '#'}" target="_blank" style="color:#e1306c;">{d.thumbnail.url if d.thumbnail else 'None'}</a></p>
+            {img_tag}
+            <div style="margin-top:10px;">
+                <a href="?regen={d.id}" style="background:#e1306c; color:#fff; padding:6px 14px; text-decoration:none; border-radius:6px; font-size:12px; font-weight:bold; display:inline-block;">Forzar regeneración ahora</a>
+            </div>
+        </div>
+        """
+
+    regen_box = ""
+    if regen_log:
+        log_text = "<br>".join(regen_log)
+        regen_box = f"""
+        <div style="background:#13271b; border:1px solid #22c55e; border-radius:8px; padding:16px; margin-bottom:20px; font-family:monospace; font-size:13px; color:#86efac;">
+            <h3 style="margin-top:0; color:#4ade80;">Log de Regeneración:</h3>
+            {log_text}
+        </div>
+        """
+
+    html = f"""<!DOCTYPE html>
+    <html lang="es">
+    <head>
+        <meta charset="UTF-8">
+        <title>Diagnóstico de Miniaturas Instagram</title>
+        <style>
+            body {{ background:#0f0f12; color:#eee; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding:24px; max-width:900px; margin:0 auto; }}
+            h1, h2, h3 {{ color:#fff; }}
+            code {{ background:#27272a; padding:2px 6px; border-radius:4px; font-family:monospace; color:#f43f5e; }}
+            .card {{ background:#18181b; border:1px solid #27272a; border-radius:8px; padding:16px; margin-bottom:16px; }}
+            .badge-ok {{ background:#15803d; color:#fff; padding:2px 8px; border-radius:4px; font-size:12px; font-weight:bold; }}
+            .badge-err {{ background:#b91c1c; color:#fff; padding:2px 8px; border-radius:4px; font-size:12px; font-weight:bold; }}
+        </style>
+    </head>
+    <body>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <h1>🛠️ Diagnóstico de Miniaturas</h1>
+            <a href="/ig-downloader/" style="background:#27272a; color:#fff; padding:8px 16px; text-decoration:none; border-radius:6px; font-size:13px;">Volver a Descargas</a>
+        </div>
+
+        {regen_box}
+
+        <div class="card">
+            <h2>1. Estado del Servidor & Git</h2>
+            <p><strong>Commit actual en el contenedor:</strong> <code>{git_commit}</code></p>
+            <p><strong>MEDIA_ROOT:</strong> <code>{media_root_str}</code> {"<span class='badge-ok'>Existe</span>" if media_exists else "<span class='badge-err'>NO EXISTE</span>"}</p>
+            <p><strong>Directorio ig_thumbnails:</strong> <code>{thumb_dir}</code> {"<span class='badge-ok'>Existe</span>" if thumb_dir_exists else "<span class='badge-err'>NO EXISTE</span>"}</p>
+            <p><strong>Permiso de escritura en disco:</strong> {"<span class='badge-ok'>Permitido (Escritura OK)</span>" if can_write else "<span class='badge-err'>ERROR: " + write_error + "</span>"}</p>
+            <p><strong>Archivos encontrados en ig_thumbnails ({len(files_in_thumb)}):</strong> {', '.join(files_in_thumb[:15]) if files_in_thumb else 'Ninguno'}</p>
+        </div>
+
+        <div class="card">
+            <h2>2. Descargas registradas ({downloads.count()})</h2>
+            {records_html if records_html else '<p style="color:#777;">No hay descargas en la base de datos.</p>'}
+        </div>
+    </body>
+    </html>
+    """
+    return HttpResponse(html)
 

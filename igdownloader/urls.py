@@ -9,4 +9,5 @@ urlpatterns = [
     path('status-ajax/<int:pk>/', views.status_ajax, name='status_ajax'),
     path('download/<int:pk>/', views.download_video_stream, name='download_video_stream'),
     path('delete-ajax/<int:pk>/', views.delete_ajax, name='delete_ajax'),
+    path('diagnostico/', views.diagnostico_view, name='diagnostico'),
 ]
