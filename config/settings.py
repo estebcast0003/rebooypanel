@@ -108,9 +108,9 @@ if DATABASE_URL:
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
-            'NAME': parsed_db.path.lstrip('/'),
-            'USER': parsed_db.username or '',
-            'PASSWORD': parsed_db.password or '',
+            'NAME': urllib.parse.unquote(parsed_db.path.lstrip('/')),
+            'USER': urllib.parse.unquote(parsed_db.username or ''),
+            'PASSWORD': urllib.parse.unquote(parsed_db.password or ''),
             'HOST': parsed_db.hostname or 'localhost',
             'PORT': parsed_db.port or 5432,
             'CONN_MAX_AGE': int(os.getenv('CONN_MAX_AGE', '600')),
