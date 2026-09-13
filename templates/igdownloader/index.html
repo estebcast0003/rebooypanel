@@ -467,11 +467,15 @@ document.getElementById('igDownloadForm').addEventListener('submit', async funct
         procTitle.innerHTML = '<span style="color:#ef4444;">Error en la descarga</span>';
         procSub.innerText = err.message || 'Error de conexión con el servidor.';
         setTimeout(() => {
-            alert(err.message || 'Error al procesar el video.');
+            showCustomAlert({
+                title: 'Error en la Descarga',
+                message: err.message || 'No se pudo procesar el video de Instagram.',
+                type: 'error'
+            });
             procCard.style.display = 'none';
             progBar.style.width = '0%';
             progBar.style.background = 'linear-gradient(90deg, #f09433, #e1306c, #bc1888)';
-        }, 1200);
+        }, 1000);
     }
 });
 
@@ -578,7 +582,7 @@ async function openIgModal(id) {
         document.body.style.overflow = 'hidden';
         lucide.createIcons();
     } catch (e) {
-        alert('No se pudo cargar la información del reel.');
+        showToast('No se pudo cargar la información del reel.', 'error');
     }
 }
 
@@ -627,11 +631,12 @@ async function executeDelete() {
             const card = document.getElementById('history-item-' + itemToDelete);
             if (card) card.remove();
             closeDeleteModal();
+            showToast('Elemento eliminado correctamente', 'success');
         } else {
-            alert('No se pudo eliminar el elemento.');
+            showToast('No se pudo eliminar el elemento.', 'error');
         }
     } catch (e) {
-        alert('Error de conexión.');
+        showToast('Error de conexión con el servidor.', 'error');
     } finally {
         btn.disabled = false;
         btn.innerText = 'Eliminar';

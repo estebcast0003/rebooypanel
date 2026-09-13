@@ -513,11 +513,19 @@ document.getElementById('fanpageGenForm').addEventListener('submit', async funct
             document.getElementById('customSubtemaInput').value = '';
             document.getElementById('customEstiloSelect').value = '';
         } else {
-            alert(data.error || 'Error al generar la fanpage.');
+            showCustomAlert({
+                title: 'Error al Generar Fanpage',
+                message: data.error || 'No se pudo generar la fanpage con IA.',
+                type: 'error'
+            });
         }
     } catch (err) {
         clearInterval(progressInterval);
-        alert('Error de conexión con el servidor.');
+        showCustomAlert({
+            title: 'Error de Conexión',
+            message: 'No se pudo comunicar con el servidor.',
+            type: 'error'
+        });
     } finally {
         btn.disabled = false;
         btn.style.opacity = '1';
@@ -612,10 +620,10 @@ async function openFanpageModal(id) {
             const data = await res.json();
             openFanpageModalWithData(data);
         } else {
-            alert('No se pudo cargar la información de la fanpage.');
+            showToast('No se pudo cargar la información de la fanpage.', 'error');
         }
     } catch (e) {
-        alert('Error de conexión.');
+        showToast('Error de conexión con el servidor.', 'error');
     }
 }
 
@@ -714,11 +722,12 @@ async function executeDeleteFp() {
             const item = document.getElementById(`fp-item-${fpIdToDelete}`);
             if (item) item.remove();
             closeDeleteFpModal();
+            showToast('Fanpage eliminada correctamente', 'success');
         } else {
-            alert('No se pudo eliminar la fanpage.');
+            showToast('No se pudo eliminar la fanpage.', 'error');
         }
     } catch (e) {
-        alert('Error al conectar con el servidor.');
+        showToast('Error al conectar con el servidor.', 'error');
     } finally {
         btn.disabled = false;
         btn.innerHTML = '<i data-lucide="trash-2" style="width:14px; height:14px;"></i> Eliminar';

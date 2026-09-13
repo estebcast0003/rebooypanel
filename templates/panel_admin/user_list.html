@@ -384,12 +384,13 @@ async function submitQuotaChange(e) {
                 }
             }
             closeQuotaModal();
+            showToast('Cuota actualizada exitosamente', 'success');
             lucide.createIcons();
         } else {
-            alert(data.message || 'Error al actualizar cuota.');
+            showToast(data.message || 'Error al actualizar cuota.', 'error');
         }
     } catch (err) {
-        alert('Error de conexión con el servidor.');
+        showToast('Error de conexión con el servidor.', 'error');
     } finally {
         saveBtn.disabled = false;
         saveBtn.innerHTML = '<i data-lucide="save" style="width:14px; height:14px;"></i> Guardar Cuota';
@@ -423,6 +424,7 @@ async function toggleUserStatus(userId) {
                         btn.title = 'Desactivar usuario';
                         btn.innerHTML = '<i data-lucide="pause-circle"></i>';
                     }
+                    showToast('Usuario activado correctamente', 'success');
                 } else {
                     cell.innerHTML = `
                         <span class="badge-inactive">
@@ -433,14 +435,15 @@ async function toggleUserStatus(userId) {
                         btn.title = 'Activar usuario';
                         btn.innerHTML = '<i data-lucide="play-circle"></i>';
                     }
+                    showToast('Usuario desactivado correctamente', 'info');
                 }
             }
             lucide.createIcons();
         } else {
-            alert(data.message || 'Error al cambiar estado.');
+            showToast(data.message || 'Error al cambiar estado.', 'error');
         }
     } catch (e) {
-        alert('Error de conexión.');
+        showToast('Error de conexión con el servidor.', 'error');
     } finally {
         if (btn) btn.disabled = false;
     }
@@ -533,12 +536,12 @@ async function executeRevokeUserSessions() {
         const data = await res.json();
         if (res.ok && data.status === 'success') {
             closeRevokeUserSessionsModal();
-            alert(data.message);
+            showToast(data.message || 'Sesiones revocadas exitosamente', 'success');
         } else {
-            alert(data.message || 'Error al revocar sesiones.');
+            showToast(data.message || 'Error al revocar sesiones.', 'error');
         }
     } catch (e) {
-        alert('Error de conexión con el servidor.');
+        showToast('Error de conexión con el servidor.', 'error');
     } finally {
         btn.disabled = false;
         btn.innerHTML = '<i data-lucide="shield-alert" style="width:14px; height:14px;"></i> Cerrar Sesiones';
@@ -572,8 +575,9 @@ async function submitDeleteUser(e) {
                 setTimeout(() => row.remove(), 260);
             }
             closeDeleteUserModal();
+            showToast('Usuario eliminado correctamente', 'success');
         } else {
-            alert(data.message || 'Error al eliminar usuario.');
+            showToast(data.message || 'Error al eliminar usuario.', 'error');
         }
     } catch (err) {
         document.getElementById('deleteUserForm').submit();

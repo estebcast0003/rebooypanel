@@ -688,6 +688,8 @@
 <script>
 let currentRawMarkdown = '';
 let promptIdToDelete = null;
+const canManageKeys = {% if user.role == 'superadmin' or user.is_superuser or user.can_manage_api_keys %}true{% else %}false{% endif %};
+const apiKeysUrl = "{% url 'videoprompt:api_keys' %}";
 
 function switchTab(type) {
     const isUpload = type === 'upload';
@@ -741,12 +743,35 @@ document.getElementById('videoPromptForm').addEventListener('submit', async func
         if (response.ok && data.status === 'success') {
             startPolling(data.prompt_id);
         } else {
-            alert(data.message || 'Error al iniciar el análisis.');
             resetForm();
+            const errMsg = data.message || 'Error al iniciar el análisis.';
+            const isKeyError = errMsg.toLowerCase().includes('claves de api') || errMsg.toLowerCase().includes('gemini_api_key');
+            if (isKeyError) {
+                showCustomAlert({
+                    title: 'Clave de API no configurada',
+                    message: errMsg,
+                    type: 'warning',
+                    icon: 'key-round',
+                    actionText: canManageKeys ? '<i data-lucide="key" style="width:14px; height:14px; margin-right:4px;"></i> Gestionar Claves IA' : null,
+                    actionUrl: canManageKeys ? apiKeysUrl : null,
+                    cancelText: 'Cerrar'
+                });
+            } else {
+                showCustomAlert({
+                    title: 'No se pudo iniciar el análisis',
+                    message: errMsg,
+                    type: 'error',
+                    cancelText: 'Entendido'
+                });
+            }
         }
     } catch (err) {
-        alert('Error de red al enviar el formulario.');
         resetForm();
+        showCustomAlert({
+            title: 'Error de Red',
+            message: 'Error al conectar con el servidor. Por favor verificá tu conexión.',
+            type: 'error'
+        });
     }
 });
 
@@ -834,8 +859,30 @@ function startPolling(promptId) {
                 procSub.innerText = data.error_message || 'Error al procesar el video.';
                 setTimeout(() => {
                     resetForm();
-                    alert('Fallo en el análisis: ' + (data.error_message || 'Error desconocido'));
-                }, 1500);
+                    const rawError = data.error_message || 'Error desconocido al procesar el video.';
+                    const isKeyError = rawError.toLowerCase().includes('claves de api') || 
+                                       rawError.toLowerCase().includes('gemini_api_key') ||
+                                       rawError.toLowerCase().includes('api key');
+
+                    if (isKeyError) {
+                        showCustomAlert({
+                            title: 'Clave de API no configurada',
+                            message: 'No hay claves de Gemini activas en la base de datos ni una clave válida en las variables de entorno.<br><br><span style="color:var(--text-muted); font-size:0.8rem;">Para que la IA de Gemini analice videos, ingresá una clave en el pool de claves o configurá <code>GEMINI_API_KEY</code>.</span>',
+                            type: 'warning',
+                            icon: 'key-round',
+                            actionText: canManageKeys ? '<i data-lucide="key" style="width:14px; height:14px; margin-right:4px;"></i> Gestionar Claves IA' : null,
+                            actionUrl: canManageKeys ? apiKeysUrl : null,
+                            cancelText: 'Cerrar'
+                        });
+                    } else {
+                        showCustomAlert({
+                            title: 'Fallo en el Análisis',
+                            message: rawError,
+                            type: 'error',
+                            cancelText: 'Entendido'
+                        });
+                    }
+                }, 1000);
             }
         } catch (err) {
             console.error('Polling error', err);
@@ -867,7 +914,7 @@ async function openPromptModal(id) {
         const data = await res.json();
         openPromptModalData(data);
     } catch (e) {
-        alert('No se pudo cargar el prompt.');
+        showToast('No se pudo cargar el prompt.', 'error');
     }
 }
 
@@ -1024,11 +1071,12 @@ async function executeDeletePrompt() {
             const item = document.getElementById('history-item-' + promptIdToDelete);
             if (item) item.remove();
             closeDeleteModal();
+            showToast('Prompt eliminado correctamente', 'success');
         } else {
-            alert('No se pudo eliminar el prompt.');
+            showToast('No se pudo eliminar el prompt.', 'error');
         }
     } catch (e) {
-        alert('Error al conectar con el servidor.');
+        showToast('Error al conectar con el servidor.', 'error');
     } finally {
         btn.disabled = false;
         btn.innerHTML = '<i data-lucide="trash-2" style="width:14px; height:14px;"></i> Eliminar';
