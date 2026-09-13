@@ -340,7 +340,7 @@ def api_keys_view(request):
             openrouter_key = request.POST.get('openrouter_api_key', '').strip()
             openrouter_model = request.POST.get('openrouter_model', 'google/gemini-2.5-flash').strip() or 'google/gemini-2.5-flash'
             gemini_key = request.POST.get('gemini_api_key', '').strip()
-            gemini_model = request.POST.get('gemini_model', 'gemini-2.5-flash').strip() or 'gemini-2.5-flash'
+            gemini_model = request.POST.get('gemini_model', 'gemini-3.6-flash').strip() or 'gemini-3.6-flash'
             use_gemini_pool = request.POST.get('use_gemini_pool') == 'on' or 'use_gemini_pool' in request.POST
             
             config = OpenRouterConfig.objects.first()
@@ -478,7 +478,16 @@ def test_gemini_ajax(request):
             'message': 'No se proporcionó ninguna clave de Gemini ni existen claves activas en el pool.'
         }, status=400)
 
-    model_name = request.POST.get('model_name', 'gemini-2.5-flash').strip() or 'gemini-2.5-flash'
+    model_name = request.POST.get('model_name', 'gemini-3.6-flash').strip() or 'gemini-3.6-flash'
+    DEPRECATED_MODELS = {
+        "gemini-1.5-pro": "gemini-3.6-flash",
+        "gemini-1.5-flash": "gemini-3.6-flash",
+        "gemini-2.5-flash": "gemini-3.6-flash",
+        "gemini-2.5-pro": "gemini-3.6-flash",
+        "gemini-2.5-flash-lite": "gemini-3.1-flash-lite",
+        "gemini-2.0-flash": "gemini-3.6-flash",
+    }
+    model_name = DEPRECATED_MODELS.get(model_name, model_name)
 
     try:
         client = genai.Client(api_key=key)

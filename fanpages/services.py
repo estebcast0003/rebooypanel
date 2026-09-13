@@ -140,7 +140,17 @@ def _generate_with_gemini(config: OpenRouterConfig, prompt: str) -> tuple:
             "en 'Configuración de IA para Fanpages' o asegurarte de tener claves activas en el 'Pool de Gemini'."
         )
 
-    model_name = (config.gemini_model.strip() if config and config.gemini_model else "gemini-2.5-flash")
+    model_name = (config.gemini_model.strip() if config and config.gemini_model else "gemini-3.6-flash")
+    # Auto-upgrade modelos deprecados por Google para evitar error 404
+    DEPRECATED_MODELS = {
+        "gemini-1.5-pro": "gemini-3.6-flash",
+        "gemini-1.5-flash": "gemini-3.6-flash",
+        "gemini-2.5-flash": "gemini-3.6-flash",
+        "gemini-2.5-pro": "gemini-3.6-flash",
+        "gemini-2.5-flash-lite": "gemini-3.1-flash-lite",
+        "gemini-2.0-flash": "gemini-3.6-flash",
+    }
+    model_name = DEPRECATED_MODELS.get(model_name, model_name)
 
     try:
         client = genai.Client(api_key=api_key)

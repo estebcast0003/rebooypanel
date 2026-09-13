@@ -16,7 +16,7 @@ class FanpageProfile(models.Model):
     prompt_foto_portada = models.TextField(help_text="Prompt en inglés para portada panorámica (16:5)")
     estilo_visual = models.CharField(max_length=200, help_text="Estilo artístico visual")
     subtema = models.CharField(max_length=200, help_text="Subtema o nicho específico")
-    modelo_usado = models.CharField(max_length=100, default='google/gemini-2.5-flash')
+    modelo_usado = models.CharField(max_length=100, default='gemini-3.6-flash')
     fecha_creacion = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -62,8 +62,8 @@ class OpenRouterConfig(models.Model):
     )
     gemini_model = models.CharField(
         max_length=100,
-        default='gemini-2.5-flash',
-        help_text="Modelo de Gemini (ej. gemini-2.5-flash, gemini-2.0-flash)"
+        default='gemini-3.6-flash',
+        help_text="Modelo de Gemini (ej. gemini-3.6-flash, gemini-3.5-flash)"
     )
     use_gemini_pool = models.BooleanField(
         default=True,
