@@ -69,6 +69,14 @@
                 Genera identidades completas para Fanpages con IA, prompts de perfil 1:1 y portadas 16:5 con motor anti-repetición.
             </p>
         </div>
+        {% if user.role == 'superadmin' or user.can_manage_api_keys %}
+        <div>
+            <a href="{% url 'videoprompt:api_keys' %}" class="btn-ghost" style="font-size:0.8rem;">
+                <i data-lucide="key" style="width:14px; height:14px; color:#a855f7;"></i>
+                Configurar Claves IA
+            </a>
+        </div>
+        {% endif %}
     </div>
 
     <!-- ═════════ 1. TARJETA DE GENERACIÓN CON IA ═════════ -->
@@ -513,11 +521,28 @@ document.getElementById('fanpageGenForm').addEventListener('submit', async funct
             document.getElementById('customSubtemaInput').value = '';
             document.getElementById('customEstiloSelect').value = '';
         } else {
-            showCustomAlert({
-                title: 'Error al Generar Fanpage',
-                message: data.error || 'No se pudo generar la fanpage con IA.',
-                type: 'error'
-            });
+            const rawError = data.error || 'No se pudo generar la fanpage con IA.';
+            const isKeyError = rawError.toLowerCase().includes('openrouter') || 
+                               rawError.toLowerCase().includes('401') ||
+                               rawError.toLowerCase().includes('clave') ||
+                               rawError.toLowerCase().includes('api');
+            if (isKeyError) {
+                showCustomAlert({
+                    title: 'Clave de OpenRouter Requerida',
+                    message: rawError + '<br><br><span style="color:var(--text-muted); font-size:0.8rem;">Podés registrar tu nueva clave de OpenRouter directamente desde el Centro de Claves de IA.</span>',
+                    type: 'warning',
+                    icon: 'key-round',
+                    actionText: '<i data-lucide="key" style="width:14px; height:14px; margin-right:4px;"></i> Configurar Claves IA',
+                    actionUrl: "{% url 'videoprompt:api_keys' %}",
+                    cancelText: 'Cerrar'
+                });
+            } else {
+                showCustomAlert({
+                    title: 'Error al Generar Fanpage',
+                    message: rawError,
+                    type: 'error'
+                });
+            }
         }
     } catch (err) {
         clearInterval(progressInterval);

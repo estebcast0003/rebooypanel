@@ -327,9 +327,38 @@ def delete_prompt_ajax(request, pk):
 @user_passes_test(is_superadmin)
 def api_keys_view(request):
     """
-    Gestión del pool de claves Gemini para superadmins.
+    Gestión del pool de claves Gemini y configuración de OpenRouter para superadmins.
     """
+    from fanpages.models import OpenRouterConfig
+
     if request.method == 'POST':
+        action = request.POST.get('action')
+        
+        # 1. Guardar o actualizar clave de OpenRouter
+        if action == 'save_openrouter' or 'openrouter_api_key' in request.POST:
+            openrouter_key = request.POST.get('openrouter_api_key', '').strip()
+            model_name = request.POST.get('openrouter_model', 'google/gemini-2.5-flash').strip() or 'google/gemini-2.5-flash'
+            
+            if openrouter_key:
+                config = OpenRouterConfig.objects.first()
+                if config:
+                    config.api_key = openrouter_key
+                    config.model_name = model_name
+                    config.is_active = True
+                    config.save()
+                else:
+                    OpenRouterConfig.objects.create(api_key=openrouter_key, model_name=model_name, is_active=True)
+                messages.success(request, "Clave de OpenRouter guardada y activada exitosamente.")
+            else:
+                # Si se envía vacío, desactivar configuración de DB
+                config = OpenRouterConfig.objects.first()
+                if config:
+                    config.is_active = False
+                    config.save()
+                    messages.info(request, "Clave de OpenRouter removida de la base de datos (se usará la variable de entorno si existe).")
+            return redirect('videoprompt:api_keys')
+
+        # 2. Agregar clave de Gemini al pool
         new_key = request.POST.get('api_key', '').strip()
         if new_key:
             if GeminiAPIKey.objects.filter(api_key=new_key).exists():
@@ -340,7 +369,74 @@ def api_keys_view(request):
         return redirect('videoprompt:api_keys')
         
     keys = GeminiAPIKey.objects.all()
-    return render(request, 'videoprompt/api_keys.html', {'keys': keys})
+    from fanpages.models import OpenRouterConfig
+    openrouter_config = OpenRouterConfig.objects.first()
+    openrouter_env_key = getattr(settings, 'OPENROUTER_API_KEY', None)
+
+    context = {
+        'keys': keys,
+        'openrouter_config': openrouter_config,
+        'openrouter_env_key': openrouter_env_key,
+    }
+    return render(request, 'videoprompt/api_keys.html', context)
+
+
+@login_required
+@user_passes_test(is_superadmin)
+@require_POST
+def test_openrouter_ajax(request):
+    """
+    Valida una clave de OpenRouter en vivo contra https://openrouter.ai/api/v1/auth/key.
+    """
+    from fanpages.models import OpenRouterConfig
+    import requests
+
+    key = request.POST.get('api_key', '').strip()
+    if not key:
+        config = OpenRouterConfig.get_active_config()
+        key = config.api_key if config else getattr(settings, 'OPENROUTER_API_KEY', None)
+
+    if not key:
+        return JsonResponse({
+            'valid': False,
+            'message': 'No se proporcionó ninguna clave de OpenRouter para verificar.'
+        }, status=400)
+
+    try:
+        resp = requests.get(
+            'https://openrouter.ai/api/v1/auth/key',
+            headers={'Authorization': f'Bearer {key}'},
+            timeout=12
+        )
+        if resp.status_code == 200:
+            data = resp.json().get('data', {})
+            label = data.get('label') or 'Clave de OpenRouter'
+            limit = data.get('limit')
+            usage = data.get('usage', 0)
+            return JsonResponse({
+                'valid': True,
+                'message': f'¡Conexión exitosa con OpenRouter! Identificador: {label}',
+                'data': {
+                    'label': label,
+                    'limit': limit,
+                    'usage': usage
+                }
+            })
+        elif resp.status_code == 401:
+            return JsonResponse({
+                'valid': False,
+                'message': 'Clave rechazada por OpenRouter (Error 401: No autorizada o usuario inexistente).'
+            }, status=401)
+        else:
+            return JsonResponse({
+                'valid': False,
+                'message': f'OpenRouter respondió con código {resp.status_code}: {resp.text[:140]}'
+            }, status=400)
+    except requests.exceptions.RequestException as err:
+        return JsonResponse({
+            'valid': False,
+            'message': f'Error al conectar con los servidores de OpenRouter: {str(err)}'
+        }, status=500)
 
 
 @login_required

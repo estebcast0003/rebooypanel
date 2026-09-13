@@ -93,18 +93,41 @@ def _build_prompt(custom_subtema: str = None, custom_estilo: str = None) -> str:
     )
 
 
+def get_openrouter_credentials():
+    """
+    Obtiene la API Key y el modelo de OpenRouter.
+    Prioridad:
+    1. Base de datos (OpenRouterConfig)
+    2. Variable de entorno / settings (OPENROUTER_API_KEY)
+    """
+    try:
+        from .models import OpenRouterConfig
+        config = OpenRouterConfig.get_active_config()
+        if config and config.api_key and config.api_key.strip():
+            model = config.model_name.strip() if config.model_name else MODEL
+            return config.api_key.strip(), model
+    except Exception:
+        pass
+
+    env_key = getattr(settings, 'OPENROUTER_API_KEY', None)
+    if env_key and env_key.strip():
+        return env_key.strip(), MODEL
+
+    return None, MODEL
+
+
 def generate_fanpage(user=None, custom_subtema: str = None, custom_estilo: str = None) -> FanpageProfile:
     """
     Invoca OpenRouter API en modo JSON, valida la respuesta y persiste el perfil en DB.
     """
-    api_key = getattr(settings, 'OPENROUTER_API_KEY', None)
+    api_key, model_to_use = get_openrouter_credentials()
     if not api_key:
-        raise ValueError("OPENROUTER_API_KEY no está configurada en settings o .env.")
+        raise ValueError("OPENROUTER_API_KEY no está configurada en el panel ni en el archivo .env.")
 
     prompt = _build_prompt(custom_subtema=custom_subtema, custom_estilo=custom_estilo)
 
     payload = {
-        "model": MODEL,
+        "model": model_to_use,
         "messages": [{"role": "user", "content": prompt}],
         "max_tokens": 2000,
         "temperature": 0.9,
@@ -117,8 +140,19 @@ def generate_fanpage(user=None, custom_subtema: str = None, custom_estilo: str =
         "X-Title": "RebooyPanel - Fanpage Creator",
     }
 
-    response = requests.post(OPENROUTER_API_URL, json=payload, headers=headers, timeout=60)
-    response.raise_for_status()
+    try:
+        response = requests.post(OPENROUTER_API_URL, json=payload, headers=headers, timeout=60)
+        response.raise_for_status()
+    except requests.exceptions.HTTPError as http_err:
+        if response.status_code == 401:
+            raise ValueError("La clave de OpenRouter fue rechazada (Error 401: No autorizada o usuario inexistente). Por favor configurala en Claves de IA.") from http_err
+        elif response.status_code == 402:
+            raise ValueError("La cuenta de OpenRouter no cuenta con créditos suficientes para procesar la solicitud.") from http_err
+        elif response.status_code == 429:
+            raise ValueError("Límite de tasa excedido en OpenRouter (Error 429). Intentá de nuevo en unos momentos.") from http_err
+        raise ValueError(f"Error de OpenRouter ({response.status_code}): {response.text[:200]}") from http_err
+    except requests.exceptions.RequestException as req_err:
+        raise ValueError(f"Error de conexión con OpenRouter: {str(req_err)}") from req_err
 
     data = response.json()
     raw_content = data["choices"][0]["message"]["content"]
@@ -140,7 +174,7 @@ def generate_fanpage(user=None, custom_subtema: str = None, custom_estilo: str =
         prompt_foto_portada=fanpage_data["prompt_foto_portada"].strip(),
         estilo_visual=fanpage_data["estilo_visual"].strip(),
         subtema=fanpage_data["subtema"].strip(),
-        modelo_usado=MODEL,
+        modelo_usado=model_to_use,
     )
 
     return profile

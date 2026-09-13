@@ -27,3 +27,28 @@ class FanpageProfile(models.Model):
     def __str__(self):
         owner = self.user.username if self.user else 'Sistema'
         return f"{self.nombre} ({self.estilo_visual}) - {owner}"
+
+
+class OpenRouterConfig(models.Model):
+    api_key = models.CharField(max_length=255, help_text="API Key de OpenRouter (sk-or-v1-...)")
+    model_name = models.CharField(
+        max_length=100,
+        default='google/gemini-2.5-flash',
+        help_text="Identificador del modelo en OpenRouter (ej. google/gemini-2.5-flash)"
+    )
+    is_active = models.BooleanField(default=True, help_text="Habilita o deshabilita el uso de esta clave")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-updated_at']
+        verbose_name = 'Configuración OpenRouter'
+        verbose_name_plural = 'Configuraciones OpenRouter'
+
+    def __str__(self):
+        masked = f"...{self.api_key[-6:]}" if len(self.api_key) > 6 else "Clave Corta"
+        return f"OpenRouter ({masked}) - {'Activa' if self.is_active else 'Inactiva'}"
+
+    @classmethod
+    def get_active_config(cls):
+        return cls.objects.filter(is_active=True).order_by('-updated_at').first()
