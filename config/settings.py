@@ -103,19 +103,11 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 DATABASE_URL = os.getenv('DATABASE_URL')
 if DATABASE_URL:
-    import urllib.parse
-    parsed_db = urllib.parse.urlparse(DATABASE_URL)
+    import environ
     DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': urllib.parse.unquote(parsed_db.path.lstrip('/')),
-            'USER': urllib.parse.unquote(parsed_db.username or ''),
-            'PASSWORD': urllib.parse.unquote(parsed_db.password or ''),
-            'HOST': parsed_db.hostname or 'localhost',
-            'PORT': parsed_db.port or 5432,
-            'CONN_MAX_AGE': int(os.getenv('CONN_MAX_AGE', '600')),
-        }
+        'default': environ.Env.db_url_config(DATABASE_URL)
     }
+    DATABASES['default']['CONN_MAX_AGE'] = int(os.getenv('CONN_MAX_AGE', '600'))
 elif os.getenv('POSTGRES_DB'):
     DATABASES = {
         'default': {
