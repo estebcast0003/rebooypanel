@@ -5,6 +5,7 @@ from django.http import JsonResponse, StreamingHttpResponse, Http404
 from django.views.decorators.http import require_POST
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
+from django.conf import settings
 from .models import InstagramDownload
 from .services.instagram_service import (
     clean_instagram_url,
@@ -25,6 +26,21 @@ def index(request):
         raise PermissionDenied("No tenés permiso para acceder al Descargador de Instagram.")
 
     my_history = InstagramDownload.objects.filter(user=request.user).order_by('-created_at')
+
+    # Auto-reparar miniaturas existentes en disco o extraerlas si faltan
+    for item in my_history[:15]:
+        if not item.thumbnail or not (hasattr(item.thumbnail, 'path') and os.path.exists(item.thumbnail.path)):
+            expected_filename = f'thumb_{item.id}.jpg'
+            full_disk_path = os.path.join(settings.MEDIA_ROOT, 'ig_thumbnails', expected_filename)
+            if os.path.exists(full_disk_path):
+                item.thumbnail = f'ig_thumbnails/{expected_filename}'
+                item.save(update_fields=['thumbnail'])
+            elif item.direct_video_url:
+                recovered = extract_thumbnail_from_video(item.direct_video_url, item.id)
+                if recovered:
+                    item.thumbnail = recovered
+                    item.save(update_fields=['thumbnail'])
+
     all_history = InstagramDownload.objects.all().select_related('user').order_by('-created_at') if request.user.role == 'superadmin' else None
 
     context = {

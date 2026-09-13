@@ -89,18 +89,31 @@ def save_thumbnail_image(thumbnail_url: str, record_id: int) -> str:
     return ''
 
 def extract_thumbnail_from_video(video_url: str, record_id: int) -> str:
-    """Extrae un fotograma del video directamente usando ffmpeg como fallback infalible."""
+    """Extrae un fotograma del video usando OpenCV y FFmpeg como fallback infalible."""
     if not video_url:
         return ''
     
+    thumb_dir = os.path.join(settings.MEDIA_ROOT, 'ig_thumbnails')
+    os.makedirs(thumb_dir, exist_ok=True)
+    filename = f'thumb_{record_id}.jpg'
+    full_path = os.path.join(thumb_dir, filename)
+    
+    # 1. Intentar con OpenCV (muy rápido y nativo en Python)
     try:
-        thumb_dir = os.path.join(settings.MEDIA_ROOT, 'ig_thumbnails')
-        os.makedirs(thumb_dir, exist_ok=True)
-        filename = f'thumb_{record_id}.jpg'
-        full_path = os.path.join(thumb_dir, filename)
-        
+        import cv2
+        cap = cv2.VideoCapture(video_url)
+        ret, frame = cap.read()
+        cap.release()
+        if ret and frame is not None and frame.size > 0:
+            cv2.imwrite(full_path, frame)
+            if os.path.exists(full_path) and os.path.getsize(full_path) > 500:
+                return f'ig_thumbnails/{filename}'
+    except Exception as e:
+        print(f'Error OpenCV extrayendo fotograma #{record_id}:', e)
+
+    # 2. Fallback con FFmpeg CLI
+    try:
         user_agent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-        
         cmd = [
             'ffmpeg', '-y',
             '-headers', f'User-Agent: {user_agent}\r\nReferer: https://www.instagram.com/\r\n',
@@ -110,17 +123,17 @@ def extract_thumbnail_from_video(video_url: str, record_id: int) -> str:
             '-q:v', '2',
             full_path
         ]
-        subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=20)
+        subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=25)
         if os.path.exists(full_path) and os.path.getsize(full_path) > 500:
             return f'ig_thumbnails/{filename}'
             
         # Fallback a 0.2 segundos si el reel es muy corto
-        cmd[4] = '00:00:00.2'
-        subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=15)
+        cmd[5] = '00:00:00.2'
+        subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=20)
         if os.path.exists(full_path) and os.path.getsize(full_path) > 500:
             return f'ig_thumbnails/{filename}'
     except Exception as e:
-        print(f'Error extrayendo miniatura con ffmpeg para #{record_id}:', e)
+        print(f'Error FFmpeg extrayendo miniatura para #{record_id}:', e)
         
     return ''
 
