@@ -16,4 +16,5 @@ urlpatterns = [
     path('api-keys/<int:pk>/toggle/', views.api_key_toggle_view, name='api_key_toggle'),
     path('api-keys/<int:pk>/delete/', views.api_key_delete_view, name='api_key_delete'),
     path('api-keys/openrouter/test/', views.test_openrouter_ajax, name='test_openrouter_ajax'),
+    path('api-keys/gemini/test/', views.test_gemini_ajax, name='test_gemini_ajax'),
 ]

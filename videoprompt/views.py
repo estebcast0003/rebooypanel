@@ -327,56 +327,60 @@ def delete_prompt_ajax(request, pk):
 @user_passes_test(is_superadmin)
 def api_keys_view(request):
     """
-    Gestión del pool de claves Gemini y configuración de OpenRouter para superadmins.
+    Gestión del pool de claves Gemini (Video Studio) y configuración de IA híbrida para Fanpages (Gemini / OpenRouter).
     """
     from fanpages.models import OpenRouterConfig
 
     if request.method == 'POST':
         action = request.POST.get('action')
         
-        # 1. Guardar o actualizar clave de OpenRouter
-        if action == 'save_openrouter' or 'openrouter_api_key' in request.POST:
+        # 1. Guardar configuración de IA para Fanpages (Gemini / OpenRouter)
+        if action in ['save_fanpage_ai', 'save_openrouter'] or 'provider' in request.POST or 'openrouter_api_key' in request.POST:
+            provider = request.POST.get('provider', 'gemini').strip()
             openrouter_key = request.POST.get('openrouter_api_key', '').strip()
-            model_name = request.POST.get('openrouter_model', 'google/gemini-2.5-flash').strip() or 'google/gemini-2.5-flash'
+            openrouter_model = request.POST.get('openrouter_model', 'google/gemini-2.5-flash').strip() or 'google/gemini-2.5-flash'
+            gemini_key = request.POST.get('gemini_api_key', '').strip()
+            gemini_model = request.POST.get('gemini_model', 'gemini-2.5-flash').strip() or 'gemini-2.5-flash'
+            use_gemini_pool = request.POST.get('use_gemini_pool') == 'on' or 'use_gemini_pool' in request.POST
             
-            if openrouter_key:
-                config = OpenRouterConfig.objects.first()
-                if config:
-                    config.api_key = openrouter_key
-                    config.model_name = model_name
-                    config.is_active = True
-                    config.save()
-                else:
-                    OpenRouterConfig.objects.create(api_key=openrouter_key, model_name=model_name, is_active=True)
-                messages.success(request, "Clave de OpenRouter guardada y activada exitosamente.")
-            else:
-                # Si se envía vacío, desactivar configuración de DB
-                config = OpenRouterConfig.objects.first()
-                if config:
-                    config.is_active = False
-                    config.save()
-                    messages.info(request, "Clave de OpenRouter removida de la base de datos (se usará la variable de entorno si existe).")
+            config = OpenRouterConfig.objects.first()
+            if not config:
+                config = OpenRouterConfig()
+                
+            config.provider = provider
+            config.api_key = openrouter_key
+            config.model_name = openrouter_model
+            config.gemini_api_key = gemini_key
+            config.gemini_model = gemini_model
+            config.use_gemini_pool = use_gemini_pool
+            config.is_active = True
+            config.save()
+
+            provider_label = "Google Gemini Directo" if provider == 'gemini' else "OpenRouter"
+            messages.success(request, f"Configuración de Fanpages guardada exitosamente. Proveedor activo: {provider_label}.")
             return redirect('videoprompt:api_keys')
 
-        # 2. Agregar clave de Gemini al pool
+        # 2. Agregar clave de Gemini al pool de Video Studio
         new_key = request.POST.get('api_key', '').strip()
         if new_key:
             if GeminiAPIKey.objects.filter(api_key=new_key).exists():
                 messages.error(request, "Esa clave ya se encuentra registrada en el pool.")
             else:
                 GeminiAPIKey.objects.create(api_key=new_key)
-                messages.success(request, "Clave de Gemini agregada exitosamente al pool.")
+                messages.success(request, "Clave de Gemini agregada exitosamente al pool de Video Studio.")
         return redirect('videoprompt:api_keys')
         
     keys = GeminiAPIKey.objects.all()
     from fanpages.models import OpenRouterConfig
     openrouter_config = OpenRouterConfig.objects.first()
     openrouter_env_key = getattr(settings, 'OPENROUTER_API_KEY', None)
+    gemini_env_key = bool(os.getenv("GEMINI_API_KEY") or getattr(settings, 'GEMINI_API_KEY', None))
 
     context = {
         'keys': keys,
         'openrouter_config': openrouter_config,
         'openrouter_env_key': openrouter_env_key,
+        'gemini_env_key': gemini_env_key,
     }
     return render(request, 'videoprompt/api_keys.html', context)
 
@@ -394,7 +398,7 @@ def test_openrouter_ajax(request):
     key = request.POST.get('api_key', '').strip()
     if not key:
         config = OpenRouterConfig.get_active_config()
-        key = config.api_key if config else getattr(settings, 'OPENROUTER_API_KEY', None)
+        key = config.api_key if config and config.api_key else getattr(settings, 'OPENROUTER_API_KEY', None)
 
     if not key:
         return JsonResponse({
@@ -436,6 +440,71 @@ def test_openrouter_ajax(request):
         return JsonResponse({
             'valid': False,
             'message': f'Error al conectar con los servidores de OpenRouter: {str(err)}'
+        }, status=500)
+
+
+@login_required
+@user_passes_test(is_superadmin)
+@require_POST
+def test_gemini_ajax(request):
+    """
+    Valida una clave de Google Gemini directa contra Google AI Studio.
+    """
+    from google import genai
+    from google.genai.errors import APIError
+    from fanpages.models import OpenRouterConfig
+
+    key = request.POST.get('api_key', '').strip()
+    source = "Clave ingresada en el campo"
+    if not key:
+        config = OpenRouterConfig.get_active_config()
+        if config and config.gemini_api_key and config.gemini_api_key.strip():
+            key = config.gemini_api_key.strip()
+            source = "Clave dedicada de Fanpages"
+        else:
+            pool_key = GeminiAPIKey.objects.filter(is_active=True).first()
+            if pool_key:
+                key = pool_key.api_key.strip()
+                source = f"Pool de Gemini (...{key[-6:]})"
+            else:
+                env_key = os.getenv("GEMINI_API_KEY") or getattr(settings, 'GEMINI_API_KEY', None)
+                if env_key and env_key.strip() and env_key != "YOUR_GEMINI_API_KEY_HERE":
+                    key = env_key.strip()
+                    source = "Variable de Entorno (.env)"
+
+    if not key:
+        return JsonResponse({
+            'valid': False,
+            'message': 'No se proporcionó ninguna clave de Gemini ni existen claves activas en el pool.'
+        }, status=400)
+
+    model_name = request.POST.get('model_name', 'gemini-2.5-flash').strip() or 'gemini-2.5-flash'
+
+    try:
+        client = genai.Client(api_key=key)
+        client.models.generate_content(
+            model=model_name,
+            contents="Responde únicamente con la palabra OK."
+        )
+        masked = f"...{key[-6:]}" if len(key) > 6 else "Clave"
+        return JsonResponse({
+            'valid': True,
+            'message': f'¡Conexión exitosa con Google Gemini API ({model_name})! [{source}]',
+            'data': {
+                'source': source,
+                'key_masked': masked,
+                'model': model_name
+            }
+        })
+    except APIError as api_err:
+        return JsonResponse({
+            'valid': False,
+            'message': f'Google Gemini API rechazó la solicitud ({api_err.code or "Error"}): {api_err.message}'
+        }, status=400)
+    except Exception as err:
+        return JsonResponse({
+            'valid': False,
+            'message': f'Error al conectar con Google Gemini: {str(err)}'
         }, status=500)
 
 

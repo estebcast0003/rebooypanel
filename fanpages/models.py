@@ -30,25 +30,67 @@ class FanpageProfile(models.Model):
 
 
 class OpenRouterConfig(models.Model):
-    api_key = models.CharField(max_length=255, help_text="API Key de OpenRouter (sk-or-v1-...)")
+    PROVIDER_CHOICES = [
+        ('gemini', 'Google Gemini Directo'),
+        ('openrouter', 'OpenRouter'),
+    ]
+
+    provider = models.CharField(
+        max_length=20,
+        choices=PROVIDER_CHOICES,
+        default='gemini',
+        help_text="Proveedor de IA activo para Fanpages"
+    )
+    # OpenRouter
+    api_key = models.CharField(
+        max_length=255, 
+        blank=True, 
+        null=True, 
+        help_text="API Key de OpenRouter (sk-or-v1-...)"
+    )
     model_name = models.CharField(
         max_length=100,
         default='google/gemini-2.5-flash',
         help_text="Identificador del modelo en OpenRouter (ej. google/gemini-2.5-flash)"
     )
-    is_active = models.BooleanField(default=True, help_text="Habilita o deshabilita el uso de esta clave")
+    # Google Gemini
+    gemini_api_key = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        help_text="API Key dedicada de Google AI Studio (opcional)"
+    )
+    gemini_model = models.CharField(
+        max_length=100,
+        default='gemini-2.5-flash',
+        help_text="Modelo de Gemini (ej. gemini-2.5-flash, gemini-2.0-flash)"
+    )
+    use_gemini_pool = models.BooleanField(
+        default=True,
+        help_text="Usar automáticamente el pool de claves de Gemini si no hay clave dedicada"
+    )
+    is_active = models.BooleanField(default=True, help_text="Habilita o deshabilita la IA en Fanpages")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         ordering = ['-updated_at']
-        verbose_name = 'Configuración OpenRouter'
-        verbose_name_plural = 'Configuraciones OpenRouter'
+        verbose_name = 'Configuración de IA para Fanpages'
+        verbose_name_plural = 'Configuraciones de IA para Fanpages'
 
     def __str__(self):
-        masked = f"...{self.api_key[-6:]}" if len(self.api_key) > 6 else "Clave Corta"
+        if self.provider == 'gemini':
+            if self.gemini_api_key:
+                masked = f"...{self.gemini_api_key[-6:]}"
+                return f"Gemini Directo ({masked}) - {'Activa' if self.is_active else 'Inactiva'}"
+            return f"Gemini Directo (Pool) - {'Activa' if self.is_active else 'Inactiva'}"
+        masked = f"...{self.api_key[-6:]}" if self.api_key and len(self.api_key) > 6 else "Sin Clave"
         return f"OpenRouter ({masked}) - {'Activa' if self.is_active else 'Inactiva'}"
 
     @classmethod
     def get_active_config(cls):
         return cls.objects.filter(is_active=True).order_by('-updated_at').first()
+
+
+# Alias semántico para legibilidad
+FanpageAIConfig = OpenRouterConfig

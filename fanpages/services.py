@@ -1,15 +1,39 @@
 """
 Servicio de generación de perfiles e identidades de Fanpages con IA.
-Motor anti-repetición y conexión directa con OpenRouter API (google/gemini-2.5-flash).
+Arquitectura Híbrida: Soporte dual para Google Gemini Directo (Google AI Studio)
+y OpenRouter API (Multi-modelo), configurable dinámicamente desde el panel.
 """
 
 import json
+import os
 import requests
 from django.conf import settings
-from .models import FanpageProfile
+from google import genai
+from google.genai import types
+from google.genai.errors import APIError
+from pydantic import BaseModel
+from .models import FanpageProfile, OpenRouterConfig
 
 OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions"
-MODEL = "google/gemini-2.5-flash"
+
+
+class FanpageAIResult(BaseModel):
+    nombre: str
+    descripcion: str
+    prompt_foto_perfil: str
+    prompt_foto_portada: str
+    estilo_visual: str
+    subtema: str
+
+
+REQUIRED_FIELDS = {
+    "nombre",
+    "descripcion",
+    "prompt_foto_perfil",
+    "prompt_foto_portada",
+    "estilo_visual",
+    "subtema"
+}
 
 SYSTEM_PROMPT = """Eres un creativo especialista en branding de fanpages de Facebook sobre peliculas, series y entretenimiento cinematográfico. Tu tarea es generar la identidad visual y conceptual completa para UNA nueva fanpage.
 
@@ -51,15 +75,6 @@ Genera un JSON con esta estructura exacta:
   "subtema": "Subtema o nicho especifico (en espanol)"
 }"""
 
-REQUIRED_FIELDS = {
-    "nombre",
-    "descripcion",
-    "prompt_foto_perfil",
-    "prompt_foto_portada",
-    "estilo_visual",
-    "subtema"
-}
-
 
 def _build_prompt(custom_subtema: str = None, custom_estilo: str = None) -> str:
     """
@@ -93,38 +108,84 @@ def _build_prompt(custom_subtema: str = None, custom_estilo: str = None) -> str:
     )
 
 
-def get_openrouter_credentials():
+def _generate_with_gemini(config: OpenRouterConfig, prompt: str) -> tuple:
     """
-    Obtiene la API Key y el modelo de OpenRouter.
-    Prioridad:
-    1. Base de datos (OpenRouterConfig)
-    2. Variable de entorno / settings (OPENROUTER_API_KEY)
+    Ejecuta la inferencia directamente contra Google Gemini API utilizando google-genai SDK.
+    Prioriza clave dedicada de Fanpages, luego rotador del Pool de Gemini, luego variable de entorno.
     """
-    try:
-        from .models import OpenRouterConfig
-        config = OpenRouterConfig.get_active_config()
-        if config and config.api_key and config.api_key.strip():
-            model = config.model_name.strip() if config.model_name else MODEL
-            return config.api_key.strip(), model
-    except Exception:
-        pass
+    api_key = None
 
-    env_key = getattr(settings, 'OPENROUTER_API_KEY', None)
-    if env_key and env_key.strip():
-        return env_key.strip(), MODEL
+    # 1. Clave dedicada configurada en Fanpages
+    if config and config.gemini_api_key and config.gemini_api_key.strip():
+        api_key = config.gemini_api_key.strip()
+    elif config is None or config.use_gemini_pool:
+        # 2. Pool de Gemini de Video Studio
+        try:
+            from videoprompt.services.gemini_client import get_next_available_key
+            key_record = get_next_available_key()
+            if key_record:
+                api_key = key_record.api_key.strip()
+        except Exception:
+            pass
 
-    return None, MODEL
-
-
-def generate_fanpage(user=None, custom_subtema: str = None, custom_estilo: str = None) -> FanpageProfile:
-    """
-    Invoca OpenRouter API en modo JSON, valida la respuesta y persiste el perfil en DB.
-    """
-    api_key, model_to_use = get_openrouter_credentials()
+    # 3. Fallback a variable de entorno
     if not api_key:
-        raise ValueError("OPENROUTER_API_KEY no está configurada en el panel ni en el archivo .env.")
+        env_key = os.getenv("GEMINI_API_KEY") or getattr(settings, 'GEMINI_API_KEY', None)
+        if env_key and env_key.strip() and env_key != "YOUR_GEMINI_API_KEY_HERE":
+            api_key = env_key.strip()
 
-    prompt = _build_prompt(custom_subtema=custom_subtema, custom_estilo=custom_estilo)
+    if not api_key:
+        raise ValueError(
+            "No hay ninguna clave de Gemini disponible para Fanpages. Podés ingresar una clave de Google AI Studio "
+            "en 'Configuración de IA para Fanpages' o asegurarte de tener claves activas en el 'Pool de Gemini'."
+        )
+
+    model_name = (config.gemini_model.strip() if config and config.gemini_model else "gemini-2.5-flash")
+
+    try:
+        client = genai.Client(api_key=api_key)
+        response = client.models.generate_content(
+            model=model_name,
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                response_mime_type="application/json",
+                response_schema=FanpageAIResult,
+                temperature=0.9,
+            )
+        )
+        raw_text = response.text
+        if not raw_text:
+            raise ValueError("Google Gemini devolvió una respuesta vacía.")
+        fanpage_data = json.loads(raw_text)
+        return fanpage_data, f"Gemini Directo ({model_name})"
+    except APIError as api_err:
+        raise ValueError(f"Error en Google Gemini API ({api_err.code or 'Error'}): {api_err.message}") from api_err
+    except json.JSONDecodeError as json_err:
+        raise ValueError("Google Gemini no generó un JSON válido.") from json_err
+    except Exception as exc:
+        raise ValueError(f"Fallo al invocar Google Gemini: {str(exc)}") from exc
+
+
+def _generate_with_openrouter(config: OpenRouterConfig, prompt: str) -> tuple:
+    """
+    Ejecuta la inferencia contra OpenRouter API con formato JSON.
+    """
+    api_key = None
+    model_to_use = "google/gemini-2.5-flash"
+
+    if config and config.api_key and config.api_key.strip():
+        api_key = config.api_key.strip()
+        model_to_use = config.model_name.strip() if config.model_name else model_to_use
+    else:
+        env_key = getattr(settings, 'OPENROUTER_API_KEY', None)
+        if env_key and env_key.strip():
+            api_key = env_key.strip()
+
+    if not api_key:
+        raise ValueError(
+            "OPENROUTER_API_KEY no está configurada. Ingresá tu clave de OpenRouter en 'Gestión de APIs' "
+            "o cambiá el proveedor a 'Google Gemini Directo'."
+        )
 
     payload = {
         "model": model_to_use,
@@ -145,9 +206,9 @@ def generate_fanpage(user=None, custom_subtema: str = None, custom_estilo: str =
         response.raise_for_status()
     except requests.exceptions.HTTPError as http_err:
         if response.status_code == 401:
-            raise ValueError("La clave de OpenRouter fue rechazada (Error 401: No autorizada o usuario inexistente). Por favor configurala en Claves de IA.") from http_err
+            raise ValueError("La clave de OpenRouter fue rechazada (Error 401: No autorizada o inválida). Verificá tu clave en el panel.") from http_err
         elif response.status_code == 402:
-            raise ValueError("La cuenta de OpenRouter no cuenta con créditos suficientes para procesar la solicitud.") from http_err
+            raise ValueError("Tu cuenta de OpenRouter no cuenta con créditos suficientes para procesar la solicitud.") from http_err
         elif response.status_code == 429:
             raise ValueError("Límite de tasa excedido en OpenRouter (Error 429). Intentá de nuevo en unos momentos.") from http_err
         raise ValueError(f"Error de OpenRouter ({response.status_code}): {response.text[:200]}") from http_err
@@ -155,12 +216,27 @@ def generate_fanpage(user=None, custom_subtema: str = None, custom_estilo: str =
         raise ValueError(f"Error de conexión con OpenRouter: {str(req_err)}") from req_err
 
     data = response.json()
-    raw_content = data["choices"][0]["message"]["content"]
-
     try:
+        raw_content = data["choices"][0]["message"]["content"]
         fanpage_data = json.loads(raw_content)
-    except json.JSONDecodeError as exc:
-        raise ValueError(f"OpenRouter retornó un JSON inválido: {raw_content[:300]}") from exc
+        return fanpage_data, f"OpenRouter ({model_to_use})"
+    except (KeyError, IndexError, json.JSONDecodeError) as exc:
+        raise ValueError("OpenRouter retornó una estructura de datos inesperada.") from exc
+
+
+def generate_fanpage(user=None, custom_subtema: str = None, custom_estilo: str = None) -> FanpageProfile:
+    """
+    Invoca el motor de IA correspondiente (Gemini Directo u OpenRouter), valida la respuesta y persiste el perfil en DB.
+    """
+    config = OpenRouterConfig.get_active_config()
+    provider = config.provider if config else 'gemini'
+
+    prompt = _build_prompt(custom_subtema=custom_subtema, custom_estilo=custom_estilo)
+
+    if provider == 'gemini':
+        fanpage_data, modelo_usado = _generate_with_gemini(config, prompt)
+    else:
+        fanpage_data, modelo_usado = _generate_with_openrouter(config, prompt)
 
     missing = REQUIRED_FIELDS - fanpage_data.keys()
     if missing:
@@ -174,7 +250,7 @@ def generate_fanpage(user=None, custom_subtema: str = None, custom_estilo: str =
         prompt_foto_portada=fanpage_data["prompt_foto_portada"].strip(),
         estilo_visual=fanpage_data["estilo_visual"].strip(),
         subtema=fanpage_data["subtema"].strip(),
-        modelo_usado=model_to_use,
+        modelo_usado=modelo_usado,
     )
 
     return profile
