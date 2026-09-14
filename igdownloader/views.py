@@ -88,6 +88,8 @@ def process_ajax(request):
         item.uploader = data.get('uploader') or 'instagram'
         item.duration_seconds = data.get('duration')
         item.direct_video_url = data.get('direct_video_url')
+        item.original_caption = data.get('original_caption')
+        item.original_hashtags = data.get('original_hashtags')
 
         # 1. Intentar descargar miniatura oficial de Instagram
         thumb_url = data.get('thumbnail_url')
@@ -117,6 +119,7 @@ def process_ajax(request):
             'status_display': item.get_status_display(),
             'created_at': item.created_at.strftime('%d %b %Y, %H:%M'),
             'download_url': f'/ig-downloader/download/{item.id}/',
+            'fb_status': item.fb_status,
         })
 
     except Exception as e:
@@ -158,6 +161,13 @@ def status_ajax(request, pk):
         'created_at': item.created_at.strftime('%d %b %Y, %H:%M'),
         'download_url': f'/ig-downloader/download/{item.id}/',
         'user': item.user.username,
+        'fb_status': item.fb_status,
+        'fb_title': item.fb_title or '',
+        'fb_description': item.fb_description or '',
+        'fb_hashtags': item.fb_hashtags or '',
+        'fb_hashtags_source': item.fb_hashtags_source,
+        'original_hashtags': item.original_hashtags or '',
+        'fb_generated_at': item.fb_generated_at.strftime('%d %b %Y, %H:%M') if item.fb_generated_at else '',
     })
 
 
@@ -379,3 +389,33 @@ def diagnostico_view(request):
     """
     return HttpResponse(html)
 
+
+@login_required
+@require_POST
+def generate_facebook_copy_ajax(request, pk):
+    item = get_object_or_404(InstagramDownload, pk=pk)
+    if request.user.role != 'superadmin' and item.user != request.user:
+        return JsonResponse({'error': 'No tenés permisos para interactuar con este video.'}, status=403)
+
+    force_regenerate = request.POST.get('regenerate') == 'true'
+
+    try:
+        from .services.facebook_copy_service import analyze_video_for_facebook
+        result = analyze_video_for_facebook(item, force_regenerate=force_regenerate)
+        return JsonResponse({
+            'success': True,
+            'id': item.id,
+            'title': result['title'],
+            'description': result['description'],
+            'hashtags': result['hashtags'],
+            'hashtags_source': result.get('hashtags_source', item.fb_hashtags_source),
+            'generated_at': result['generated_at'],
+            'from_cache': result.get('from_cache', False),
+            'fb_status': item.fb_status,
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': f"Error al generar copy para Facebook: {str(e)}",
+            'fb_status': item.fb_status,
+        }, status=400)

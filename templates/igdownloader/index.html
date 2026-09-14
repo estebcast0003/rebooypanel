@@ -64,6 +64,100 @@
         color: #e1306c;
         border: 1px solid rgba(225, 48, 108, 0.25);
     }
+    .btn-fb-card {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        width: 100%;
+        padding: 7px 12px;
+        font-size: 0.78rem;
+        font-weight: 600;
+        border-radius: 7px;
+        border: 1px solid rgba(59, 130, 246, 0.35);
+        background: rgba(59, 130, 246, 0.09);
+        color: #3b82f6;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-decoration: none;
+    }
+    .btn-fb-card:hover {
+        background: rgba(59, 130, 246, 0.2);
+        border-color: #3b82f6;
+        color: #60a5fa;
+    }
+    .btn-fb-card.completed {
+        border-color: rgba(34, 197, 94, 0.4);
+        background: rgba(34, 197, 94, 0.12);
+        color: #22c55e;
+    }
+    .btn-fb-card.completed:hover {
+        background: rgba(34, 197, 94, 0.22);
+        border-color: #22c55e;
+        color: #4ade80;
+    }
+    .btn-fb-card:disabled {
+        opacity: 0.65;
+        cursor: not-allowed;
+    }
+    .fb-copy-section {
+        border-top: 1px solid var(--border-subtle);
+        padding-top: 20px;
+        margin-top: 6px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+    }
+    .fb-copy-card {
+        background: var(--bg-muted);
+        border: 1px solid var(--border-subtle);
+        border-radius: 10px;
+        padding: 14px;
+        position: relative;
+        transition: border-color 0.2s ease;
+    }
+    .fb-copy-card:hover {
+        border-color: var(--border-highlight);
+    }
+    .fb-copy-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+    }
+    .fb-copy-label {
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--text-muted);
+    }
+    .fb-copy-btn-mini {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 4px 8px;
+        font-size: 0.72rem;
+        font-weight: 600;
+        border-radius: 4px;
+        border: 1px solid var(--border-subtle);
+        background: var(--bg-card);
+        color: var(--text-secondary);
+        cursor: pointer;
+        transition: all 0.15s ease;
+    }
+    .fb-copy-btn-mini:hover {
+        color: var(--text-primary);
+        border-color: var(--text-muted);
+    }
+    .fb-copy-content {
+        font-size: 0.88rem;
+        line-height: 1.55;
+        color: var(--text-primary);
+        margin: 0;
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
     @media (max-width: 640px) {
         .history-grid-responsive {
             grid-template-columns: 1fr !important;
@@ -167,8 +261,8 @@
                 {% for item in my_history %}
                 <div class="prompt-card-shadcn" id="history-item-{{ item.id }}" onclick="openIgModal({{ item.id }})">
                     <div>
-                        <!-- Miniatura -->
-                        <div style="width:100%; height:140px; border-radius:8px; background:var(--bg-muted); border:1px solid var(--border-subtle); overflow:hidden; position:relative; margin-bottom:12px; display:flex; align-items:center; justify-content:center;">
+                        <!-- Miniatura con Overlay Moderno -->
+                        <div style="width:100%; height:150px; border-radius:10px; background:var(--bg-muted); border:1px solid var(--border-subtle); overflow:hidden; position:relative; margin-bottom:12px; display:flex; align-items:center; justify-content:center;">
                             {% if item.thumbnail %}
                                 <img src="{{ item.thumbnail.url }}" alt="Miniatura Reel" style="width:100%; height:100%; object-fit:cover;" onerror="this.onerror=null; this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='flex';">
                                 <div style="display:none; width:100%; height:100%; align-items:center; justify-content:center;">
@@ -178,47 +272,67 @@
                                 <i data-lucide="film" style="width:36px; height:36px; color:var(--text-muted); opacity:0.5;"></i>
                             {% endif %}
 
+                            <!-- Badge Uploader en Miniatura (Glassmorphism) -->
+                            <div style="position:absolute; top:8px; left:8px;">
+                                <span style="display:inline-flex; align-items:center; gap:4px; padding:3px 8px; border-radius:6px; background:rgba(0,0,0,0.65); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); color:#fff; font-size:0.7rem; font-weight:600;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#e1306c" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"></line></svg>
+                                    @{{ item.uploader|default:'instagram' }}
+                                </span>
+                            </div>
+
+                            <!-- Duración en Miniatura -->
                             {% if item.duration_seconds %}
-                            <div style="position:absolute; bottom:8px; right:8px; background:rgba(0,0,0,0.7); color:#fff; font-size:0.65rem; font-weight:700; padding:2px 6px; border-radius:4px;">
+                            <div style="position:absolute; bottom:8px; right:8px; background:rgba(0,0,0,0.75); backdrop-filter:blur(4px); color:#fff; font-size:0.68rem; font-weight:700; padding:2px 7px; border-radius:5px;">
                                 {{ item.duration_seconds|floatformat:0 }}s
                             </div>
                             {% endif %}
 
+                            <!-- Estado si no está completado -->
+                            {% if item.status != 'completed' %}
                             <div style="position:absolute; bottom:8px; left:8px;">
-                                <span class="badge-pill {% if item.status == 'completed' %}badge-admin{% elif item.status == 'processing' %}badge-superadmin{% else %}badge-user{% endif %}" style="font-size:0.65rem;">
+                                <span class="badge-pill {% if item.status == 'processing' %}badge-superadmin{% else %}badge-user{% endif %}" style="font-size:0.65rem;">
                                     {{ item.get_status_display }}
                                 </span>
                             </div>
+                            {% endif %}
                         </div>
 
-                        <!-- Info -->
-                        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
-                            <span class="ig-badge">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"></line></svg>
-                                @{{ item.uploader|default:'instagram' }}
+                        <!-- Meta Info: Fecha y Enlace Externo Limpio -->
+                        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
+                            <span style="font-size:0.72rem; color:var(--text-muted); display:inline-flex; align-items:center; gap:4px;">
+                                <i data-lucide="calendar" style="width:11px; height:11px; opacity:0.7;"></i>
+                                {{ item.created_at|date:"d M, H:i" }}
                             </span>
-                            <span style="font-size:0.7rem; color:var(--text-muted);">{{ item.created_at|date:"d M, H:i" }}</span>
+                            <a href="{{ item.instagram_url }}" target="_blank" rel="noopener noreferrer" style="font-size:0.72rem; color:#e1306c; text-decoration:none; display:inline-flex; align-items:center; gap:3px; font-weight:600;" onclick="event.stopPropagation();" title="Abrir en Instagram">
+                                <span>Ver Reel</span>
+                                <i data-lucide="external-link" style="width:11px; height:11px;"></i>
+                            </a>
                         </div>
 
-                        <h3 style="font-size:0.9rem; font-weight:700; color:var(--text-primary); margin:6px 0 6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="{{ item.title }}">
+                        <!-- Título (Clamp a 2 líneas limpias) -->
+                        <h3 style="font-size:0.88rem; font-weight:700; color:var(--text-primary); margin:0 0 10px; line-height:1.35; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; min-height:2.4em;" title="{{ item.title }}">
                             {{ item.title|default:'Reel de Instagram' }}
                         </h3>
-
-                        <div style="font-size:0.75rem; color:#e1306c; margin:0 0 10px; display:flex; align-items:center; gap:5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-                            <i data-lucide="link" style="width:12px; height:12px; flex-shrink:0;"></i>
-                            <span style="overflow:hidden; text-overflow:ellipsis;" title="{{ item.instagram_url }}">{{ item.instagram_url }}</span>
-                        </div>
                     </div>
 
-                    <!-- Acciones Rápidas -->
-                    <div style="display:flex; align-items:center; justify-content:space-between; border-top:1px solid var(--border-subtle); padding-top:10px; margin-top:6px;">
-                        <a href="{% url 'igdownloader:download_video_stream' item.id %}" class="btn-brand" style="padding:5px 12px; font-size:0.75rem; text-decoration:none;" onclick="event.stopPropagation();">
-                            <i data-lucide="download" style="width:12px; height:12px;"></i>
-                            Descargar
-                        </a>
-                        <button type="button" class="action-btn action-btn-delete" title="Eliminar" onclick="event.stopPropagation(); openDeleteModal({{ item.id }})">
-                            <i data-lucide="trash-2" style="width:14px; height:14px;"></i>
+                    <!-- Acciones Rápidas (Estructuradas en 2 filas limpias) -->
+                    <div style="display:flex; flex-direction:column; gap:8px; border-top:1px solid var(--border-subtle); padding-top:12px; margin-top:8px;">
+                        <!-- Fila 1: Botón Copy con IA destacado a lo ancho -->
+                        <button type="button" id="card-fb-btn-{{ item.id }}" class="btn-fb-card {% if item.fb_status == 'completed' %}completed{% endif %}" onclick="event.stopPropagation(); handleCardFbClick({{ item.id }});" title="{% if item.fb_status == 'completed' %}Ver Copy para Facebook{% else %}Generar Copy para Facebook con IA{% endif %}">
+                            <i data-lucide="{% if item.fb_status == 'completed' %}check-circle-2{% else %}sparkles{% endif %}" style="width:13px; height:13px;"></i>
+                            <span>{% if item.fb_status == 'completed' %}Ver Copy FB{% else %}Generar Copy FB con IA{% endif %}</span>
                         </button>
+
+                        <!-- Fila 2: Descargar + Eliminar -->
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <a href="{% url 'igdownloader:download_video_stream' item.id %}" class="btn-brand" style="flex:1; justify-content:center; padding:7px 12px; font-size:0.75rem; text-decoration:none;" onclick="event.stopPropagation();">
+                                <i data-lucide="download" style="width:13px; height:13px;"></i>
+                                Descargar Video
+                            </a>
+                            <button type="button" class="action-btn action-btn-delete" title="Eliminar" style="flex-shrink:0;" onclick="event.stopPropagation(); openDeleteModal({{ item.id }})">
+                                <i data-lucide="trash-2" style="width:14px; height:14px;"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
                 {% empty %}
@@ -237,8 +351,8 @@
                 {% for item in all_history %}
                 <div class="prompt-card-shadcn" id="history-item-{{ item.id }}" onclick="openIgModal({{ item.id }})">
                     <div>
-                        <!-- Miniatura con Badge de Usuario -->
-                        <div style="width:100%; height:140px; border-radius:8px; background:var(--bg-muted); border:1px solid var(--border-subtle); overflow:hidden; position:relative; margin-bottom:12px; display:flex; align-items:center; justify-content:center;">
+                        <!-- Miniatura con Overlay Moderno -->
+                        <div style="width:100%; height:150px; border-radius:10px; background:var(--bg-muted); border:1px solid var(--border-subtle); overflow:hidden; position:relative; margin-bottom:12px; display:flex; align-items:center; justify-content:center;">
                             {% if item.thumbnail %}
                                 <img src="{{ item.thumbnail.url }}" alt="Miniatura Reel" style="width:100%; height:100%; object-fit:cover;" onerror="this.onerror=null; this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='flex';">
                                 <div style="display:none; width:100%; height:100%; align-items:center; justify-content:center;">
@@ -248,43 +362,66 @@
                                 <i data-lucide="film" style="width:36px; height:36px; color:var(--text-muted); opacity:0.5;"></i>
                             {% endif %}
 
+                            <!-- Badge Uploader en Miniatura -->
                             <div style="position:absolute; top:8px; left:8px;">
-                                <span class="badge-pill badge-superadmin" style="font-size:0.68rem; display:inline-flex; align-items:center; gap:4px;">
-                                    <i data-lucide="user" style="width:11px; height:11px;"></i>
-                                    @{{ item.user.username }}
+                                <span style="display:inline-flex; align-items:center; gap:4px; padding:3px 8px; border-radius:6px; background:rgba(0,0,0,0.65); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); color:#fff; font-size:0.7rem; font-weight:600;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#e1306c" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"></line></svg>
+                                    @{{ item.uploader|default:'instagram' }}
                                 </span>
                             </div>
 
+                            <!-- Badge Usuario (Superadmin) -->
+                            <div style="position:absolute; top:8px; right:8px;">
+                                <span class="badge-pill badge-superadmin" style="font-size:0.65rem; display:inline-flex; align-items:center; gap:3px; padding:2px 7px;">
+                                    <i data-lucide="user" style="width:10px; height:10px;"></i>
+                                    {{ item.user.username }}
+                                </span>
+                            </div>
+
+                            <!-- Duración en Miniatura -->
                             {% if item.duration_seconds %}
-                            <div style="position:absolute; bottom:8px; right:8px; background:rgba(0,0,0,0.7); color:#fff; font-size:0.65rem; font-weight:700; padding:2px 6px; border-radius:4px;">
+                            <div style="position:absolute; bottom:8px; right:8px; background:rgba(0,0,0,0.75); backdrop-filter:blur(4px); color:#fff; font-size:0.68rem; font-weight:700; padding:2px 7px; border-radius:5px;">
                                 {{ item.duration_seconds|floatformat:0 }}s
                             </div>
                             {% endif %}
                         </div>
 
-                        <!-- Info -->
-                        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
-                            <span class="ig-badge">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"></line></svg>
-                                @{{ item.uploader|default:'instagram' }}
+                        <!-- Meta Info: Fecha y Enlace Externo Limpio -->
+                        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
+                            <span style="font-size:0.72rem; color:var(--text-muted); display:inline-flex; align-items:center; gap:4px;">
+                                <i data-lucide="calendar" style="width:11px; height:11px; opacity:0.7;"></i>
+                                {{ item.created_at|date:"d M, H:i" }}
                             </span>
-                            <span style="font-size:0.7rem; color:var(--text-muted);">{{ item.created_at|date:"d M, H:i" }}</span>
+                            <a href="{{ item.instagram_url }}" target="_blank" rel="noopener noreferrer" style="font-size:0.72rem; color:#e1306c; text-decoration:none; display:inline-flex; align-items:center; gap:3px; font-weight:600;" onclick="event.stopPropagation();" title="Abrir en Instagram">
+                                <span>Ver Reel</span>
+                                <i data-lucide="external-link" style="width:11px; height:11px;"></i>
+                            </a>
                         </div>
 
-                        <h3 style="font-size:0.9rem; font-weight:700; color:var(--text-primary); margin:6px 0 6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="{{ item.title }}">
+                        <!-- Título (Clamp a 2 líneas limpias) -->
+                        <h3 style="font-size:0.88rem; font-weight:700; color:var(--text-primary); margin:0 0 10px; line-height:1.35; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; min-height:2.4em;" title="{{ item.title }}">
                             {{ item.title|default:'Reel de Instagram' }}
                         </h3>
                     </div>
 
-                    <!-- Acciones Rápidas -->
-                    <div style="display:flex; align-items:center; justify-content:space-between; border-top:1px solid var(--border-subtle); padding-top:10px; margin-top:6px;">
-                        <a href="{% url 'igdownloader:download_video_stream' item.id %}" class="btn-brand" style="padding:5px 12px; font-size:0.75rem; text-decoration:none;" onclick="event.stopPropagation();">
-                            <i data-lucide="download" style="width:12px; height:12px;"></i>
-                            Descargar
-                        </a>
-                        <button type="button" class="action-btn action-btn-delete" title="Eliminar" onclick="event.stopPropagation(); openDeleteModal({{ item.id }})">
-                            <i data-lucide="trash-2" style="width:14px; height:14px;"></i>
+                    <!-- Acciones Rápidas (Estructuradas en 2 filas limpias) -->
+                    <div style="display:flex; flex-direction:column; gap:8px; border-top:1px solid var(--border-subtle); padding-top:12px; margin-top:8px;">
+                        <!-- Fila 1: Botón Copy con IA destacado a lo ancho -->
+                        <button type="button" id="all-card-fb-btn-{{ item.id }}" class="btn-fb-card {% if item.fb_status == 'completed' %}completed{% endif %}" onclick="event.stopPropagation(); handleCardFbClick({{ item.id }});" title="{% if item.fb_status == 'completed' %}Ver Copy para Facebook{% else %}Generar Copy para Facebook con IA{% endif %}">
+                            <i data-lucide="{% if item.fb_status == 'completed' %}check-circle-2{% else %}sparkles{% endif %}" style="width:13px; height:13px;"></i>
+                            <span>{% if item.fb_status == 'completed' %}Ver Copy FB{% else %}Generar Copy FB con IA{% endif %}</span>
                         </button>
+
+                        <!-- Fila 2: Descargar + Eliminar -->
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <a href="{% url 'igdownloader:download_video_stream' item.id %}" class="btn-brand" style="flex:1; justify-content:center; padding:7px 12px; font-size:0.75rem; text-decoration:none;" onclick="event.stopPropagation();">
+                                <i data-lucide="download" style="width:13px; height:13px;"></i>
+                                Descargar Video
+                            </a>
+                            <button type="button" class="action-btn action-btn-delete" title="Eliminar" style="flex-shrink:0;" onclick="event.stopPropagation(); openDeleteModal({{ item.id }})">
+                                <i data-lucide="trash-2" style="width:14px; height:14px;"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
                 {% empty %}
@@ -369,6 +506,101 @@
                 </div>
             </div>
 
+            <!-- ═════════ SECCIÓN IA: ESTRATEGIA & COPY PARA FACEBOOK ═════════ -->
+            <div class="fb-copy-section">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <div style="width:28px; height:28px; border-radius:6px; background:rgba(59,130,246,0.12); color:#3b82f6; display:flex; align-items:center; justify-content:center;">
+                            <i data-lucide="sparkles" style="width:16px; height:16px;"></i>
+                        </div>
+                        <h4 style="font-size:0.95rem; font-weight:700; color:var(--text-primary); margin:0;">
+                            Estrategia & Copy para Facebook
+                        </h4>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <span id="fbSectionBadge" class="badge-pill badge-user" style="font-size:0.7rem;">Sin generar</span>
+                        <button type="button" id="fbRegenerateBtn" class="fb-copy-btn-mini" style="display:none;" onclick="triggerFacebookCopy(currentModalId, true)" title="Volver a generar copy con IA">
+                            <i data-lucide="refresh-cw" style="width:11px; height:11px;"></i>
+                            <span>Regenerar</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Estado 1: Sin generar -->
+                <div id="fbStateIdle" style="background:var(--bg-muted); border:1px dashed var(--border-subtle); border-radius:10px; padding:20px; text-align:center;">
+                    <p style="font-size:0.84rem; color:var(--text-secondary); margin:0 0 14px; max-width:480px; margin-left:auto; margin-right:auto; line-height:1.5;">
+                        Extraé el contexto audiovisual del video con <strong>Gemini 3.6 Flash</strong> y obtené un título magnético, gancho, desarrollo y llamado a la acción optimizado para Facebook.
+                    </p>
+                    <button type="button" id="fbGenerateBtnMain" class="btn-brand" style="display:inline-flex; align-items:center; gap:8px; padding:10px 18px; font-size:0.86rem; margin:0 auto;" onclick="triggerFacebookCopy(currentModalId, false)">
+                        <i data-lucide="sparkles" style="width:15px; height:15px;"></i>
+                        <span>Generar Copy con IA</span>
+                    </button>
+                </div>
+
+                <!-- Estado 2: Procesando con Gemini -->
+                <div id="fbStateLoading" style="display:none; background:rgba(59,130,246,0.06); border:1px solid rgba(59,130,246,0.25); border-radius:10px; padding:24px 18px; text-align:center;">
+                    <div style="display:flex; justify-content:center; margin-bottom:12px;">
+                        <div style="width:26px; height:26px; border-radius:50%; border:2.5px solid #3b82f6; border-top-color:transparent; animation:spin 1s linear infinite;"></div>
+                    </div>
+                    <div style="font-size:0.9rem; font-weight:700; color:var(--text-primary); margin-bottom:4px;">
+                        Analizando video y audio con IA...
+                    </div>
+                    <div style="font-size:0.78rem; color:var(--text-muted); max-width:420px; margin:0 auto;">
+                        Descargando stream efímero, extrayendo elementos visuales y redactando estrategia para Facebook.
+                    </div>
+                </div>
+
+                <!-- Estado 3: Completado (Resultados) -->
+                <div id="fbStateCompleted" style="display:none; flex-direction:column; gap:12px;">
+                    <!-- Bloque Título -->
+                    <div class="fb-copy-card">
+                        <div class="fb-copy-header">
+                            <span class="fb-copy-label">Título sugerido (máx 80 caracteres con emojis)</span>
+                            <button type="button" class="fb-copy-btn-mini" onclick="copyFbElement('fbTitleText', this)">
+                                <i data-lucide="copy" style="width:11px; height:11px;"></i>
+                                <span>Copiar</span>
+                            </button>
+                        </div>
+                        <p id="fbTitleText" class="fb-copy-content" style="font-weight:700;"></p>
+                    </div>
+
+                    <!-- Bloque Descripción -->
+                    <div class="fb-copy-card">
+                        <div class="fb-copy-header">
+                            <span class="fb-copy-label">Descripción (Hook + Desarrollo + CTA)</span>
+                            <button type="button" class="fb-copy-btn-mini" onclick="copyFbElement('fbDescText', this)">
+                                <i data-lucide="copy" style="width:11px; height:11px;"></i>
+                                <span>Copiar</span>
+                            </button>
+                        </div>
+                        <p id="fbDescText" class="fb-copy-content"></p>
+                    </div>
+
+                    <!-- Bloque Hashtags -->
+                    <div class="fb-copy-card">
+                        <div class="fb-copy-header">
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <span class="fb-copy-label">Hashtags</span>
+                                <span id="fbHashtagsSourceBadge" class="badge-pill" style="font-size:0.65rem; background:rgba(34,197,94,0.15); color:#22c55e; border:1px solid rgba(34,197,94,0.3);">
+                                    Originales de la publicación
+                                </span>
+                            </div>
+                            <button type="button" class="fb-copy-btn-mini" onclick="copyFbElement('fbHashtagsText', this)">
+                                <i data-lucide="copy" style="width:11px; height:11px;"></i>
+                                <span>Copiar</span>
+                            </button>
+                        </div>
+                        <p id="fbHashtagsText" class="fb-copy-content" style="color:#3b82f6; font-weight:600;"></p>
+                    </div>
+
+                    <!-- Botón Destacado: Copiar Todo -->
+                    <button type="button" id="copyAllFbBtn" class="btn-brand" style="justify-content:center; padding:12px; font-size:0.9rem; background:linear-gradient(135deg, #1877f2, #0d5cb6); border:none; margin-top:4px;" onclick="copyAllFbContent(this)">
+                        <i data-lucide="clipboard-check" style="width:16px; height:16px;"></i>
+                        <span>Copiar Todo el Post para Facebook</span>
+                    </button>
+                </div>
+            </div>
+
         </div>
     </div>
 </div>
@@ -392,6 +624,7 @@
 {% block extra_js %}
 <script>
 let currentModalUrl = '';
+let currentModalId = null;
 let itemToDelete = null;
 
 // Form Submit
@@ -496,36 +729,55 @@ function insertCardIntoGrid(data) {
     const cardHtml = `
     <div class="prompt-card-shadcn" id="history-item-${data.id}" onclick="openIgModal(${data.id})">
         <div>
-            <div style="width:100%; height:140px; border-radius:8px; background:var(--bg-muted); border:1px solid var(--border-subtle); overflow:hidden; position:relative; margin-bottom:12px; display:flex; align-items:center; justify-content:center;">
+            <!-- Miniatura con Overlay Moderno -->
+            <div style="width:100%; height:150px; border-radius:10px; background:var(--bg-muted); border:1px solid var(--border-subtle); overflow:hidden; position:relative; margin-bottom:12px; display:flex; align-items:center; justify-content:center;">
                 ${thumbHtml}
-                ${durationHtml}
-                <div style="position:absolute; bottom:8px; left:8px;">
-                    <span class="badge-pill badge-admin" style="font-size:0.65rem;">${data.status_display}</span>
+                <!-- Badge Uploader en Miniatura (Glassmorphism) -->
+                <div style="position:absolute; top:8px; left:8px;">
+                    <span style="display:inline-flex; align-items:center; gap:4px; padding:3px 8px; border-radius:6px; background:rgba(0,0,0,0.65); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); color:#fff; font-size:0.7rem; font-weight:600;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#e1306c" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"></line></svg>
+                        @${data.uploader || 'instagram'}
+                    </span>
                 </div>
+                ${durationHtml}
             </div>
-            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
-                <span class="ig-badge">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"></line></svg>
-                    @${data.uploader || 'instagram'}
+
+            <!-- Meta Info: Fecha y Enlace Externo Limpio -->
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
+                <span style="font-size:0.72rem; color:var(--text-muted); display:inline-flex; align-items:center; gap:4px;">
+                    <i data-lucide="calendar" style="width:11px; height:11px; opacity:0.7;"></i>
+                    ${data.created_at}
                 </span>
-                <span style="font-size:0.7rem; color:var(--text-muted);">${data.created_at}</span>
+                <a href="${data.instagram_url}" target="_blank" rel="noopener noreferrer" style="font-size:0.72rem; color:#e1306c; text-decoration:none; display:inline-flex; align-items:center; gap:3px; font-weight:600;" onclick="event.stopPropagation();" title="Abrir en Instagram">
+                    <span>Ver Reel</span>
+                    <i data-lucide="external-link" style="width:11px; height:11px;"></i>
+                </a>
             </div>
-            <h3 style="font-size:0.9rem; font-weight:700; color:var(--text-primary); margin:6px 0 6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${data.title}">
+
+            <!-- Título (Clamp a 2 líneas limpias) -->
+            <h3 style="font-size:0.88rem; font-weight:700; color:var(--text-primary); margin:0 0 10px; line-height:1.35; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; min-height:2.4em;" title="${data.title || 'Reel de Instagram'}">
                 ${data.title || 'Reel de Instagram'}
             </h3>
-            <div style="font-size:0.75rem; color:#e1306c; margin:0 0 10px; display:flex; align-items:center; gap:5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-                <i data-lucide="link" style="width:12px; height:12px; flex-shrink:0;"></i>
-                <span style="overflow:hidden; text-overflow:ellipsis;">${data.instagram_url}</span>
-            </div>
         </div>
-        <div style="display:flex; align-items:center; justify-content:space-between; border-top:1px solid var(--border-subtle); padding-top:10px; margin-top:6px;">
-            <a href="${data.download_url}" class="btn-brand" style="padding:5px 12px; font-size:0.75rem; text-decoration:none;" onclick="event.stopPropagation();">
-                <i data-lucide="download" style="width:12px; height:12px;"></i>
-                Descargar
-            </a>
-            <button type="button" class="action-btn action-btn-delete" title="Eliminar" onclick="event.stopPropagation(); openDeleteModal(${data.id})">
-                <i data-lucide="trash-2" style="width:14px; height:14px;"></i>
+
+        <!-- Acciones Rápidas (Estructuradas en 2 filas limpias) -->
+        <div style="display:flex; flex-direction:column; gap:8px; border-top:1px solid var(--border-subtle); padding-top:12px; margin-top:8px;">
+            <!-- Fila 1: Botón Copy con IA destacado a lo ancho -->
+            <button type="button" id="card-fb-btn-${data.id}" class="btn-fb-card ${data.fb_status === 'completed' ? 'completed' : ''}" onclick="event.stopPropagation(); handleCardFbClick(${data.id});" title="${data.fb_status === 'completed' ? 'Ver Copy para Facebook' : 'Generar Copy para Facebook con IA'}">
+                <i data-lucide="${data.fb_status === 'completed' ? 'check-circle-2' : 'sparkles'}" style="width:13px; height:13px;"></i>
+                <span>${data.fb_status === 'completed' ? 'Ver Copy FB' : 'Generar Copy FB con IA'}</span>
             </button>
+
+            <!-- Fila 2: Descargar + Eliminar -->
+            <div style="display:flex; align-items:center; gap:8px;">
+                <a href="${data.download_url}" class="btn-brand" style="flex:1; justify-content:center; padding:7px 12px; font-size:0.75rem; text-decoration:none;" onclick="event.stopPropagation();">
+                    <i data-lucide="download" style="width:13px; height:13px;"></i>
+                    Descargar Video
+                </a>
+                <button type="button" class="action-btn action-btn-delete" title="Eliminar" style="flex-shrink:0;" onclick="event.stopPropagation(); openDeleteModal(${data.id})">
+                    <i data-lucide="trash-2" style="width:14px; height:14px;"></i>
+                </button>
+            </div>
         </div>
     </div>`;
 
@@ -539,6 +791,7 @@ async function openIgModal(id) {
         if (!res.ok) throw new Error();
         const data = await res.json();
 
+        currentModalId = id;
         currentModalUrl = data.instagram_url;
         document.getElementById('modalTitle').innerText = data.title || 'Reel de Instagram';
         document.getElementById('modalDate').innerText = data.created_at;
@@ -576,6 +829,9 @@ async function openIgModal(id) {
         } else {
             durBadge.style.display = 'none';
         }
+
+        // Actualizar sección de Copy para Facebook
+        updateFbSection(data);
 
         const modal = document.getElementById('igModal');
         modal.style.display = 'flex';
@@ -655,6 +911,214 @@ function switchHistoryTab(tab) {
 
     if (tabMyBtn) tabMyBtn.classList.toggle('active', isMy);
     if (tabAllBtn) tabAllBtn.classList.toggle('active', !isMy);
+}
+
+// ═════════ FUNCIONES IA: ESTRATEGIA & COPY PARA FACEBOOK ═════════
+
+function updateFbSection(data) {
+    const badge = document.getElementById('fbSectionBadge');
+    const regenBtn = document.getElementById('fbRegenerateBtn');
+    const idleBox = document.getElementById('fbStateIdle');
+    const loadingBox = document.getElementById('fbStateLoading');
+    const completedBox = document.getElementById('fbStateCompleted');
+    const titleText = document.getElementById('fbTitleText');
+    const descText = document.getElementById('fbDescText');
+    const hashtagsText = document.getElementById('fbHashtagsText');
+
+    if (!badge || !idleBox || !loadingBox || !completedBox) return;
+
+    if (data.fb_status === 'completed' && data.fb_title) {
+        badge.className = 'badge-pill badge-admin';
+        badge.style.background = 'rgba(34, 197, 94, 0.15)';
+        badge.style.color = '#22c55e';
+        badge.style.borderColor = 'rgba(34, 197, 94, 0.3)';
+        badge.innerText = 'Listo';
+
+        titleText.innerText = data.fb_title || '';
+        descText.innerText = data.fb_description || '';
+        hashtagsText.innerText = data.fb_hashtags || '';
+
+        const tagsBadge = document.getElementById('fbHashtagsSourceBadge');
+        if (tagsBadge) {
+            const isOriginal = (data.fb_hashtags_source === 'original' || data.hashtags_source === 'original');
+            tagsBadge.style.background = isOriginal ? 'rgba(34, 197, 94, 0.15)' : 'rgba(59, 130, 246, 0.15)';
+            tagsBadge.style.color = isOriginal ? '#22c55e' : '#3b82f6';
+            tagsBadge.style.borderColor = isOriginal ? 'rgba(34, 197, 94, 0.3)' : 'rgba(59, 130, 246, 0.3)';
+            tagsBadge.innerText = isOriginal ? '✨ Originales de la publicación' : '⚡ Sugeridos por IA (el video no traía tags)';
+        }
+
+        idleBox.style.display = 'none';
+        loadingBox.style.display = 'none';
+        completedBox.style.display = 'flex';
+        regenBtn.style.display = 'inline-flex';
+    } else if (data.fb_status === 'processing') {
+        badge.className = 'badge-pill badge-user';
+        badge.style.background = '';
+        badge.style.color = '';
+        badge.style.borderColor = '';
+        badge.innerText = 'Analizando...';
+
+        idleBox.style.display = 'none';
+        loadingBox.style.display = 'block';
+        completedBox.style.display = 'none';
+        regenBtn.style.display = 'none';
+    } else {
+        badge.className = 'badge-pill badge-user';
+        badge.style.background = '';
+        badge.style.color = '';
+        badge.style.borderColor = '';
+        badge.innerText = 'Sin generar';
+
+        idleBox.style.display = 'block';
+        loadingBox.style.display = 'none';
+        completedBox.style.display = 'none';
+        regenBtn.style.display = 'none';
+    }
+    lucide.createIcons();
+}
+
+async function handleCardFbClick(id) {
+    // 1. Abrir el modal con los detalles del Reel
+    await openIgModal(id);
+
+    // 2. Si todavía no se generó el copy (o dio error), iniciar generación directa
+    const myBtn = document.getElementById(`card-fb-btn-${id}`);
+    const allBtn = document.getElementById(`all-card-fb-btn-${id}`);
+    const activeBtn = myBtn || allBtn;
+
+    if (!activeBtn || !activeBtn.classList.contains('completed')) {
+        triggerFacebookCopy(id, false);
+    }
+}
+
+async function triggerFacebookCopy(id, isRegenerate = false) {
+    const targetId = id || currentModalId;
+    if (!targetId) return;
+
+    const myCardBtn = document.getElementById(`card-fb-btn-${targetId}`);
+    const allCardBtn = document.getElementById(`all-card-fb-btn-${targetId}`);
+    const cardBtns = [myCardBtn, allCardBtn].filter(Boolean);
+
+    // Feedback visual en la tarjeta
+    cardBtns.forEach(b => {
+        b.disabled = true;
+        b.innerHTML = `<span style="width:12px; height:12px; border:2px solid currentColor; border-top-color:transparent; border-radius:50%; animation:spin 1s linear infinite; display:inline-block;"></span> <span>Analizando...</span>`;
+    });
+
+    // Feedback visual en el modal
+    const badge = document.getElementById('fbSectionBadge');
+    const idleBox = document.getElementById('fbStateIdle');
+    const loadingBox = document.getElementById('fbStateLoading');
+    const completedBox = document.getElementById('fbStateCompleted');
+    const regenBtn = document.getElementById('fbRegenerateBtn');
+
+    if (badge) {
+        badge.className = 'badge-pill badge-user';
+        badge.innerText = 'Analizando con Gemini...';
+    }
+    if (idleBox) idleBox.style.display = 'none';
+    if (completedBox) completedBox.style.display = 'none';
+    if (loadingBox) loadingBox.style.display = 'block';
+    if (regenBtn) regenBtn.style.display = 'none';
+
+    try {
+        const formData = new FormData();
+        formData.append('regenerate', isRegenerate ? 'true' : 'false');
+        formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+        const res = await fetch(`/ig-downloader/facebook-copy/${targetId}/`, {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: formData
+        });
+
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+            // Actualizar botones de card a "Ver Copy FB"
+            cardBtns.forEach(b => {
+                b.disabled = false;
+                b.classList.add('completed');
+                b.setAttribute('title', 'Ver Copy para Facebook');
+                b.innerHTML = `<i data-lucide="check-circle-2" style="width:12px; height:12px;"></i> <span>Ver Copy FB</span>`;
+            });
+
+            // Actualizar datos en modal
+            updateFbSection({
+                fb_status: 'completed',
+                fb_title: data.title,
+                fb_description: data.description,
+                fb_hashtags: data.hashtags,
+                fb_hashtags_source: data.hashtags_source
+            });
+
+            showToast(data.from_cache ? 'Copy recuperado de memoria' : '¡Copy para Facebook generado exitosamente!', 'success');
+        } else {
+            throw new Error(data.error || 'Error al procesar el video con IA');
+        }
+    } catch (err) {
+        showToast(err.message || 'Error de conexión procesando el video.', 'error');
+        if (badge) {
+            badge.className = 'badge-pill';
+            badge.style.background = 'rgba(239, 68, 68, 0.15)';
+            badge.style.color = '#ef4444';
+            badge.innerText = 'Error al generar';
+        }
+        if (loadingBox) loadingBox.style.display = 'none';
+        if (idleBox) idleBox.style.display = 'block';
+
+        cardBtns.forEach(b => {
+            b.disabled = false;
+            b.innerHTML = `<i data-lucide="sparkles" style="width:12px; height:12px;"></i> <span>Reintentar Copy FB</span>`;
+        });
+    } finally {
+        lucide.createIcons();
+    }
+}
+
+function copyFbElement(elementId, btn) {
+    const text = document.getElementById(elementId)?.innerText || '';
+    if (!text) return;
+
+    navigator.clipboard.writeText(text).then(() => {
+        const originalContent = btn.innerHTML;
+        btn.innerHTML = `<i data-lucide="check" style="width:11px; height:11px;"></i> <span>¡Copiado!</span>`;
+        lucide.createIcons();
+        setTimeout(() => {
+            btn.innerHTML = originalContent;
+            lucide.createIcons();
+        }, 2000);
+        showToast('Copiado al portapapeles', 'success');
+    }).catch(() => {
+        showToast('No se pudo copiar el texto', 'error');
+    });
+}
+
+function copyAllFbContent(btn) {
+    const title = document.getElementById('fbTitleText')?.innerText || '';
+    const desc = document.getElementById('fbDescText')?.innerText || '';
+    const tags = document.getElementById('fbHashtagsText')?.innerText || '';
+
+    if (!title && !desc && !tags) return;
+
+    const fullPost = `${title}\n\n${desc}\n\n${tags}`.trim();
+
+    navigator.clipboard.writeText(fullPost).then(() => {
+        const originalContent = btn.innerHTML;
+        btn.innerHTML = `<i data-lucide="check-check" style="width:16px; height:16px;"></i> <span>¡Post Completo Copiado!</span>`;
+        btn.style.background = '#16a34a';
+        lucide.createIcons();
+        setTimeout(() => {
+            btn.innerHTML = originalContent;
+            btn.style.background = 'linear-gradient(135deg, #1877f2, #0d5cb6)';
+            lucide.createIcons();
+        }, 2200);
+        showToast('¡Post completo copiado para Facebook!', 'success');
+    }).catch(() => {
+        showToast('No se pudo copiar el post', 'error');
+    });
 }
 
 window.addEventListener('keydown', (e) => {

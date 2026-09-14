@@ -44,15 +44,21 @@ def extract_instagram_data(url: str) -> dict:
                     thumbnail_url = t['url']
                     break
         
+        full_desc = info.get('description') or ''
         title = info.get('title') or ''
         if not title or title.startswith('Video by') or title.startswith('Instagram post by'):
-            desc = info.get('description') or ''
-            title = desc[:150] if desc else 'Reel de Instagram'
+            title = full_desc[:150] if full_desc else 'Reel de Instagram'
         
         uploader = info.get('uploader') or info.get('channel') or info.get('uploader_id') or 'instagram'
         uploader = uploader.replace('@', '')
         
         duration = info.get('duration')
+        
+        # Extraer hashtags originales con regex (#palabra)
+        found_tags = re.findall(r'#[\w\d_]+', full_desc)
+        if not found_tags and info.get('tags'):
+            found_tags = [f"#{t.lstrip('#')}" for t in info.get('tags') if t]
+        original_hashtags = " ".join(dict.fromkeys(found_tags))
         
         return {
             'clean_url': clean_url,
@@ -61,6 +67,8 @@ def extract_instagram_data(url: str) -> dict:
             'duration': duration,
             'thumbnail_url': thumbnail_url,
             'direct_video_url': direct_url,
+            'original_caption': full_desc,
+            'original_hashtags': original_hashtags,
         }
 
 def save_thumbnail_image(thumbnail_url: str, record_id: int) -> str:

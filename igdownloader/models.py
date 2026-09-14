@@ -25,6 +25,24 @@ class InstagramDownload(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     error_message = models.TextField(blank=True, null=True)
 
+    original_caption = models.TextField(blank=True, null=True)
+    original_hashtags = models.TextField(blank=True, null=True)
+
+    # Copys generados con Inteligencia Artificial para Facebook
+    FB_STATUS_CHOICES = [
+        ('idle', 'Sin generar'),
+        ('processing', 'Procesando'),
+        ('completed', 'Completado'),
+        ('failed', 'Fallido'),
+    ]
+    fb_title = models.CharField(max_length=255, blank=True, null=True)
+    fb_description = models.TextField(blank=True, null=True)
+    fb_hashtags = models.CharField(max_length=255, blank=True, null=True)
+    fb_hashtags_source = models.CharField(max_length=20, default='original', choices=[('original', 'Originales de Instagram'), ('ai', 'Generados por IA')])
+    fb_status = models.CharField(max_length=20, choices=FB_STATUS_CHOICES, default='idle')
+    fb_error = models.TextField(blank=True, null=True)
+    fb_generated_at = models.DateTimeField(blank=True, null=True)
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
