@@ -171,6 +171,19 @@
         white-space: pre-wrap;
         word-break: break-word;
     }
+    .ig-modal-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 100000;
+        background: var(--modal-backdrop, rgba(0, 0, 0, 0.7));
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+        overscroll-behavior: contain;
+    }
     .ig-modal-dialog {
         width: 100%;
         max-width: 680px;
@@ -513,7 +526,7 @@
 
 {% block modals %}
 <!-- ═════════ 3. MODAL INTERACTIVO: VISOR DE REEL ═════════ -->
-<div id="igModal" class="ig-modal-overlay">
+<div id="igModal" class="ig-modal-overlay" style="display:none; position:fixed; inset:0; z-index:100000; background:var(--modal-backdrop, rgba(0,0,0,0.7)); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); align-items:center; justify-content:center; padding:16px;">
     <div class="shadcn-card ig-modal-dialog">
         
         <!-- Header -->
@@ -681,7 +694,7 @@
 </div>
 
 <!-- Modal Eliminar -->
-<div id="deleteModal" class="ig-modal-overlay">
+<div id="deleteModal" class="ig-modal-overlay" style="display:none; position:fixed; inset:0; z-index:100000; background:var(--modal-backdrop, rgba(0,0,0,0.7)); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); align-items:center; justify-content:center; padding:16px;">
     <div class="shadcn-card" style="width:100%; max-width:400px; padding:24px; text-align:center; animation:modalIn 0.2s ease-out;">
         <div style="width:44px; height:44px; border-radius:50%; background:rgba(239,68,68,0.12); color:#ef4444; display:flex; align-items:center; justify-content:center; margin:0 auto 16px;">
             <i data-lucide="trash-2" style="width:22px; height:22px;"></i>
@@ -861,15 +874,7 @@ function insertCardIntoGrid(data) {
 }
 
 function setModalScrollLocked(isLocked) {
-    if (isLocked) {
-        document.body.style.overflow = 'hidden';
-        const mainWrapper = document.querySelector('.main-content-wrapper');
-        if (mainWrapper) mainWrapper.style.overflow = 'hidden';
-    } else {
-        document.body.style.overflow = '';
-        const mainWrapper = document.querySelector('.main-content-wrapper');
-        if (mainWrapper) mainWrapper.style.overflow = 'auto';
-    }
+    document.body.style.overflow = isLocked ? 'hidden' : '';
 }
 
 async function openIgModal(id) {
@@ -877,36 +882,40 @@ async function openIgModal(id) {
     const modal = document.getElementById('igModal');
     if (!modal) return;
 
-    // Pre-poblar datos de la tarjeta inmediatamente para feedback instantáneo (0ms)
-    const card = document.getElementById(`history-item-${id}`);
-    if (card) {
-        const cardTitle = card.querySelector('h3')?.getAttribute('title') || card.querySelector('h3')?.innerText?.trim();
-        const cardImg = card.querySelector('img');
-        const cardUploader = card.querySelector('.ig-badge, [class*="ig-badge"]')?.innerText?.trim();
-        const cardDownloadLink = card.querySelector('a[href*="download"]')?.href;
-        const cardReelLink = card.querySelector('a[href*="instagram.com"]')?.href;
+    try {
+        // Pre-poblar datos de la tarjeta inmediatamente para feedback instantáneo (0ms)
+        const card = document.getElementById(`history-item-${id}`);
+        if (card) {
+            const cardTitle = card.querySelector('h3')?.getAttribute('title') || card.querySelector('h3')?.innerText?.trim();
+            const cardImg = card.querySelector('img');
+            const cardDownloadLink = card.querySelector('a[href*="download"]')?.href;
+            const cardReelLink = card.querySelector('a[href*="instagram.com"]')?.href;
 
-        if (cardTitle) {
-            document.getElementById('modalTitle').innerText = cardTitle;
-            document.getElementById('modalDescription').innerText = cardTitle;
+            if (cardTitle) {
+                const titleEl = document.getElementById('modalTitle');
+                const descEl = document.getElementById('modalDescription');
+                if (titleEl) titleEl.innerText = cardTitle;
+                if (descEl) descEl.innerText = cardTitle;
+            }
+            if (cardDownloadLink) {
+                const dlBtn = document.getElementById('modalDownloadBtn');
+                if (dlBtn) dlBtn.href = cardDownloadLink;
+            }
+            if (cardReelLink) {
+                const igLink = document.getElementById('modalIgLink');
+                if (igLink) igLink.href = cardReelLink;
+                currentModalUrl = cardReelLink;
+            }
+            const img = document.getElementById('modalThumbnailImg');
+            const ph = document.getElementById('modalThumbnailPlaceholder');
+            if (img && ph && cardImg && cardImg.src && cardImg.style.display !== 'none') {
+                img.src = cardImg.src;
+                img.style.display = 'block';
+                ph.style.display = 'none';
+            }
         }
-        if (cardDownloadLink) {
-            document.getElementById('modalDownloadBtn').href = cardDownloadLink;
-        }
-        if (cardReelLink) {
-            document.getElementById('modalIgLink').href = cardReelLink;
-            currentModalUrl = cardReelLink;
-        }
-        if (cardUploader) {
-            document.getElementById('modalUploader').innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"></line></svg> ${cardUploader}`;
-        }
-        const img = document.getElementById('modalThumbnailImg');
-        const ph = document.getElementById('modalThumbnailPlaceholder');
-        if (cardImg && cardImg.src && cardImg.style.display !== 'none') {
-            img.src = cardImg.src;
-            img.style.display = 'block';
-            ph.style.display = 'none';
-        }
+    } catch (e) {
+        console.warn('Error pre-populating modal:', e);
     }
 
     modal.style.display = 'flex';
@@ -1243,21 +1252,6 @@ function copyAllFbContent(btn) {
     }).catch(() => {
         showToast('No se pudo copiar el post', 'error');
     });
-}
-
-// Teleport guarantee: asegura que los modales vivan directamente bajo <body> para evitar recortes de CSS transform
-function ensureModalsTeleported() {
-    ['igModal', 'deleteModal'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el && el.parentElement !== document.body) {
-            document.body.appendChild(el);
-        }
-    });
-}
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', ensureModalsTeleported);
-} else {
-    ensureModalsTeleported();
 }
 
 window.addEventListener('keydown', (e) => {
