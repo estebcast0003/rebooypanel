@@ -64,6 +64,7 @@ def upload_and_analyze_video(file_path, additional_context="", language="es"):
     attempts = 0
     active_keys_count = GeminiAPIKey.objects.filter(is_active=True).count()
     max_attempts = max(3, active_keys_count * 2) if active_keys_count > 0 else 3
+    last_error_detail = ""
 
     while attempts < max_attempts:
         attempts += 1
@@ -212,6 +213,7 @@ def upload_and_analyze_video(file_path, additional_context="", language="es"):
                     
         except (APIError, Exception) as e:
             error_msg = str(e)
+            last_error_detail = error_msg
             is_key_invalid = False
             is_temporary_error = False
             
@@ -224,7 +226,7 @@ def upload_and_analyze_video(file_path, additional_context="", language="es"):
             else:
                 if ("api key" in lower_msg or "api-key" in lower_msg or "not valid" in lower_msg or "expired" in lower_msg) and ("400" in lower_msg or "403" in lower_msg):
                     is_key_invalid = True
-                elif "429" in lower_msg or "resourceexhausted" in lower_msg or "503" in lower_msg or "unavailable" in lower_msg:
+                elif "429" in lower_msg or "resourceexhausted" in lower_msg or "503" in lower_msg or "unavailable" in lower_msg or "high demand" in lower_msg:
                     is_temporary_error = True
 
             if is_key_invalid and key_record:
@@ -238,10 +240,11 @@ def upload_and_analyze_video(file_path, additional_context="", language="es"):
                 key_record.error_count += 1
                 key_record.status_message = f"Sobrecarga temporal ({error_msg[:80]})"
                 key_record.save()
-                time.sleep(2)
+                sleep_time = min(2 + attempts, 5)
+                time.sleep(sleep_time)
                 continue
                 
             else:
                 raise Exception(f"Fallo usando clave de {source}: {error_msg}")
                 
-    raise Exception("Todas las claves de API activas en el pool fallaron por límite de cuota o sobrecarga del servidor.")
+    raise Exception(f"Todas las claves activas fallaron por sobrecarga temporal o cuota en Google Gemini. Detalle: {last_error_detail[:180]}")
