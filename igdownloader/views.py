@@ -74,6 +74,8 @@ def process_ajax(request):
         item.title = data.get('title') or 'Reel de Instagram'
         item.uploader = data.get('uploader') or 'instagram'
         item.duration_seconds = data.get('duration')
+        item.like_count = data.get('like_count')
+        item.comment_count = data.get('comment_count')
         item.direct_video_url = data.get('direct_video_url')
         item.original_caption = data.get('original_caption')
         item.original_hashtags = data.get('original_hashtags')
@@ -102,6 +104,10 @@ def process_ajax(request):
             'instagram_url': item.instagram_url,
             'thumbnail_url': item.thumbnail.url if item.thumbnail else '',
             'duration_seconds': item.duration_seconds,
+            'like_count': item.like_count,
+            'comment_count': item.comment_count,
+            'formatted_likes': item.formatted_likes,
+            'formatted_comments': item.formatted_comments,
             'status': item.status,
             'status_display': item.get_status_display(),
             'created_at': item.created_at.strftime('%d %b %Y, %H:%M'),
@@ -146,6 +152,10 @@ def status_ajax(request, pk):
         'instagram_url': item.instagram_url,
         'thumbnail_url': thumb_url,
         'duration_seconds': item.duration_seconds,
+        'like_count': item.like_count,
+        'comment_count': item.comment_count,
+        'formatted_likes': item.formatted_likes,
+        'formatted_comments': item.formatted_comments,
         'status': item.status,
         'status_display': item.get_status_display(),
         'created_at': item.created_at.strftime('%d %b %Y, %H:%M'),

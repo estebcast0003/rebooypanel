@@ -21,12 +21,34 @@ class InstagramDownload(models.Model):
     thumbnail = models.FileField(upload_to='ig_thumbnails/', blank=True, null=True)
     duration_seconds = models.FloatField(null=True, blank=True)
     direct_video_url = models.TextField(blank=True, null=True)
+    like_count = models.PositiveIntegerField(null=True, blank=True)
+    comment_count = models.PositiveIntegerField(null=True, blank=True)
     
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     error_message = models.TextField(blank=True, null=True)
 
     original_caption = models.TextField(blank=True, null=True)
     original_hashtags = models.TextField(blank=True, null=True)
+
+    @property
+    def formatted_likes(self):
+        if self.like_count is None:
+            return None
+        if self.like_count >= 1_000_000:
+            return f"{self.like_count / 1_000_000:.1f}M"
+        if self.like_count >= 1_000:
+            return f"{self.like_count / 1_000:.1f}K"
+        return str(self.like_count)
+
+    @property
+    def formatted_comments(self):
+        if self.comment_count is None:
+            return None
+        if self.comment_count >= 1_000_000:
+            return f"{self.comment_count / 1_000_000:.1f}M"
+        if self.comment_count >= 1_000:
+            return f"{self.comment_count / 1_000:.1f}K"
+        return str(self.comment_count)
 
     # Copys generados con Inteligencia Artificial para Facebook
     FB_STATUS_CHOICES = [

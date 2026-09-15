@@ -53,6 +53,8 @@ def extract_instagram_data(url: str) -> dict:
         uploader = uploader.replace('@', '')
         
         duration = info.get('duration')
+        like_count = info.get('like_count')
+        comment_count = info.get('comment_count')
         
         # Extraer hashtags originales con regex (#palabra)
         found_tags = re.findall(r'#[\w\d_]+', full_desc)
@@ -65,6 +67,8 @@ def extract_instagram_data(url: str) -> dict:
             'title': title[:490],
             'uploader': uploader[:250],
             'duration': duration,
+            'like_count': like_count,
+            'comment_count': comment_count,
             'thumbnail_url': thumbnail_url,
             'direct_video_url': direct_url,
             'original_caption': full_desc,
