@@ -46,11 +46,23 @@
         cursor: pointer;
         position: relative;
         overflow: hidden;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+        user-select: none;
     }
-    .prompt-card-shadcn:hover {
-        border-color: var(--border-highlight);
-        transform: translateY(-2px);
-        box-shadow: 0 8px 20px -4px rgba(0,0,0,0.12);
+    @media (hover: hover) {
+        .prompt-card-shadcn:hover {
+            border-color: var(--border-highlight);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px -4px rgba(0,0,0,0.12);
+        }
+    }
+    .prompt-card-shadcn:active {
+        transform: scale(0.985);
+    }
+    .btn-fb-card, .btn-brand, .btn-ghost, .action-pill-btn, .action-btn {
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
     }
     .ig-badge {
         display: inline-flex;
@@ -145,6 +157,7 @@
         color: var(--text-secondary);
         cursor: pointer;
         transition: all 0.15s ease;
+        touch-action: manipulation;
     }
     .fb-copy-btn-mini:hover {
         color: var(--text-primary);
@@ -158,9 +171,69 @@
         white-space: pre-wrap;
         word-break: break-word;
     }
+    .ig-modal-dialog {
+        width: 100%;
+        max-width: 680px;
+        max-height: 90vh;
+        display: flex;
+        flex-direction: column;
+        animation: modalIn 0.22s ease-out;
+        overflow: hidden;
+    }
+    .ig-modal-header {
+        padding: 18px 24px;
+        border-bottom: 1px solid var(--border-subtle);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-shrink: 0;
+    }
+    .ig-modal-body {
+        padding: 24px;
+        overflow-y: auto;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        -webkit-overflow-scrolling: touch;
+    }
+    .ig-modal-thumbnail {
+        width: 100%;
+        height: 250px;
+        border-radius: 12px;
+        background: var(--bg-muted);
+        border: 1px solid var(--border-subtle);
+        overflow: hidden;
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
     @media (max-width: 640px) {
         .history-grid-responsive {
             grid-template-columns: 1fr !important;
+        }
+        #igModal, #deleteModal {
+            padding: 8px !important;
+        }
+        .ig-modal-dialog {
+            max-height: 95vh !important;
+            border-radius: 12px !important;
+            width: 100% !important;
+        }
+        .ig-modal-header {
+            padding: 12px 16px !important;
+        }
+        .ig-modal-body {
+            padding: 14px 14px 18px !important;
+            gap: 14px !important;
+        }
+        .ig-modal-thumbnail {
+            height: 165px !important;
+        }
+        .fb-copy-section {
+            padding-top: 14px !important;
+            gap: 12px !important;
         }
     }
 </style>
@@ -259,7 +332,7 @@
         <div id="mySection">
             <div id="myHistoryGrid" class="history-grid-responsive" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(270px, 1fr)); gap:18px;">
                 {% for item in my_history %}
-                <div class="prompt-card-shadcn" id="history-item-{{ item.id }}" onclick="openIgModal({{ item.id }})">
+                <div class="prompt-card-shadcn" id="history-item-{{ item.id }}" onclick="openIgModal({{ item.id }})" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ') { event.preventDefault(); openIgModal({{ item.id }}); }">
                     <div>
                         <!-- Miniatura con Overlay Moderno -->
                         <div style="width:100%; height:150px; border-radius:10px; background:var(--bg-muted); border:1px solid var(--border-subtle); overflow:hidden; position:relative; margin-bottom:12px; display:flex; align-items:center; justify-content:center;">
@@ -347,9 +420,9 @@
         {% if user.role == 'superadmin' %}
         <!-- SECCIÓN 2: TODOS LOS USUARIOS (SUPERADMIN) -->
         <div id="allSection" style="display:none;">
-            <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(270px, 1fr)); gap:18px;">
+            <div id="allHistoryGrid" class="history-grid-responsive" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(270px, 1fr)); gap:18px;">
                 {% for item in all_history %}
-                <div class="prompt-card-shadcn" id="history-item-{{ item.id }}" onclick="openIgModal({{ item.id }})">
+                <div class="prompt-card-shadcn" id="history-item-{{ item.id }}" onclick="openIgModal({{ item.id }})" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ') { event.preventDefault(); openIgModal({{ item.id }}); }">
                     <div>
                         <!-- Miniatura con Overlay Moderno -->
                         <div style="width:100%; height:150px; border-radius:10px; background:var(--bg-muted); border:1px solid var(--border-subtle); overflow:hidden; position:relative; margin-bottom:12px; display:flex; align-items:center; justify-content:center;">
@@ -436,13 +509,15 @@
     </div>
 
 </div>
+{% endblock %}
 
+{% block modals %}
 <!-- ═════════ 3. MODAL INTERACTIVO: VISOR DE REEL ═════════ -->
-<div id="igModal" style="display:none; position:fixed; inset:0; z-index:100000; background:var(--modal-backdrop); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); align-items:center; justify-content:center; padding:16px;">
-    <div class="shadcn-card" style="width:100%; max-width:680px; max-height:90vh; display:flex; flex-direction:column; animation:modalIn 0.22s ease-out; overflow:hidden;">
+<div id="igModal" class="ig-modal-overlay">
+    <div class="shadcn-card ig-modal-dialog">
         
         <!-- Header -->
-        <div style="padding:18px 24px; border-bottom:1px solid var(--border-subtle); display:flex; justify-content:space-between; align-items:center; flex-shrink:0;">
+        <div class="ig-modal-header">
             <div style="display:flex; align-items:center; gap:12px;">
                 <div style="width:36px; height:36px; border-radius:9999px; background:rgba(225,48,108,0.12); border:1px solid rgba(225,48,108,0.25); display:flex; align-items:center; justify-content:center; color:#e1306c;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e1306c" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"></line></svg>
@@ -455,16 +530,16 @@
                     </div>
                 </div>
             </div>
-            <button type="button" class="action-pill-btn" onclick="closeIgModal()">
+            <button type="button" class="action-pill-btn" onclick="closeIgModal()" aria-label="Cerrar modal">
                 <i data-lucide="x"></i>
             </button>
         </div>
 
         <!-- Body -->
-        <div style="padding:24px; overflow-y:auto; flex:1; display:flex; flex-direction:column; gap:20px;">
+        <div class="ig-modal-body">
             
             <!-- Miniatura Grande con Overlay -->
-            <div style="width:100%; height:260px; border-radius:12px; background:var(--bg-muted); border:1px solid var(--border-subtle); overflow:hidden; position:relative; display:flex; align-items:center; justify-content:center;">
+            <div class="ig-modal-thumbnail">
                 <img id="modalThumbnailImg" src="" alt="Miniatura Reel" style="width:100%; height:100%; object-fit:cover; display:none;">
                 <div id="modalThumbnailPlaceholder" style="display:flex; align-items:center; justify-content:center;">
                     <i data-lucide="film" style="width:48px; height:48px; color:var(--text-muted); opacity:0.4;"></i>
@@ -606,8 +681,8 @@
 </div>
 
 <!-- Modal Eliminar -->
-<div id="deleteModal" style="display:none; position:fixed; inset:0; z-index:100000; background:var(--modal-backdrop); backdrop-filter:blur(10px); align-items:center; justify-content:center; padding:16px;">
-    <div class="shadcn-card" style="width:100%; max-width:400px; padding:24px; text-align:center;">
+<div id="deleteModal" class="ig-modal-overlay">
+    <div class="shadcn-card" style="width:100%; max-width:400px; padding:24px; text-align:center; animation:modalIn 0.2s ease-out;">
         <div style="width:44px; height:44px; border-radius:50%; background:rgba(239,68,68,0.12); color:#ef4444; display:flex; align-items:center; justify-content:center; margin:0 auto 16px;">
             <i data-lucide="trash-2" style="width:22px; height:22px;"></i>
         </div>
@@ -727,7 +802,7 @@ function insertCardIntoGrid(data) {
         : `<i data-lucide="film" style="width:36px; height:36px; color:var(--text-muted); opacity:0.5;"></i>`;
 
     const cardHtml = `
-    <div class="prompt-card-shadcn" id="history-item-${data.id}" onclick="openIgModal(${data.id})">
+    <div class="prompt-card-shadcn" id="history-item-${data.id}" onclick="openIgModal(${data.id})" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ') { event.preventDefault(); openIgModal(${data.id}); }">
         <div>
             <!-- Miniatura con Overlay Moderno -->
             <div style="width:100%; height:150px; border-radius:10px; background:var(--bg-muted); border:1px solid var(--border-subtle); overflow:hidden; position:relative; margin-bottom:12px; display:flex; align-items:center; justify-content:center;">
@@ -785,13 +860,64 @@ function insertCardIntoGrid(data) {
     lucide.createIcons();
 }
 
+function setModalScrollLocked(isLocked) {
+    if (isLocked) {
+        document.body.style.overflow = 'hidden';
+        const mainWrapper = document.querySelector('.main-content-wrapper');
+        if (mainWrapper) mainWrapper.style.overflow = 'hidden';
+    } else {
+        document.body.style.overflow = '';
+        const mainWrapper = document.querySelector('.main-content-wrapper');
+        if (mainWrapper) mainWrapper.style.overflow = 'auto';
+    }
+}
+
 async function openIgModal(id) {
+    currentModalId = id;
+    const modal = document.getElementById('igModal');
+    if (!modal) return;
+
+    // Pre-poblar datos de la tarjeta inmediatamente para feedback instantáneo (0ms)
+    const card = document.getElementById(`history-item-${id}`);
+    if (card) {
+        const cardTitle = card.querySelector('h3')?.getAttribute('title') || card.querySelector('h3')?.innerText?.trim();
+        const cardImg = card.querySelector('img');
+        const cardUploader = card.querySelector('.ig-badge, [class*="ig-badge"]')?.innerText?.trim();
+        const cardDownloadLink = card.querySelector('a[href*="download"]')?.href;
+        const cardReelLink = card.querySelector('a[href*="instagram.com"]')?.href;
+
+        if (cardTitle) {
+            document.getElementById('modalTitle').innerText = cardTitle;
+            document.getElementById('modalDescription').innerText = cardTitle;
+        }
+        if (cardDownloadLink) {
+            document.getElementById('modalDownloadBtn').href = cardDownloadLink;
+        }
+        if (cardReelLink) {
+            document.getElementById('modalIgLink').href = cardReelLink;
+            currentModalUrl = cardReelLink;
+        }
+        if (cardUploader) {
+            document.getElementById('modalUploader').innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"></line></svg> ${cardUploader}`;
+        }
+        const img = document.getElementById('modalThumbnailImg');
+        const ph = document.getElementById('modalThumbnailPlaceholder');
+        if (cardImg && cardImg.src && cardImg.style.display !== 'none') {
+            img.src = cardImg.src;
+            img.style.display = 'block';
+            ph.style.display = 'none';
+        }
+    }
+
+    modal.style.display = 'flex';
+    setModalScrollLocked(true);
+    lucide.createIcons();
+
     try {
         const res = await fetch(`/ig-downloader/status-ajax/${id}/`);
         if (!res.ok) throw new Error();
         const data = await res.json();
 
-        currentModalId = id;
         currentModalUrl = data.instagram_url;
         document.getElementById('modalTitle').innerText = data.title || 'Reel de Instagram';
         document.getElementById('modalDate').innerText = data.created_at;
@@ -808,7 +934,6 @@ async function openIgModal(id) {
             ph.style.display = 'none';
 
             // Actualizar miniatura en la tarjeta del grid si estaba vacía
-            const card = document.getElementById(`history-item-${id}`);
             if (card) {
                 const cardImg = card.querySelector('img');
                 if (cardImg) {
@@ -817,7 +942,7 @@ async function openIgModal(id) {
                     if (cardImg.nextElementSibling) cardImg.nextElementSibling.style.display = 'none';
                 }
             }
-        } else {
+        } else if (!img.src) {
             img.style.display = 'none';
             ph.style.display = 'flex';
         }
@@ -832,19 +957,16 @@ async function openIgModal(id) {
 
         // Actualizar sección de Copy para Facebook
         updateFbSection(data);
-
-        const modal = document.getElementById('igModal');
-        modal.style.display = 'flex';
-        document.body.style.overflow = 'hidden';
         lucide.createIcons();
     } catch (e) {
-        showToast('No se pudo cargar la información del reel.', 'error');
+        showToast('No se pudo cargar la información completa del reel.', 'error');
     }
 }
 
 function closeIgModal() {
-    document.getElementById('igModal').style.display = 'none';
-    document.body.style.overflow = 'auto';
+    const modal = document.getElementById('igModal');
+    if (modal) modal.style.display = 'none';
+    setModalScrollLocked(false);
 }
 
 function copyModalUrl() {
@@ -858,15 +980,17 @@ function copyModalUrl() {
 
 function openDeleteModal(id) {
     itemToDelete = id;
-    document.getElementById('deleteModal').style.display = 'flex';
-    document.body.style.overflow = 'hidden';
+    const modal = document.getElementById('deleteModal');
+    if (modal) modal.style.display = 'flex';
+    setModalScrollLocked(true);
     lucide.createIcons();
 }
 
 function closeDeleteModal() {
     itemToDelete = null;
-    document.getElementById('deleteModal').style.display = 'none';
-    document.body.style.overflow = 'auto';
+    const modal = document.getElementById('deleteModal');
+    if (modal) modal.style.display = 'none';
+    setModalScrollLocked(false);
 }
 
 async function executeDelete() {
@@ -1121,16 +1245,31 @@ function copyAllFbContent(btn) {
     });
 }
 
+// Teleport guarantee: asegura que los modales vivan directamente bajo <body> para evitar recortes de CSS transform
+function ensureModalsTeleported() {
+    ['igModal', 'deleteModal'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el && el.parentElement !== document.body) {
+            document.body.appendChild(el);
+        }
+    });
+}
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', ensureModalsTeleported);
+} else {
+    ensureModalsTeleported();
+}
+
 window.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
         closeIgModal();
         closeDeleteModal();
     }
 });
-document.getElementById('igModal').addEventListener('click', (e) => {
+document.getElementById('igModal')?.addEventListener('click', (e) => {
     if (e.target.id === 'igModal') closeIgModal();
 });
-document.getElementById('deleteModal').addEventListener('click', (e) => {
+document.getElementById('deleteModal')?.addEventListener('click', (e) => {
     if (e.target.id === 'deleteModal') closeDeleteModal();
 });
 </script>
