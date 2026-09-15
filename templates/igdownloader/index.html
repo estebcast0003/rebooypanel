@@ -435,7 +435,7 @@
         <div id="allSection" style="display:none;">
             <div id="allHistoryGrid" class="history-grid-responsive" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(270px, 1fr)); gap:18px;">
                 {% for item in all_history %}
-                <div class="prompt-card-shadcn" id="history-item-{{ item.id }}" onclick="openIgModal({{ item.id }})" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ') { event.preventDefault(); openIgModal({{ item.id }}); }">
+                <div class="prompt-card-shadcn" id="all-history-item-{{ item.id }}" onclick="openIgModal({{ item.id }})" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ') { event.preventDefault(); openIgModal({{ item.id }}); }">
                     <div>
                         <!-- Miniatura con Overlay Moderno -->
                         <div style="width:100%; height:150px; border-radius:10px; background:var(--bg-muted); border:1px solid var(--border-subtle); overflow:hidden; position:relative; margin-bottom:12px; display:flex; align-items:center; justify-content:center;">
@@ -713,6 +713,7 @@
 <script>
 let currentModalUrl = '';
 let currentModalId = null;
+let activeStatusFetchId = null;
 let itemToDelete = null;
 
 // Form Submit
@@ -877,19 +878,91 @@ function setModalScrollLocked(isLocked) {
     document.body.style.overflow = isLocked ? 'hidden' : '';
 }
 
+function getCardElement(id) {
+    return document.getElementById(`history-item-${id}`) || document.getElementById(`all-history-item-${id}`);
+}
+
+function resetModalState() {
+    currentModalUrl = '';
+
+    const modalTitle = document.getElementById('modalTitle');
+    const modalDate = document.getElementById('modalDate');
+    const modalUploader = document.getElementById('modalUploader');
+    const modalDescription = document.getElementById('modalDescription');
+    const modalStatus = document.getElementById('modalStatus');
+    const modalDurationBadge = document.getElementById('modalDurationBadge');
+    const modalDownloadBtn = document.getElementById('modalDownloadBtn');
+    const modalIgLink = document.getElementById('modalIgLink');
+    const modalThumbnailImg = document.getElementById('modalThumbnailImg');
+    const modalThumbnailPlaceholder = document.getElementById('modalThumbnailPlaceholder');
+
+    if (modalTitle) modalTitle.innerText = 'Cargando...';
+    if (modalDate) modalDate.innerText = '';
+    if (modalUploader) {
+        modalUploader.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"></line></svg> @...`;
+    }
+    if (modalDescription) modalDescription.innerText = 'Cargando información del reel...';
+    if (modalStatus) {
+        modalStatus.className = 'badge-pill badge-user';
+        modalStatus.innerText = 'Cargando';
+    }
+    if (modalDurationBadge) {
+        modalDurationBadge.innerText = '';
+        modalDurationBadge.style.display = 'none';
+    }
+    if (modalDownloadBtn) modalDownloadBtn.href = '#';
+    if (modalIgLink) modalIgLink.href = '#';
+    if (modalThumbnailImg) {
+        modalThumbnailImg.src = '';
+        modalThumbnailImg.style.display = 'none';
+    }
+    if (modalThumbnailPlaceholder) modalThumbnailPlaceholder.style.display = 'flex';
+
+    // Reset sección Copy FB a estado inicial limpio
+    const badge = document.getElementById('fbSectionBadge');
+    const regenBtn = document.getElementById('fbRegenerateBtn');
+    const idleBox = document.getElementById('fbStateIdle');
+    const loadingBox = document.getElementById('fbStateLoading');
+    const completedBox = document.getElementById('fbStateCompleted');
+    const titleText = document.getElementById('fbTitleText');
+    const descText = document.getElementById('fbDescText');
+    const hashtagsText = document.getElementById('fbHashtagsText');
+
+    if (titleText) titleText.innerText = '';
+    if (descText) descText.innerText = '';
+    if (hashtagsText) hashtagsText.innerText = '';
+
+    if (badge) {
+        badge.className = 'badge-pill badge-user';
+        badge.style.background = '';
+        badge.style.color = '';
+        badge.style.borderColor = '';
+        badge.innerText = 'Sin generar';
+    }
+    if (regenBtn) regenBtn.style.display = 'none';
+    if (loadingBox) loadingBox.style.display = 'none';
+    if (completedBox) completedBox.style.display = 'none';
+    if (idleBox) idleBox.style.display = 'block';
+}
+
 async function openIgModal(id) {
+    activeStatusFetchId = id;
     currentModalId = id;
     const modal = document.getElementById('igModal');
     if (!modal) return;
 
-    try {
-        // Pre-poblar datos de la tarjeta inmediatamente para feedback instantáneo (0ms)
-        const card = document.getElementById(`history-item-${id}`);
-        if (card) {
+    // 1. Limpiar completamente el modal para evitar contaminar con tarjetas anteriores
+    resetModalState();
+
+    // 2. Pre-poblar datos de la tarjeta inmediatamente para feedback instantáneo (0ms)
+    const card = getCardElement(id);
+    if (card) {
+        try {
             const cardTitle = card.querySelector('h3')?.getAttribute('title') || card.querySelector('h3')?.innerText?.trim();
             const cardImg = card.querySelector('img');
             const cardDownloadLink = card.querySelector('a[href*="download"]')?.href;
             const cardReelLink = card.querySelector('a[href*="instagram.com"]')?.href;
+            const cardUploader = card.querySelector('.ig-badge, [style*="backdrop-filter"]')?.innerText?.trim();
 
             if (cardTitle) {
                 const titleEl = document.getElementById('modalTitle');
@@ -906,6 +979,12 @@ async function openIgModal(id) {
                 if (igLink) igLink.href = cardReelLink;
                 currentModalUrl = cardReelLink;
             }
+            if (cardUploader) {
+                const uploaderEl = document.getElementById('modalUploader');
+                if (uploaderEl) {
+                    uploaderEl.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"></line></svg> ${cardUploader}`;
+                }
+            }
             const img = document.getElementById('modalThumbnailImg');
             const ph = document.getElementById('modalThumbnailPlaceholder');
             if (img && ph && cardImg && cardImg.src && cardImg.style.display !== 'none') {
@@ -913,62 +992,86 @@ async function openIgModal(id) {
                 img.style.display = 'block';
                 ph.style.display = 'none';
             }
+        } catch (e) {
+            console.warn('Error pre-populating modal:', e);
         }
-    } catch (e) {
-        console.warn('Error pre-populating modal:', e);
     }
 
     modal.style.display = 'flex';
     setModalScrollLocked(true);
     lucide.createIcons();
 
+    // 3. Consultar datos oficiales y estado FB vía AJAX
     try {
         const res = await fetch(`/ig-downloader/status-ajax/${id}/`);
-        if (!res.ok) throw new Error();
+        if (!res.ok) throw new Error('Error al consultar estado en el servidor');
         const data = await res.json();
 
+        // Descartar si el usuario abrió otra tarjeta mientras esta petición estaba en vuelo
+        if (activeStatusFetchId !== id) return;
+
         currentModalUrl = data.instagram_url;
-        document.getElementById('modalTitle').innerText = data.title || 'Reel de Instagram';
-        document.getElementById('modalDate').innerText = data.created_at;
-        document.getElementById('modalUploader').innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"></line></svg> @${data.uploader}`;
-        document.getElementById('modalDescription').innerText = data.title || 'Sin descripción adicional disponible.';
-        document.getElementById('modalDownloadBtn').href = data.download_url;
-        document.getElementById('modalIgLink').href = data.instagram_url;
+        const titleEl = document.getElementById('modalTitle');
+        if (titleEl) titleEl.innerText = data.title || 'Reel de Instagram';
+
+        const dateEl = document.getElementById('modalDate');
+        if (dateEl) dateEl.innerText = data.created_at;
+
+        const uploaderEl = document.getElementById('modalUploader');
+        if (uploaderEl) {
+            uploaderEl.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"></line></svg> @${data.uploader || 'instagram'}`;
+        }
+
+        const descEl = document.getElementById('modalDescription');
+        if (descEl) descEl.innerText = data.title || 'Sin descripción adicional disponible.';
+
+        const dlBtn = document.getElementById('modalDownloadBtn');
+        if (dlBtn) dlBtn.href = data.download_url;
+
+        const igLink = document.getElementById('modalIgLink');
+        if (igLink) igLink.href = data.instagram_url;
 
         const img = document.getElementById('modalThumbnailImg');
         const ph = document.getElementById('modalThumbnailPlaceholder');
         if (data.thumbnail_url) {
-            img.src = data.thumbnail_url;
-            img.style.display = 'block';
-            ph.style.display = 'none';
+            if (img) {
+                img.src = data.thumbnail_url;
+                img.style.display = 'block';
+            }
+            if (ph) ph.style.display = 'none';
 
             // Actualizar miniatura en la tarjeta del grid si estaba vacía
-            if (card) {
-                const cardImg = card.querySelector('img');
+            const targetCard = getCardElement(id);
+            if (targetCard) {
+                const cardImg = targetCard.querySelector('img');
                 if (cardImg) {
                     cardImg.src = data.thumbnail_url;
                     cardImg.style.display = 'block';
                     if (cardImg.nextElementSibling) cardImg.nextElementSibling.style.display = 'none';
                 }
             }
-        } else if (!img.src) {
+        } else if (img && !img.src) {
             img.style.display = 'none';
-            ph.style.display = 'flex';
+            if (ph) ph.style.display = 'flex';
         }
 
         const durBadge = document.getElementById('modalDurationBadge');
-        if (data.duration_seconds) {
-            durBadge.innerText = Math.round(data.duration_seconds) + 's';
-            durBadge.style.display = 'block';
-        } else {
-            durBadge.style.display = 'none';
+        if (durBadge) {
+            if (data.duration_seconds) {
+                durBadge.innerText = Math.round(data.duration_seconds) + 's';
+                durBadge.style.display = 'block';
+            } else {
+                durBadge.style.display = 'none';
+            }
         }
 
-        // Actualizar sección de Copy para Facebook
+        // 4. Actualizar sección de Copy para Facebook
         updateFbSection(data);
         lucide.createIcons();
     } catch (e) {
-        showToast('No se pudo cargar la información completa del reel.', 'error');
+        if (activeStatusFetchId === id) {
+            showToast('No se pudo cargar la información completa del reel.', 'error');
+        }
     }
 }
 
@@ -976,6 +1079,9 @@ function closeIgModal() {
     const modal = document.getElementById('igModal');
     if (modal) modal.style.display = 'none';
     setModalScrollLocked(false);
+    activeStatusFetchId = null;
+    currentModalId = null;
+    resetModalState();
 }
 
 function copyModalUrl() {
@@ -1178,14 +1284,16 @@ async function triggerFacebookCopy(id, isRegenerate = false) {
                 b.innerHTML = `<i data-lucide="check-circle-2" style="width:12px; height:12px;"></i> <span>Ver Copy FB</span>`;
             });
 
-            // Actualizar datos en modal
-            updateFbSection({
-                fb_status: 'completed',
-                fb_title: data.title,
-                fb_description: data.description,
-                fb_hashtags: data.hashtags,
-                fb_hashtags_source: data.hashtags_source
-            });
+            // Actualizar datos en modal solo si el modal sigue mostrando este video
+            if (currentModalId === targetId) {
+                updateFbSection({
+                    fb_status: 'completed',
+                    fb_title: data.title,
+                    fb_description: data.description,
+                    fb_hashtags: data.hashtags,
+                    fb_hashtags_source: data.hashtags_source
+                });
+            }
 
             showToast(data.from_cache ? 'Copy recuperado de memoria' : '¡Copy para Facebook generado exitosamente!', 'success');
         } else {
@@ -1193,14 +1301,16 @@ async function triggerFacebookCopy(id, isRegenerate = false) {
         }
     } catch (err) {
         showToast(err.message || 'Error de conexión procesando el video.', 'error');
-        if (badge) {
-            badge.className = 'badge-pill';
-            badge.style.background = 'rgba(239, 68, 68, 0.15)';
-            badge.style.color = '#ef4444';
-            badge.innerText = 'Error al generar';
+        if (currentModalId === targetId) {
+            if (badge) {
+                badge.className = 'badge-pill';
+                badge.style.background = 'rgba(239, 68, 68, 0.15)';
+                badge.style.color = '#ef4444';
+                badge.innerText = 'Error al generar';
+            }
+            if (loadingBox) loadingBox.style.display = 'none';
+            if (idleBox) idleBox.style.display = 'block';
         }
-        if (loadingBox) loadingBox.style.display = 'none';
-        if (idleBox) idleBox.style.display = 'block';
 
         cardBtns.forEach(b => {
             b.disabled = false;

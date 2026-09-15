@@ -27,27 +27,14 @@ def index(request):
 
     my_history = InstagramDownload.objects.filter(user=request.user).order_by('-created_at')
 
-    # Auto-reparar miniaturas existentes en disco o extraerlas si faltan
-    for item in my_history[:5]:
+    # Auto-asociar miniaturas si ya existen en disco local sin llamadas externas bloqueantes
+    for item in my_history[:10]:
         expected_filename = f'thumb_{item.id}.jpg'
         full_disk_path = os.path.join(settings.MEDIA_ROOT, 'ig_thumbnails', expected_filename)
         if os.path.exists(full_disk_path):
             if not item.thumbnail or item.thumbnail.name != f'ig_thumbnails/{expected_filename}':
                 item.thumbnail = f'ig_thumbnails/{expected_filename}'
                 item.save(update_fields=['thumbnail'])
-        else:
-            try:
-                data = extract_instagram_data(item.instagram_url)
-                saved = ''
-                if data.get('thumbnail_url'):
-                    saved = save_thumbnail_image(data['thumbnail_url'], item.id)
-                if not saved and data.get('direct_video_url'):
-                    saved = extract_thumbnail_from_video(data['direct_video_url'], item.id)
-                if saved:
-                    item.thumbnail = saved
-                    item.save(update_fields=['thumbnail'])
-            except Exception:
-                pass
 
     all_history = InstagramDownload.objects.all().select_related('user').order_by('-created_at') if request.user.role == 'superadmin' else None
 
@@ -135,26 +122,29 @@ def process_ajax(request):
 def status_ajax(request, pk):
     item = get_object_or_404(InstagramDownload, pk=pk)
     if request.user.role != 'superadmin' and item.user != request.user:
-        raise PermissionDenied()
+        return JsonResponse({'error': 'No tenés permisos para ver este video.'}, status=403)
 
-    # Si no tiene miniatura o no existe el archivo en disco, intentar recuperarla
-    if not item.thumbnail or not (hasattr(item.thumbnail, 'path') and os.path.exists(item.thumbnail.path)):
+    # Si la miniatura no está asignada pero ya existe en disco local, asociarla
+    if not item.thumbnail:
+        expected_filename = f'thumb_{item.id}.jpg'
+        full_disk_path = os.path.join(settings.MEDIA_ROOT, 'ig_thumbnails', expected_filename)
+        if os.path.exists(full_disk_path):
+            item.thumbnail = f'ig_thumbnails/{expected_filename}'
+            item.save(update_fields=['thumbnail'])
+
+    thumb_url = ''
+    if item.thumbnail:
         try:
-            video_url = item.direct_video_url or get_or_refresh_direct_url(item)
-            if video_url:
-                recovered = extract_thumbnail_from_video(video_url, item.id)
-                if recovered:
-                    item.thumbnail = recovered
-                    item.save(update_fields=['thumbnail'])
+            thumb_url = item.thumbnail.url
         except Exception:
-            pass
+            thumb_url = ''
 
     return JsonResponse({
         'id': item.id,
         'title': item.title or 'Reel de Instagram',
         'uploader': item.uploader or 'instagram',
         'instagram_url': item.instagram_url,
-        'thumbnail_url': item.thumbnail.url if item.thumbnail else '',
+        'thumbnail_url': thumb_url,
         'duration_seconds': item.duration_seconds,
         'status': item.status,
         'status_display': item.get_status_display(),
