@@ -69,14 +69,6 @@
                 Genera identidades completas para Fanpages con IA, prompts de perfil 1:1 y portadas 16:5 con motor anti-repetición.
             </p>
         </div>
-        {% if user.role == 'superadmin' or user.can_manage_api_keys %}
-        <div>
-            <a href="{% url 'videoprompt:api_keys' %}" class="btn-ghost" style="font-size:0.8rem;">
-                <i data-lucide="key" style="width:14px; height:14px; color:#a855f7;"></i>
-                Configurar Claves IA
-            </a>
-        </div>
-        {% endif %}
     </div>
 
     <!-- ═════════ 1. TARJETA DE GENERACIÓN CON IA ═════════ -->
@@ -530,11 +522,9 @@ document.getElementById('fanpageGenForm').addEventListener('submit', async funct
             if (isKeyError) {
                 showCustomAlert({
                     title: 'Configuración de IA Requerida',
-                    message: rawError + '<br><br><span style="color:var(--text-muted); font-size:0.8rem;">Podés configurar tu proveedor de IA (Google Gemini Directo u OpenRouter) directamente desde el Centro de Claves de IA.</span>',
+                    message: rawError + '<br><br><span style="color:var(--text-muted); font-size:0.8rem;">Verificá la configuración de la clave en el archivo .env del servidor.</span>',
                     type: 'warning',
                     icon: 'key-round',
-                    actionText: '<i data-lucide="key" style="width:14px; height:14px; margin-right:4px;"></i> Configurar Claves IA',
-                    actionUrl: "{% url 'videoprompt:api_keys' %}",
                     cancelText: 'Cerrar'
                 });
             } else {

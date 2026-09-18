@@ -189,6 +189,8 @@ STORAGES = {
         "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
     },
 }
+WHITENOISE_MANIFEST_STRICT = False
+
 
 
 # Email
@@ -226,4 +228,13 @@ CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = TIME_ZONE
 CELERY_TASK_TRACK_STARTED = True
 CELERY_TASK_TIME_LIMIT = 30 * 60
+
+# CLI Proxy API Configuration (Google Gemini Proxy)
+CLI_PROXY_URL = os.getenv('CLI_PROXY_URL', 'https://cli.serverdok.site')
+CLI_SECRET_KEY = os.getenv('CLI_SECRET_KEY', '')
+CLI_PROXY_MODEL = os.getenv('CLI_PROXY_MODEL', 'gemini-3.7-flash-high')
+
+# Instagram / Facebook Session Cookies Path
+INSTAGRAM_COOKIE_FILE = os.getenv('INSTAGRAM_COOKIE_FILE', str(BASE_DIR / 'cookies.txt'))
+
 

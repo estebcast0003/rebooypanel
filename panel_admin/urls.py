@@ -10,4 +10,8 @@ urlpatterns = [
     path('usuarios/<int:pk>/revocar-sesiones/', views.user_revoke_sessions_view, name='user_revoke_sessions'),
     path('usuarios/<int:pk>/cuota/', views.user_update_quota_ajax, name='user_update_quota'),
     path('usuarios/<int:pk>/eliminar/', views.user_delete_view, name='user_delete'),
+    
+    # Gestión de Cookies
+    path('cookies/', views.cookies_management_view, name='cookies_management'),
+    path('cookies/test-ajax/', views.test_cookies_ajax, name='test_cookies_ajax'),
 ]

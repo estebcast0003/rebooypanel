@@ -118,42 +118,35 @@ def _generate_with_gemini(config: OpenRouterConfig, prompt: str) -> tuple:
     # 1. Clave dedicada configurada en Fanpages
     if config and config.gemini_api_key and config.gemini_api_key.strip():
         api_key = config.gemini_api_key.strip()
-    elif config is None or config.use_gemini_pool:
-        # 2. Pool de Gemini de Video Studio
+        client = genai.Client(api_key=api_key)
+    else:
+        # 2. Proxy CLI centralizado o fallback de entorno
+        from core.services.cli_proxy import get_cli_proxy_client
         try:
-            from videoprompt.services.gemini_client import get_next_available_key
-            key_record = get_next_available_key()
-            if key_record:
-                api_key = key_record.api_key.strip()
+            client = get_cli_proxy_client()
         except Exception:
-            pass
+            env_key = getattr(settings, 'GEMINI_API_KEY', None) or os.getenv("GEMINI_API_KEY")
+            if env_key and env_key != "YOUR_GEMINI_API_KEY_HERE":
+                client = genai.Client(api_key=env_key)
+            else:
+                raise ValueError(
+                    "No hay ninguna clave de IA configurada para Fanpages. Asegurate de tener configurada CLI_SECRET_KEY en el .env."
+                )
 
-    # 3. Fallback a variable de entorno
-    if not api_key:
-        env_key = os.getenv("GEMINI_API_KEY") or getattr(settings, 'GEMINI_API_KEY', None)
-        if env_key and env_key.strip() and env_key != "YOUR_GEMINI_API_KEY_HERE":
-            api_key = env_key.strip()
-
-    if not api_key:
-        raise ValueError(
-            "No hay ninguna clave de Gemini disponible para Fanpages. Podés ingresar una clave de Google AI Studio "
-            "en 'Configuración de IA para Fanpages' o asegurarte de tener claves activas en el 'Pool de Gemini'."
-        )
-
-    model_name = (config.gemini_model.strip() if config and config.gemini_model else "gemini-3.6-flash")
+    model_name = (config.gemini_model.strip() if config and config.gemini_model else "gemini-3.7-flash-high")
     # Auto-upgrade modelos deprecados por Google para evitar error 404
     DEPRECATED_MODELS = {
-        "gemini-1.5-pro": "gemini-3.6-flash",
-        "gemini-1.5-flash": "gemini-3.6-flash",
-        "gemini-2.5-flash": "gemini-3.6-flash",
-        "gemini-2.5-pro": "gemini-3.6-flash",
-        "gemini-2.5-flash-lite": "gemini-3.1-flash-lite",
-        "gemini-2.0-flash": "gemini-3.6-flash",
+        "gemini-1.5-pro": "gemini-3.7-flash-high",
+        "gemini-1.5-flash": "gemini-3.7-flash-high",
+        "gemini-2.5-flash": "gemini-3.7-flash-high",
+        "gemini-2.5-pro": "gemini-3.7-flash-high",
+        "gemini-2.5-flash-lite": "gemini-3.7-flash-high",
+        "gemini-2.0-flash": "gemini-3.7-flash-high",
+        "gemini-3.6-flash": "gemini-3.7-flash-high",
     }
     model_name = DEPRECATED_MODELS.get(model_name, model_name)
 
     try:
-        client = genai.Client(api_key=api_key)
         response = client.models.generate_content(
             model=model_name,
             contents=prompt,
@@ -167,7 +160,7 @@ def _generate_with_gemini(config: OpenRouterConfig, prompt: str) -> tuple:
         if not raw_text:
             raise ValueError("Google Gemini devolvió una respuesta vacía.")
         fanpage_data = json.loads(raw_text)
-        return fanpage_data, f"Gemini Directo ({model_name})"
+        return fanpage_data, f"Gemini Proxy ({model_name})"
     except APIError as api_err:
         raise ValueError(f"Error en Google Gemini API ({api_err.code or 'Error'}): {api_err.message}") from api_err
     except json.JSONDecodeError as json_err:

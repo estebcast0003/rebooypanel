@@ -55,20 +55,3 @@ class VideoPrompt(models.Model):
         owner = self.user.username if self.user else 'Anónimo'
         return f"Prompt #{self.id} ({owner}) - {self.get_status_display()} ({self.created_at.strftime('%Y-%m-%d %H:%M')})"
 
-
-class GeminiAPIKey(models.Model):
-    api_key = models.CharField(max_length=255, unique=True, help_text="API Key de Google AI Studio")
-    is_active = models.BooleanField(default=True, help_text="Activar/Desactivar esta clave manualmente")
-    last_used_at = models.DateTimeField(blank=True, null=True, editable=False)
-    error_count = models.IntegerField(default=0, editable=False)
-    status_message = models.CharField(max_length=255, default='Activa', help_text="Estado reportado por el rotador")
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        ordering = ['-created_at']
-        verbose_name = 'Gemini API Key'
-        verbose_name_plural = 'Gemini API Keys'
-
-    def __str__(self):
-        masked = f"...{self.api_key[-6:]}" if len(self.api_key) > 6 else "Clave Corta"
-        return f"Clave {masked} - {'Activa' if self.is_active else 'Inactiva'} ({self.status_message})"

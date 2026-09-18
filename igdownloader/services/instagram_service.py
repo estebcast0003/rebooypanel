@@ -14,19 +14,45 @@ def clean_instagram_url(url: str) -> str:
         return match.group(1).rstrip('/') + '/'
     return url.split('?')[0]
 
-def extract_instagram_data(url: str) -> dict:
-    clean_url = clean_instagram_url(url)
-    
-    ydl_opts = {
+def get_instagram_ydl_opts(extra_opts=None) -> dict:
+    opts = {
         'quiet': True,
         'no_warnings': True,
-        'skip_download': True,
         'format': 'mp4/best',
         'http_headers': {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
             'Referer': 'https://www.instagram.com/',
         }
     }
+    
+    # Soporte para archivo de cookies de Instagram
+    cookie_path = getattr(settings, 'INSTAGRAM_COOKIE_FILE', None) or os.getenv('INSTAGRAM_COOKIE_FILE')
+    if not cookie_path or not os.path.exists(cookie_path):
+        default_cookie_path = os.path.join(settings.BASE_DIR, 'cookies.txt')
+        if os.path.exists(default_cookie_path):
+            cookie_path = default_cookie_path
+        else:
+            ig_cookie_path = os.path.join(settings.BASE_DIR, 'cookies_instagram.txt')
+            if os.path.exists(ig_cookie_path):
+                cookie_path = ig_cookie_path
+                
+    if cookie_path and os.path.exists(cookie_path):
+        opts['cookiefile'] = str(cookie_path)
+        
+    # Soporte para proxy (si no es el placeholder de ejemplo)
+    proxy_url = getattr(settings, 'INSTAGRAM_PROXY_URL', None) or getattr(settings, 'EXTRACTOR_PROXY_URL', None)
+    if proxy_url and 'proxy_user:proxy_pass' not in proxy_url:
+        opts['proxy'] = proxy_url
+
+    if extra_opts:
+        opts.update(extra_opts)
+    return opts
+
+
+def extract_instagram_data(url: str) -> dict:
+    clean_url = clean_instagram_url(url)
+    
+    ydl_opts = get_instagram_ydl_opts({'skip_download': True})
     
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(clean_url, download=False)

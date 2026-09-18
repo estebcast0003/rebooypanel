@@ -142,7 +142,12 @@
             font-size: 0.875rem !important;
             transition: all 0.18s ease !important;
         }
-        .shadcn-input:focus, .glass-input:focus {
+        textarea.shadcn-input, textarea.glass-input, .shadcn-textarea {
+            border-radius: 10px !important;
+            padding: 12px 16px !important;
+            line-height: 1.5 !important;
+        }
+        .shadcn-input:focus, .glass-input:focus, .shadcn-textarea:focus {
             outline: none !important;
             border-color: var(--primary-brand) !important;
             box-shadow: 0 0 0 3px var(--primary-brand-soft) !important;
@@ -813,12 +818,10 @@
                 <i data-lucide="shield-check" style="color:#60a5fa;"></i>
                 Sesiones Activas
             </a>
-            {% endif %}
-            {% if user.role == 'superadmin' or user.can_manage_api_keys %}
-            <a href="{% url 'videoprompt:api_keys' %}"
-               class="nav-link {% if '/video-prompt/api-keys/' in request.path %}active{% endif %}">
-                <i data-lucide="key"></i>
-                Claves de IA
+            <a href="{% url 'cookies_management' %}"
+               class="nav-link {% if '/panel/cookies/' in request.path %}active{% endif %}">
+                <i data-lucide="cookie" style="color:#f59e0b;"></i>
+                Gestión de Cookies
             </a>
             {% endif %}
             {% endif %}

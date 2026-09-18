@@ -165,14 +165,6 @@
                 Analiza videos con Gemini IA y genera prompts cinematográficos escena por escena.
             </p>
         </div>
-        {% if user.role == 'superadmin' or user.can_manage_api_keys %}
-        <div>
-            <a href="{% url 'videoprompt:api_keys' %}" class="btn-ghost" style="font-size:0.8rem;">
-                <i data-lucide="key" style="width:14px; height:14px; color:#ef4444;"></i>
-                Pool de Claves IA
-            </a>
-        </div>
-        {% endif %}
     </div>
 
     <!-- ═════════ 1. TARJETA DE CREACIÓN DE PROMPT ═════════ -->
@@ -688,8 +680,6 @@
 <script>
 let currentRawMarkdown = '';
 let promptIdToDelete = null;
-const canManageKeys = {% if user.role == 'superadmin' or user.is_superuser or user.can_manage_api_keys %}true{% else %}false{% endif %};
-const apiKeysUrl = "{% url 'videoprompt:api_keys' %}";
 
 function switchTab(type) {
     const isUpload = type === 'upload';

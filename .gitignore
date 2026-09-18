@@ -15,6 +15,11 @@ db.sqlite3
 .env
 .env.*
 !.env.example
+cookies.txt
+cookies_*.txt
+*.cookie
+tests/
+
 
 # IDE & Editor
 .vscode/
