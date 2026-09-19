@@ -735,15 +735,13 @@ document.getElementById('videoPromptForm').addEventListener('submit', async func
         } else {
             resetForm();
             const errMsg = data.message || 'Error al iniciar el análisis.';
-            const isTrulyNoKey = errMsg.includes('No hay claves de API activas en la base de datos') || errMsg.includes('GEMINI_API_KEY no configurada');
+            const isTrulyNoKey = errMsg.includes('CLI_SECRET_KEY no está configurada') || errMsg.includes('Clave de API no configurada');
             if (isTrulyNoKey) {
                 showCustomAlert({
                     title: 'Clave de API no configurada',
-                    message: errMsg,
+                    message: errMsg + '<br><br><span style="color:var(--text-muted); font-size:0.8rem;">Asegurate de configurar <code>CLI_SECRET_KEY</code> en las variables de entorno del servidor.</span>',
                     type: 'warning',
                     icon: 'key-round',
-                    actionText: canManageKeys ? '<i data-lucide="key" style="width:14px; height:14px; margin-right:4px;"></i> Gestionar Claves IA' : null,
-                    actionUrl: canManageKeys ? apiKeysUrl : null,
                     cancelText: 'Cerrar'
                 });
             } else {
@@ -851,17 +849,15 @@ function startPolling(promptId) {
                     resetForm();
                     const rawError = data.error_message || 'Error desconocido al procesar el video.';
                     const lowerErr = rawError.toLowerCase();
-                    const isTrulyNoKey = rawError.includes('No hay claves de API activas en la base de datos') ||
-                                         rawError.includes('GEMINI_API_KEY no configurada');
+                    const isTrulyNoKey = rawError.includes('CLI_SECRET_KEY no está configurada') ||
+                                         rawError.includes('No hay ninguna clave de IA');
 
                     if (isTrulyNoKey) {
                         showCustomAlert({
                             title: 'Clave de API no configurada',
-                            message: 'No hay claves de Gemini activas en la base de datos ni en las variables de entorno.<br><br><span style="color:var(--text-muted); font-size:0.8rem;">Para que la IA de Gemini analice videos, ingresá una clave en el pool o configurá <code>GEMINI_API_KEY</code>.</span>',
+                            message: 'No está configurada la clave del Proxy CLI en las variables de entorno.<br><br><span style="color:var(--text-muted); font-size:0.8rem;">Asegurate de configurar <code>CLI_SECRET_KEY</code> en las variables de entorno de Dokploy.</span>',
                             type: 'warning',
                             icon: 'key-round',
-                            actionText: canManageKeys ? '<i data-lucide="key" style="width:14px; height:14px; margin-right:4px;"></i> Gestionar Claves IA' : null,
-                            actionUrl: canManageKeys ? apiKeysUrl : null,
                             cancelText: 'Cerrar'
                         });
                     } else if (rawError.includes('503') || lowerErr.includes('alta demanda') || lowerErr.includes('high demand') || lowerErr.includes('sobrecarga') || lowerErr.includes('cuota') || rawError.includes('429') || lowerErr.includes('resourceexhausted') || lowerErr.includes('unavailable')) {

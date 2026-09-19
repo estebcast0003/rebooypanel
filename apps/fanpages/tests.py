@@ -1,3 +1,4 @@
+from unittest.mock import patch, MagicMock
 from django.test import TestCase, Client
 from django.urls import reverse
 from accounts.models import CustomUser
@@ -72,3 +73,30 @@ class FanpageStudioViewsTests(TestCase):
         self.client.login(username="denied_fanpage_user", password="password123")
         response = self.client.get(reverse("fanpages:studio"))
         self.assertEqual(response.status_code, 403)
+
+
+class FanpagesAIServiceTests(TestCase):
+    """
+    Unit tests ensuring Fanpages generation uses the centralized CLI proxy.
+    """
+
+    @patch("fanpages.services.get_cli_proxy_model", return_value="gemini-3.7-flash-high")
+    @patch("fanpages.services.get_cli_proxy_client")
+    def test_generate_with_gemini_uses_cli_proxy(self, mock_get_client, mock_get_model):
+        from fanpages.services import _generate_with_gemini
+
+        mock_client = MagicMock()
+        mock_resp = MagicMock()
+        mock_resp.text = (
+            '{"nombre": "Cine Test", "descripcion": "Desc", '
+            '"prompt_foto_perfil": "prompt 1", "prompt_foto_portada": "prompt 2", '
+            '"estilo_visual": "Cyberpunk", "subtema": "SciFi"}'
+        )
+        mock_client.models.generate_content.return_value = mock_resp
+        mock_get_client.return_value = mock_client
+
+        data, model_str = _generate_with_gemini(None, "test prompt")
+        self.assertEqual(data["nombre"], "Cine Test")
+        self.assertIn("CLI Proxy", model_str)
+        mock_get_client.assert_called_once()
+        mock_client.models.generate_content.assert_called_once()

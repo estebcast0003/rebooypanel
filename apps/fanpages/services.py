@@ -12,6 +12,7 @@ from google import genai
 from google.genai import types
 from google.genai.errors import APIError
 from pydantic import BaseModel
+from core.services.cli_proxy import get_cli_proxy_client, get_cli_proxy_model
 from .models import FanpageProfile, OpenRouterConfig
 
 OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions"
@@ -110,41 +111,11 @@ def _build_prompt(custom_subtema: str = None, custom_estilo: str = None) -> str:
 
 def _generate_with_gemini(config: OpenRouterConfig, prompt: str) -> tuple:
     """
-    Ejecuta la inferencia directamente contra Google Gemini API utilizando google-genai SDK.
-    Prioriza clave dedicada de Fanpages, luego rotador del Pool de Gemini, luego variable de entorno.
+    Ejecuta la inferencia contra el proxy CLI unificado (Google Gemini) utilizando
+    el SDK google-genai y el endpoint centralizado de la API CLI.
     """
-    api_key = None
-
-    # 1. Clave dedicada configurada en Fanpages
-    if config and config.gemini_api_key and config.gemini_api_key.strip():
-        api_key = config.gemini_api_key.strip()
-        client = genai.Client(api_key=api_key)
-    else:
-        # 2. Proxy CLI centralizado o fallback de entorno
-        from core.services.cli_proxy import get_cli_proxy_client
-        try:
-            client = get_cli_proxy_client()
-        except Exception:
-            env_key = getattr(settings, 'GEMINI_API_KEY', None) or os.getenv("GEMINI_API_KEY")
-            if env_key and env_key != "YOUR_GEMINI_API_KEY_HERE":
-                client = genai.Client(api_key=env_key)
-            else:
-                raise ValueError(
-                    "No hay ninguna clave de IA configurada para Fanpages. Asegurate de tener configurada CLI_SECRET_KEY en el .env."
-                )
-
-    model_name = (config.gemini_model.strip() if config and config.gemini_model else "gemini-3.7-flash-high")
-    # Auto-upgrade modelos deprecados por Google para evitar error 404
-    DEPRECATED_MODELS = {
-        "gemini-1.5-pro": "gemini-3.7-flash-high",
-        "gemini-1.5-flash": "gemini-3.7-flash-high",
-        "gemini-2.5-flash": "gemini-3.7-flash-high",
-        "gemini-2.5-pro": "gemini-3.7-flash-high",
-        "gemini-2.5-flash-lite": "gemini-3.7-flash-high",
-        "gemini-2.0-flash": "gemini-3.7-flash-high",
-        "gemini-3.6-flash": "gemini-3.7-flash-high",
-    }
-    model_name = DEPRECATED_MODELS.get(model_name, model_name)
+    client = get_cli_proxy_client()
+    model_name = get_cli_proxy_model()
 
     try:
         response = client.models.generate_content(
@@ -158,15 +129,15 @@ def _generate_with_gemini(config: OpenRouterConfig, prompt: str) -> tuple:
         )
         raw_text = response.text
         if not raw_text:
-            raise ValueError("Google Gemini devolvió una respuesta vacía.")
+            raise ValueError("El proxy CLI devolvió una respuesta vacía.")
         fanpage_data = json.loads(raw_text)
-        return fanpage_data, f"Gemini Proxy ({model_name})"
+        return fanpage_data, f"CLI Proxy ({model_name})"
     except APIError as api_err:
-        raise ValueError(f"Error en Google Gemini API ({api_err.code or 'Error'}): {api_err.message}") from api_err
+        raise ValueError(f"Error en CLI Proxy API ({api_err.code or 'Error'}): {api_err.message}") from api_err
     except json.JSONDecodeError as json_err:
-        raise ValueError("Google Gemini no generó un JSON válido.") from json_err
+        raise ValueError("El proxy CLI no generó un JSON válido.") from json_err
     except Exception as exc:
-        raise ValueError(f"Fallo al invocar Google Gemini: {str(exc)}") from exc
+        raise ValueError(f"Fallo al invocar CLI Proxy: {str(exc)}") from exc
 
 
 def _generate_with_openrouter(config: OpenRouterConfig, prompt: str) -> tuple:
