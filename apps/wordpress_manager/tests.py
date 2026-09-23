@@ -1,3 +1,5 @@
+import os
+import tempfile
 from unittest.mock import patch, MagicMock
 import requests
 from django.test import TestCase, Client
@@ -10,7 +12,11 @@ from wordpress_manager.forms import WordPressSiteForm
 from wordpress_manager.services.wordpress_service import (
     clean_instagram_url,
     build_instagram_embed_html,
+    clean_slug_for_wordpress,
+    append_utm_parameters,
+    build_html5_video_player_html,
     build_wordpress_article_html,
+    upload_featured_media_to_wordpress,
     publish_article_to_wordpress,
 )
 
@@ -777,4 +783,256 @@ class WordPressServiceTests(TestCase):
         self.site2.refresh_from_db()
         self.assertEqual(self.site1.last_status, WordPressSite.STATUS_ERROR)
         self.assertEqual(self.site2.last_status, WordPressSite.STATUS_ERROR)
+
+    def test_clean_slug_for_wordpress(self):
+        # Strips emojis and generates clean ASCII slug
+        title_with_emojis = "¡Aprende este tip increíble 🔥🚀! 100% real #1"
+        self.assertEqual(
+            clean_slug_for_wordpress(title_with_emojis),
+            "aprende-este-tip-increible-100-real-1"
+        )
+
+        # Title with only emojis returns empty string
+        self.assertEqual(clean_slug_for_wordpress("🔥🚀✨💰"), "")
+
+        # Title with Spanish characters and special punctuation
+        title_spanish = "¿Cómo ganar dinero en 2026? 💰✨ ¡Secreto revelado!"
+        self.assertEqual(
+            clean_slug_for_wordpress(title_spanish),
+            "como-ganar-dinero-en-2026-secreto-revelado"
+        )
+
+        # Title with accents and ñ
+        self.assertEqual(
+            clean_slug_for_wordpress("Café con leche y ñoquis"),
+            "cafe-con-leche-y-noquis"
+        )
+
+        # Empty and None values
+        self.assertEqual(clean_slug_for_wordpress(""), "")
+        self.assertEqual(clean_slug_for_wordpress(None), "")
+        self.assertEqual(clean_slug_for_wordpress("   "), "")
+
+    def test_append_utm_parameters(self):
+        base_url = "https://sitiouno.com/mi-articulo/"
+
+        # Appends with '?' when no query parameters exist
+        attributed_url = append_utm_parameters(base_url, username="editor_fb")
+        self.assertEqual(
+            attributed_url,
+            "https://sitiouno.com/mi-articulo/?utm_source=facebook&utm_medium=social&utm_campaign=editor_fb&utm_content=comment"
+        )
+
+        # Appends with '&' when query parameters already exist
+        query_url = "https://sitiouno.com/?p=456"
+        attributed_query_url = append_utm_parameters(query_url, username="admin_social")
+        self.assertEqual(
+            attributed_query_url,
+            "https://sitiouno.com/?p=456&utm_source=facebook&utm_medium=social&utm_campaign=admin_social&utm_content=comment"
+        )
+
+        # If username is None or whitespace, returns unchanged URL
+        self.assertEqual(append_utm_parameters(base_url, username=None), base_url)
+        self.assertEqual(append_utm_parameters(base_url, username=""), base_url)
+        self.assertEqual(append_utm_parameters(base_url, username="   "), base_url)
+
+        # If post_url is None or empty, returns post_url
+        self.assertIsNone(append_utm_parameters(None, username="editor_fb"))
+        self.assertEqual(append_utm_parameters("", username="editor_fb"), "")
+
+    def test_build_html5_video_player_html(self):
+        video_url = "https://instagram.fcor1.fna.fbcdn.net/video.mp4"
+        poster_url = "https://sitiouno.com/wp-content/uploads/portada.jpg"
+
+        player_html = build_html5_video_player_html(direct_video_url=video_url, poster_url=poster_url)
+
+        # Structure and required attributes
+        self.assertIn('style="text-align: center; margin: 24px auto; max-width: 600px; width: 100%;"', player_html)
+        self.assertIn('controls=""', player_html)
+        self.assertIn('playsinline=""', player_html)
+        self.assertIn('autoplay=""', player_html)
+        self.assertIn('muted=""', player_html)
+        self.assertIn('preload="metadata"', player_html)
+        self.assertIn(f'poster="{poster_url}"', player_html)
+        self.assertIn('class="w-full max-h-[600px] mx-auto bg-black"', player_html)
+        self.assertIn(f'<source src="{video_url}" type="video/mp4">', player_html)
+        self.assertIn('Tu navegador no soporta la reproducción de video HTML5.', player_html)
+
+        # Without poster URL produces empty poster attribute
+        player_without_poster = build_html5_video_player_html(video_url=video_url, poster_url=None)
+        self.assertIn('poster=""', player_without_poster)
+
+        # Empty video URL returns empty string
+        self.assertEqual(build_html5_video_player_html(""), "")
+        self.assertEqual(build_html5_video_player_html(None), "")
+
+    def test_build_wordpress_article_html_with_direct_video(self):
+        direct_url = "https://instagram.cdn/reel.mp4"
+        poster_url = "https://sitiouno.com/media/poster.jpg"
+        ig_url = "https://www.instagram.com/reel/C8qL_yGsq6n/"
+
+        # 1. Places HTML5 player after the first paragraph </p>
+        article = "<p>Párrafo inicial del artículo.</p><p>Párrafo final de cierre.</p>"
+        result = build_wordpress_article_html(
+            article,
+            instagram_url=ig_url,
+            direct_video_url=direct_url,
+            poster_url=poster_url,
+        )
+
+        first_p = "<p>Párrafo inicial del artículo.</p>"
+        second_p = "<p>Párrafo final de cierre.</p>"
+        self.assertTrue(result.startswith(first_p))
+        self.assertTrue(result.endswith(second_p))
+        self.assertIn('<video controls=""', result)
+        self.assertIn(f'poster="{poster_url}"', result)
+        self.assertIn(f'<source src="{direct_url}" type="video/mp4">', result)
+        # Direct video takes precedence over Instagram embed
+        self.assertNotIn("wp-block-embed-instagram", result)
+
+        # 2. Places HTML5 player at the top when no </p> tag exists
+        article_no_p = "<div>Contenido sin etiquetas de párrafo</div>"
+        result_no_p = build_wordpress_article_html(
+            article_no_p,
+            direct_video_url=direct_url,
+            poster_url=poster_url,
+        )
+        self.assertTrue(result_no_p.startswith('<div style="text-align: center;'))
+        self.assertIn(article_no_p, result_no_p)
+
+    @patch("wordpress_manager.services.wordpress_service.requests.post")
+    def test_upload_featured_media_to_wordpress_success(self, mock_post):
+        mock_response = MagicMock()
+        mock_response.status_code = 201
+        mock_response.json.return_value = {
+            "id": 88,
+            "source_url": "https://sitiouno.com/wp-content/uploads/portada_test.jpg",
+        }
+        mock_post.return_value = mock_response
+
+        with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as f:
+            f.write(b"\xff\xd8\xff\xe0" + b"\x00" * 50)  # fake jpeg header + bytes
+            temp_thumb_path = f.name
+
+        try:
+            media_id, source_url = upload_featured_media_to_wordpress(
+                self.site1,
+                thumbnail_path=temp_thumb_path,
+                title="Título de la imagen"
+            )
+
+            self.assertEqual(media_id, 88)
+            self.assertEqual(source_url, "https://sitiouno.com/wp-content/uploads/portada_test.jpg")
+
+            mock_post.assert_called_once()
+            call_args, call_kwargs = mock_post.call_args
+            self.assertEqual(call_args[0], "https://sitiouno.com/wp-json/wp/v2/media")
+            self.assertEqual(call_kwargs['auth'], ("admin1", "aaaabbbbccccdddd"))
+            self.assertEqual(call_kwargs['headers']['Content-Type'], "image/jpeg")
+            self.assertIn(os.path.basename(temp_thumb_path), call_kwargs['headers']['Content-Disposition'])
+            self.assertEqual(call_kwargs['timeout'], 20)
+        finally:
+            if os.path.exists(temp_thumb_path):
+                os.remove(temp_thumb_path)
+
+    def test_upload_featured_media_to_wordpress_file_not_found(self):
+        # Non-existent file path
+        media_id, source_url = upload_featured_media_to_wordpress(
+            self.site1,
+            thumbnail_path="/ruta/inexistente/no_existe.jpg"
+        )
+        self.assertIsNone(media_id)
+        self.assertIsNone(source_url)
+
+        # Empty / None path
+        self.assertEqual(upload_featured_media_to_wordpress(self.site1, ""), (None, None))
+        self.assertEqual(upload_featured_media_to_wordpress(self.site1, None), (None, None))
+
+    @patch("wordpress_manager.services.wordpress_service.requests.post")
+    def test_upload_featured_media_to_wordpress_errors(self, mock_post):
+        with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as f:
+            f.write(b"fake jpeg data")
+            temp_path = f.name
+
+        try:
+            # HTTP 500 error
+            mock_post.return_value = MagicMock(status_code=500, text="Internal Server Error")
+            media_id, source_url = upload_featured_media_to_wordpress(self.site1, temp_path)
+            self.assertIsNone(media_id)
+            self.assertIsNone(source_url)
+
+            # RequestException
+            mock_post.side_effect = requests.exceptions.RequestException("Upload connection error")
+            media_id, source_url = upload_featured_media_to_wordpress(self.site1, temp_path)
+            self.assertIsNone(media_id)
+            self.assertIsNone(source_url)
+        finally:
+            if os.path.exists(temp_path):
+                os.remove(temp_path)
+
+    @patch("wordpress_manager.services.wordpress_service.requests.post")
+    def test_publish_article_to_wordpress_with_thumbnail_video_and_utm(self, mock_post):
+        # Setup: deactivate site2 so site1 is deterministic
+        self.site2.is_active = False
+        self.site2.save()
+
+        # 1st call: upload media (201)
+        media_response = MagicMock()
+        media_response.status_code = 201
+        media_response.json.return_value = {
+            "id": 150,
+            "source_url": "https://sitiouno.com/wp-content/uploads/portada_thumb.jpg",
+        }
+
+        # 2nd call: publish post (201)
+        post_response = MagicMock()
+        post_response.status_code = 201
+        post_response.json.return_value = {
+            "id": 500,
+            "link": "https://sitiouno.com/top-5-secretos-revelados/",
+            "status": "publish",
+        }
+
+        mock_post.side_effect = [media_response, post_response]
+
+        with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as f:
+            f.write(b"\xff\xd8\xff\xe0" + b"\x00" * 20)
+            temp_thumb = f.name
+
+        try:
+            result = publish_article_to_wordpress(
+                title="¡Top 5 Secretos Revelados 🔥🚀!",
+                content_html="<p>Introducción.</p><p>Cuerpo del artículo.</p>",
+                thumbnail_path=temp_thumb,
+                direct_video_url="https://video.cdn.com/reel123.mp4",
+                username="social_creator",
+            )
+
+            self.assertTrue(result['success'])
+            self.assertEqual(result['post_id'], 500)
+            # Verifies UTM parameters appended to returned post_url
+            self.assertEqual(
+                result['post_url'],
+                "https://sitiouno.com/top-5-secretos-revelados/?utm_source=facebook&utm_medium=social&utm_campaign=social_creator&utm_content=comment"
+            )
+
+            # Assert 2 POST calls made: 1 media, 1 post
+            self.assertEqual(mock_post.call_count, 2)
+
+            # Inspect post creation payload (call 2)
+            post_call_kwargs = mock_post.call_args_list[1][1]
+            payload = post_call_kwargs['json']
+
+            # Clean slug without emojis
+            self.assertEqual(payload['slug'], "top-5-secretos-revelados")
+            # Featured media ID assigned
+            self.assertEqual(payload['featured_media'], 150)
+            # HTML5 video player injected with poster and video URL
+            self.assertIn('<video controls=""', payload['content'])
+            self.assertIn('poster="https://sitiouno.com/wp-content/uploads/portada_thumb.jpg"', payload['content'])
+            self.assertIn('<source src="https://video.cdn.com/reel123.mp4" type="video/mp4">', payload['content'])
+        finally:
+            if os.path.exists(temp_thumb):
+                os.remove(temp_thumb)
+
 

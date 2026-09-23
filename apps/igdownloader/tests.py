@@ -5,7 +5,10 @@ from django.test import TestCase, Client
 from django.urls import reverse
 from accounts.models import CustomUser
 from igdownloader.models import InstagramDownload
-from igdownloader.services.facebook_copy_service import analyze_video_for_facebook
+from igdownloader.services.facebook_copy_service import (
+    analyze_video_for_facebook,
+    FacebookPostCopy,
+)
 from wordpress_manager.models import WordPressSite
 
 
@@ -64,7 +67,8 @@ class FacebookCopyServiceTests(TestCase):
             user=self.user,
             instagram_url="https://www.instagram.com/reel/C8qL_yGsq6n/",
             original_hashtags="#viral #reels",
-            original_caption="Awesome reel video"
+            original_caption="Awesome reel video",
+            direct_video_url="https://video.example.com/direct.mp4",
         )
         self.wp_site = WordPressSite.objects.create(
             name="Sitio Tech",
@@ -74,6 +78,7 @@ class FacebookCopyServiceTests(TestCase):
             is_active=True
         )
 
+    @patch("igdownloader.services.facebook_copy_service.get_or_refresh_direct_url", return_value="https://video.example.com/direct.mp4")
     @patch("igdownloader.services.facebook_copy_service.download_temp_video", return_value="mock_temp.mp4")
     @patch("igdownloader.services.facebook_copy_service.create_video_part_from_file")
     @patch("igdownloader.services.facebook_copy_service.get_cli_proxy_model", return_value="gemini-3.7-flash-high")
@@ -82,7 +87,7 @@ class FacebookCopyServiceTests(TestCase):
     @patch("os.path.exists", return_value=True)
     @patch("os.remove")
     def test_generate_facebook_copy_success(
-        self, mock_remove, mock_exists, mock_publish_wp, mock_get_client, mock_get_model, mock_create_part, mock_download
+        self, mock_remove, mock_exists, mock_publish_wp, mock_get_client, mock_get_model, mock_create_part, mock_download, mock_get_direct_url
     ):
         mock_publish_wp.return_value = {
             "success": True,
@@ -124,8 +129,12 @@ class FacebookCopyServiceTests(TestCase):
             title="Aprende este tip increíble 🔥",
             content_html="<p>Contenido completo del artículo SEO sobre productividad.</p>",
             instagram_url=self.download.instagram_url,
+            thumbnail_path=None,
+            direct_video_url="https://video.example.com/direct.mp4",
+            username=self.user.username,
         )
 
+    @patch("igdownloader.services.facebook_copy_service.get_or_refresh_direct_url", return_value="https://video.example.com/direct.mp4")
     @patch("igdownloader.services.facebook_copy_service.download_temp_video", return_value="mock_temp.mp4")
     @patch("igdownloader.services.facebook_copy_service.create_video_part_from_file")
     @patch("igdownloader.services.facebook_copy_service.get_cli_proxy_model", return_value="gemini-3.7-flash-high")
@@ -134,7 +143,7 @@ class FacebookCopyServiceTests(TestCase):
     @patch("os.path.exists", return_value=True)
     @patch("os.remove")
     def test_generate_facebook_copy_wp_error_still_completes(
-        self, mock_remove, mock_exists, mock_publish_wp, mock_get_client, mock_get_model, mock_create_part, mock_download
+        self, mock_remove, mock_exists, mock_publish_wp, mock_get_client, mock_get_model, mock_create_part, mock_download, mock_get_direct_url
     ):
         mock_client = MagicMock()
         mock_response = MagicMock()
@@ -178,6 +187,61 @@ class FacebookCopyServiceTests(TestCase):
         self.assertEqual(result["wp_post_url"], "https://tech.example.com/cached-article/")
         self.assertEqual(result["wp_article_title"], "Título en caché")
         self.assertEqual(result["wp_site_name"], self.wp_site.name)
+
+    @patch("igdownloader.services.facebook_copy_service.get_or_refresh_direct_url", return_value="https://video.example.com/direct.mp4")
+    @patch("igdownloader.services.facebook_copy_service.download_temp_video", return_value="mock_temp.mp4")
+    @patch("igdownloader.services.facebook_copy_service.create_video_part_from_file")
+    @patch("igdownloader.services.facebook_copy_service.get_cli_proxy_model", return_value="gemini-3.7-flash-high")
+    @patch("igdownloader.services.facebook_copy_service.get_cli_proxy_client")
+    @patch("igdownloader.services.facebook_copy_service.publish_article_to_wordpress")
+    @patch("os.remove")
+    def test_generate_facebook_copy_passes_thumbnail_and_user(
+        self, mock_remove, mock_publish_wp, mock_get_client, mock_get_model, mock_create_part, mock_download, mock_get_direct_url
+    ):
+        mock_publish_wp.return_value = {
+            "success": True,
+            "post_id": 99,
+            "post_url": "https://tech.example.com/articulo/?utm_source=facebook&utm_medium=social&utm_campaign=copyuser&utm_content=comment",
+            "site_id": self.wp_site.id,
+            "site_name": self.wp_site.name,
+            "site_url": self.wp_site.site_url,
+        }
+        mock_client = MagicMock()
+        mock_response = MagicMock()
+        mock_response.text = json.dumps({
+            "title": "Consejo viral sin emojis",
+            "description": "Copy con gancho y emojis 🔥",
+            "article_content": "<p>Contenido del artículo.</p>",
+            "hashtags": "#viral"
+        })
+        mock_client.models.generate_content.return_value = mock_response
+        mock_get_client.return_value = mock_client
+
+        # Mock thumbnail field
+        self.download.thumbnail = "ig_thumbnails/portada_mock.jpg"
+        self.download.save()
+
+        with patch("os.path.exists", return_value=True):
+            result = analyze_video_for_facebook(self.download)
+
+        self.assertTrue(result["success"])
+        self.assertEqual(
+            result["wp_post_url"],
+            "https://tech.example.com/articulo/?utm_source=facebook&utm_medium=social&utm_campaign=copyuser&utm_content=comment"
+        )
+        mock_publish_wp.assert_called_once_with(
+            title="Consejo viral sin emojis",
+            content_html="<p>Contenido del artículo.</p>",
+            instagram_url=self.download.instagram_url,
+            thumbnail_path=self.download.thumbnail.path,
+            direct_video_url="https://video.example.com/direct.mp4",
+            username=self.user.username,
+        )
+
+    def test_facebook_post_copy_schema_title_no_emojis(self):
+        description = FacebookPostCopy.model_fields['title'].description
+        self.assertIn("ESTRICTAMENTE SIN EMOJIS", description)
+
 
 
 class InstagramDownloaderViewsTests(TestCase):

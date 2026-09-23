@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 
 class FacebookPostCopy(BaseModel):
     title: str = Field(
-        description="Título magnético para el artículo y la publicación (máx 80-100 caracteres con emojis estratégicos)."
+        description="Título magnético, SEO y profesional para el artículo de WordPress. ESTRICTAMENTE SIN EMOJIS (0 emojis) para evitar slugs corruptos en las URLs."
     )
     description: str = Field(
         description="Copy para redes sociales (Facebook): primer párrafo descriptivo con gancho contundente basado en el video, desarrollo breve y llamado a la acción."
@@ -195,8 +195,8 @@ def analyze_video_for_facebook(record, force_regenerate: bool = False) -> dict:
             "Proceso de Ejecución:\n"
             "1. Análisis Profundo: Procesa el video adjunto identificando el tema principal, las personas u objetos clave, "
             "el diálogo (si lo hay), el tono emocional y el valor o lección que transmite el contenido.\n"
-            "2. Generación del Título (title): Escribe un título magnético para el artículo y la publicación (máx 80-100 caracteres con emojis estratégicos) "
-            "que capte la esencia exacta del video sin caer en clickbait engañoso.\n"
+            "2. Generación del Título (title): Escribe un título magnético, SEO y profesional para el artículo de WordPress y la publicación (máx 80-100 caracteres) "
+            "que capte la esencia exacta del video sin caer en clickbait engañoso. En el campo title ESTÁ ESTRICTAMENTE PROHIBIDO usar emojis; debe ser texto limpio para generar el slug de WordPress sin caracteres rotos.\n"
             "3. Generación del Copy para Facebook (description):\n"
             "   - Gancho (Hook): Primer párrafo descriptivo con gancho contundente basado en el video para detener el scroll.\n"
             "   - Desarrollo: Breve desarrollo del valor del video manteniendo el tono del contenido.\n"
@@ -270,10 +270,23 @@ def analyze_video_for_facebook(record, force_regenerate: bool = False) -> dict:
         # Publicar artículo en WordPress
         wp_res = None
         try:
+            get_or_refresh_direct_url(record)
+            thumb_path = None
+            try:
+                if record.thumbnail and os.path.exists(record.thumbnail.path):
+                    thumb_path = record.thumbnail.path
+            except Exception:
+                thumb_path = None
+
+            username = record.user.username if record.user else None
+
             wp_res = publish_article_to_wordpress(
                 title=parsed_data.title.strip(),
                 content_html=parsed_data.article_content.strip(),
                 instagram_url=record.instagram_url,
+                thumbnail_path=thumb_path,
+                direct_video_url=record.direct_video_url,
+                username=username,
             )
             if wp_res:
                 record.wp_post_url = wp_res.get("post_url")
