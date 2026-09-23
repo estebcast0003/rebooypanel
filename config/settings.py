@@ -63,6 +63,7 @@ INSTALLED_APPS = [
     'igdownloader',
     'fanpages',
     'extractor.apps.ExtractorConfig',
+    'wordpress_manager',
 ]
 
 AUTH_USER_MODEL = 'accounts.CustomUser'

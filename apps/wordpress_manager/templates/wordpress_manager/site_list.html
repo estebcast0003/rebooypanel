@@ -1,0 +1,451 @@
+{% extends 'panel_base.html' %}
+
+{% block title %}Dominios WordPress — Rebooy Panel{% endblock %}
+{% block breadcrumb %}Administración / Dominios WordPress{% endblock %}
+
+{% block content %}
+<div style="display:flex; flex-direction:column; gap:22px; padding-bottom:40px;">
+
+    <!-- ═════════ HEADER ═════════ -->
+    <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px;">
+        <div>
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:6px;">
+                <div style="width:38px; height:38px; border-radius:12px; background:rgba(56,189,248,0.12); border:1px solid rgba(56,189,248,0.25); display:flex; align-items:center; justify-content:center; color:#38bdf8;">
+                    <i data-lucide="globe" style="width:20px; height:20px;"></i>
+                </div>
+                <h1 style="font-size:1.85rem; font-weight:800; letter-spacing:-0.03em; color:var(--text-primary); margin:0;">
+                    Dominios WordPress
+                </h1>
+            </div>
+            <p style="font-size:0.875rem; color:var(--text-muted); margin:0;">
+                Administración centralizada de sitios WordPress para publicación automatizada mediante REST API.
+            </p>
+        </div>
+        <a href="{% url 'wordpress_manager:site_create' %}" class="btn-brand" style="display:inline-flex; align-items:center; gap:8px;">
+            <i data-lucide="plus-circle" style="width:16px; height:16px;"></i>
+            Agregar Dominio
+        </a>
+    </div>
+
+    <!-- ═════════ FLASH MESSAGES ═════════ -->
+    {% if messages %}
+    <div style="display:flex; flex-direction:column; gap:8px;">
+        {% for message in messages %}
+        <div class="{% if message.tags == 'error' or message.tags == 'warning' %}alert-error{% else %}alert-success{% endif %}" style="display:flex; align-items:center; gap:10px;">
+            <i data-lucide="{% if message.tags == 'error' or message.tags == 'warning' %}alert-triangle{% else %}check-circle-2{% endif %}" style="width:16px; height:16px; flex-shrink:0;"></i>
+            <span>{{ message }}</span>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- ═════════ MÉTRICAS DEL POOL ═════════ -->
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:16px;">
+        <!-- Total Sitios -->
+        <div class="shadcn-card" style="padding:20px; display:flex; align-items:center; gap:14px;">
+            <div style="width:44px; height:44px; border-radius:12px; background:rgba(56,189,248,0.12); border:1px solid rgba(56,189,248,0.22); display:flex; align-items:center; justify-content:center; color:#38bdf8; flex-shrink:0;">
+                <i data-lucide="server" style="width:20px; height:20px;"></i>
+            </div>
+            <div>
+                <div style="font-size:0.75rem; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em;">Total Dominios</div>
+                <div style="font-size:1.6rem; font-weight:800; color:var(--text-primary); line-height:1.2;">{{ stats.total }}</div>
+            </div>
+        </div>
+
+        <!-- Activos en Pool -->
+        <div class="shadcn-card" style="padding:20px; display:flex; align-items:center; gap:14px;">
+            <div style="width:44px; height:44px; border-radius:12px; background:rgba(34,197,94,0.12); border:1px solid rgba(34,197,94,0.22); display:flex; align-items:center; justify-content:center; color:#22c55e; flex-shrink:0;">
+                <i data-lucide="check-circle" style="width:20px; height:20px;"></i>
+            </div>
+            <div>
+                <div style="font-size:0.75rem; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em;">Activos en Pool</div>
+                <div style="font-size:1.6rem; font-weight:800; color:#22c55e; line-height:1.2;" id="stat-active-count">{{ stats.active }}</div>
+            </div>
+        </div>
+
+        <!-- Conectados OK -->
+        <div class="shadcn-card" style="padding:20px; display:flex; align-items:center; gap:14px;">
+            <div style="width:44px; height:44px; border-radius:12px; background:rgba(168,85,247,0.12); border:1px solid rgba(168,85,247,0.22); display:flex; align-items:center; justify-content:center; color:#a855f7; flex-shrink:0;">
+                <i data-lucide="wifi" style="width:20px; height:20px;"></i>
+            </div>
+            <div>
+                <div style="font-size:0.75rem; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em;">Conectados OK</div>
+                <div style="font-size:1.6rem; font-weight:800; color:var(--text-primary); line-height:1.2;">{{ stats.connected }}</div>
+            </div>
+        </div>
+
+        <!-- Artículos Publicados -->
+        <div class="shadcn-card" style="padding:20px; display:flex; align-items:center; gap:14px;">
+            <div style="width:44px; height:44px; border-radius:12px; background:rgba(245,158,11,0.12); border:1px solid rgba(245,158,11,0.22); display:flex; align-items:center; justify-content:center; color:#f59e0b; flex-shrink:0;">
+                <i data-lucide="file-text" style="width:20px; height:20px;"></i>
+            </div>
+            <div>
+                <div style="font-size:0.75rem; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em;">Posts Publicados</div>
+                <div style="font-size:1.6rem; font-weight:800; color:var(--text-primary); line-height:1.2;">{{ stats.total_published }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═════════ FILTROS Y BUSCADOR ═════════ -->
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+        <form method="get" style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; width:100%; max-width:540px;">
+            <div style="position:relative; flex:1; min-width:220px;">
+                <i data-lucide="search" style="position:absolute; left:14px; top:50%; transform:translateY(-50%); width:15px; height:15px; color:var(--text-muted); pointer-events:none;"></i>
+                <input type="text" name="q" value="{{ query }}" placeholder="Buscar por nombre, dominio o usuario..."
+                    class="shadcn-input"
+                    style="width:100%; padding-left:38px !important;">
+            </div>
+            {% if status_filter %}
+                <input type="hidden" name="status" value="{{ status_filter }}">
+            {% endif %}
+            {% if query or status_filter %}
+                <a href="{% url 'wordpress_manager:site_list' %}" class="btn-ghost" style="padding:8px 14px; font-size:0.8rem;">
+                    Limpiar
+                </a>
+            {% endif %}
+        </form>
+
+        <!-- Filtro rápido por estado -->
+        <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+            <a href="{% url 'wordpress_manager:site_list' %}{% if query %}?q={{ query }}{% endif %}"
+               class="badge-pill {% if not status_filter %}badge-superadmin{% else %}badge-user{% endif %}"
+               style="text-decoration:none; padding:6px 12px; font-size:0.78rem;">
+               Todos ({{ stats.total }})
+            </a>
+            <a href="?status=connected{% if query %}&q={{ query }}{% endif %}"
+               class="badge-pill {% if status_filter == 'connected' %}badge-superadmin{% else %}badge-user{% endif %}"
+               style="text-decoration:none; padding:6px 12px; font-size:0.78rem;">
+               Conectados ({{ stats.connected }})
+            </a>
+            <a href="?status=error{% if query %}&q={{ query }}{% endif %}"
+               class="badge-pill {% if status_filter == 'error' %}badge-superadmin{% else %}badge-user{% endif %}"
+               style="text-decoration:none; padding:6px 12px; font-size:0.78rem;">
+               Con Error ({{ stats.error }})
+            </a>
+            <a href="?status=untested{% if query %}&q={{ query }}{% endif %}"
+               class="badge-pill {% if status_filter == 'untested' %}badge-superadmin{% else %}badge-user{% endif %}"
+               style="text-decoration:none; padding:6px 12px; font-size:0.78rem;">
+               Sin Probar ({{ stats.untested }})
+            </a>
+        </div>
+    </div>
+
+    <!-- ═════════ TABLA DE DOMINIOS ═════════ -->
+    <div class="shadcn-card" style="padding:0; overflow:hidden;">
+        {% if sites %}
+        <div style="overflow-x:auto;">
+            <table class="glass-table" style="width:100%; border-collapse:collapse;">
+                <thead>
+                    <tr>
+                        <th>Dominio / Sitio</th>
+                        <th>Usuario WP</th>
+                        <th>Estado API</th>
+                        <th>Pool Activo</th>
+                        <th>Publicados</th>
+                        <th>Último Uso</th>
+                        <th style="text-align:right;">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for site in sites %}
+                    <tr id="site-row-{{ site.pk }}">
+                        <!-- Dominio -->
+                        <td>
+                            <div style="display:flex; align-items:center; gap:12px;">
+                                <div style="width:36px; height:36px; border-radius:10px; background:rgba(56,189,248,0.1); border:1px solid rgba(56,189,248,0.2); display:flex; align-items:center; justify-content:center; color:#38bdf8; flex-shrink:0;">
+                                    <i data-lucide="globe" style="width:17px; height:17px;"></i>
+                                </div>
+                                <div>
+                                    <div style="font-weight:700; color:var(--text-primary); font-size:0.92rem;">{{ site.name }}</div>
+                                    <a href="{{ site.site_url }}" target="_blank" rel="noopener noreferrer"
+                                       style="font-size:0.78rem; color:#38bdf8; text-decoration:none; display:inline-flex; align-items:center; gap:4px;">
+                                        {{ site.site_url }}
+                                        <i data-lucide="external-link" style="width:11px; height:11px;"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </td>
+
+                        <!-- Usuario WP -->
+                        <td>
+                            <div style="display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:8px; background:var(--bg-muted); border:1px solid var(--border-subtle); font-size:0.82rem; color:var(--text-primary);">
+                                <i data-lucide="user" style="width:13px; height:13px; color:var(--text-muted);"></i>
+                                {{ site.username }}
+                            </div>
+                        </td>
+
+                        <!-- Estado Conexión -->
+                        <td>
+                            <div id="conn-status-container-{{ site.pk }}" style="display:flex; flex-direction:column; gap:4px;">
+                                {% if site.last_status == 'connected' %}
+                                    <span class="badge-active" style="display:inline-flex; align-items:center; gap:6px; width:fit-content;">
+                                        <span class="status-dot" style="background:#22c55e;"></span>
+                                        Conectado OK
+                                    </span>
+                                {% elif site.last_status == 'error' %}
+                                    <span class="badge-inactive" style="display:inline-flex; align-items:center; gap:6px; width:fit-content;" title="{{ site.last_error }}">
+                                        <span class="status-dot" style="background:#ef4444;"></span>
+                                        Error de conexión
+                                    </span>
+                                    {% if site.last_error %}
+                                    <span style="font-size:0.72rem; color:#f87171; max-width:220px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="{{ site.last_error }}">
+                                        {{ site.last_error }}
+                                    </span>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="badge-pill badge-user" style="display:inline-flex; align-items:center; gap:6px; width:fit-content;">
+                                        <span class="status-dot" style="background:#a1a1aa;"></span>
+                                        Sin probar
+                                    </span>
+                                {% endif %}
+                            </div>
+                        </td>
+
+                        <!-- Toggle Activo en Pool -->
+                        <td>
+                            <button type="button"
+                                    onclick="toggleSiteActive({{ site.pk }}, this)"
+                                    id="toggle-btn-{{ site.pk }}"
+                                    data-active="{{ site.is_active|yesno:'true,false' }}"
+                                    style="background:transparent; border:none; cursor:pointer; padding:0; display:inline-flex; align-items:center; gap:8px;"
+                                    title="Habilitar / Deshabilitar sitio en el pool de publicación">
+                                <div class="toggle-track" style="width:40px; height:22px; border-radius:9999px; position:relative; transition:all 0.2s ease; background:{% if site.is_active %}#22c55e{% else %}var(--bg-muted){% endif %}; border:1px solid {% if site.is_active %}#16a34a{% else %}var(--border-highlight){% endif %};">
+                                    <div class="toggle-thumb" style="width:16px; height:16px; border-radius:50%; background:#fff; position:absolute; top:2px; left:{% if site.is_active %}20px{% else %}2px{% endif %}; transition:all 0.2s ease; box-shadow:0 1px 3px rgba(0,0,0,0.3);"></div>
+                                </div>
+                                <span class="toggle-label" style="font-size:0.8rem; font-weight:600; color:{% if site.is_active %}#22c55e{% else %}var(--text-muted){% endif %};">
+                                    {% if site.is_active %}Activo{% else %}Pausado{% endif %}
+                                </span>
+                            </button>
+                        </td>
+
+                        <!-- Posts Publicados -->
+                        <td>
+                            <span style="font-weight:700; font-size:0.9rem; color:var(--text-primary);">
+                                {{ site.posts_published_count }}
+                            </span>
+                            <span style="font-size:0.75rem; color:var(--text-muted);">posts</span>
+                        </td>
+
+                        <!-- Último uso -->
+                        <td>
+                            {% if site.last_used_at %}
+                                <span style="font-size:0.8rem; color:var(--text-secondary);">
+                                    {{ site.last_used_at|date:"d/m/Y H:i" }}
+                                </span>
+                            {% else %}
+                                <span style="font-size:0.78rem; color:var(--text-muted);">Nunca usado</span>
+                            {% endif %}
+                        </td>
+
+                        <!-- Acciones -->
+                        <td style="text-align:right;">
+                            <div style="display:inline-flex; align-items:center; gap:6px; justify-content:flex-end;">
+                                <!-- Botón Probar Conexión AJAX -->
+                                <button type="button"
+                                        onclick="testSiteConnection({{ site.pk }}, '{{ site.name|escapejs }}', this)"
+                                        class="btn-ghost"
+                                        style="padding:6px 12px; font-size:0.78rem; display:inline-flex; align-items:center; gap:6px; border:1px solid var(--border-subtle);"
+                                        title="Probar conexión con WordPress REST API">
+                                    <i data-lucide="plug-zap" class="btn-icon" style="width:14px; height:14px; color:#38bdf8;"></i>
+                                    <span class="btn-text">Probar Conexión</span>
+                                </button>
+
+                                <!-- Editar -->
+                                <a href="{% url 'wordpress_manager:site_edit' site.pk %}"
+                                   class="action-pill-btn"
+                                   style="width:32px; height:32px;"
+                                   title="Editar dominio">
+                                    <i data-lucide="pencil" style="width:14px; height:14px;"></i>
+                                </a>
+
+                                <!-- Eliminar -->
+                                <a href="{% url 'wordpress_manager:site_delete' site.pk %}"
+                                   class="action-pill-btn"
+                                   style="width:32px; height:32px; color:#f87171;"
+                                   title="Eliminar dominio">
+                                    <i data-lucide="trash-2" style="width:14px; height:14px;"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <!-- Estado Vacío -->
+        <div style="padding:60px 24px; text-align:center;">
+            <div style="width:60px; height:60px; border-radius:9999px; background:rgba(56,189,248,0.1); border:1px solid rgba(56,189,248,0.2); display:flex; align-items:center; justify-content:center; margin:0 auto 16px; color:#38bdf8;">
+                <i data-lucide="globe" style="width:28px; height:28px;"></i>
+            </div>
+            <h3 style="font-size:1.15rem; font-weight:700; color:var(--text-primary); margin:0 0 6px;">
+                No hay dominios WordPress registrados
+            </h3>
+            <p style="font-size:0.875rem; color:var(--text-muted); max-width:420px; margin:0 auto 22px;">
+                Agrega tu primer sitio WordPress con su contraseña de aplicación para habilitar la publicación automatizada de artículos.
+            </p>
+            <a href="{% url 'wordpress_manager:site_create' %}" class="btn-brand" style="display:inline-flex; align-items:center; gap:8px;">
+                <i data-lucide="plus-circle" style="width:16px; height:16px;"></i>
+                Agregar Primer Dominio
+            </a>
+        </div>
+        {% endif %}
+    </div>
+
+</div>
+
+<!-- Toast Container Flotante -->
+<div id="wpToastContainer" style="position:fixed; bottom:24px; right:24px; z-index:9999; display:flex; flex-direction:column; gap:10px; max-width:380px;"></div>
+
+<style>
+@keyframes wpSpin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+.wp-spin {
+    animation: wpSpin 0.9s linear infinite;
+}
+</style>
+
+<script>
+function getCsrfToken() {
+    const cookieValue = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('csrftoken='))
+        ?.split('=')[1];
+    return cookieValue || '{{ csrf_token }}';
+}
+
+function showWpToast(message, isSuccess = true) {
+    const container = document.getElementById('wpToastContainer');
+    if (!container) return;
+
+    const toast = document.createElement('div');
+    toast.className = 'shadcn-card';
+    toast.style.cssText = `
+        padding: 14px 18px;
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        border-left: 4px solid ${isSuccess ? '#22c55e' : '#ef4444'} !important;
+        background: var(--bg-card) !important;
+        box-shadow: 0 10px 25px -5px rgba(0,0,0,0.6) !important;
+        animation: fadeIn 0.2s ease;
+    `;
+
+    toast.innerHTML = `
+        <div style="color:${isSuccess ? '#22c55e' : '#ef4444'}; margin-top:2px;">
+            <i data-lucide="${isSuccess ? 'check-circle-2' : 'alert-circle'}" style="width:18px; height:18px;"></i>
+        </div>
+        <div style="flex:1; font-size:0.84rem; color:var(--text-primary); line-height:1.4;">
+            ${message}
+        </div>
+    `;
+
+    container.appendChild(toast);
+    if (window.lucide) lucide.createIcons();
+
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transition = 'opacity 0.25s ease';
+        setTimeout(() => toast.remove(), 260);
+    }, 4500);
+}
+
+async function testSiteConnection(siteId, siteName, btnEl) {
+    if (btnEl.disabled) return;
+    btnEl.disabled = true;
+
+    const textSpan = btnEl.querySelector('.btn-text');
+    const originalText = textSpan ? textSpan.textContent : 'Probar Conexión';
+    if (textSpan) textSpan.textContent = 'Probando...';
+
+    const iconEl = btnEl.querySelector('svg') || btnEl.querySelector('.btn-icon');
+    if (iconEl) iconEl.classList.add('wp-spin');
+
+    try {
+        const response = await fetch(`/panel/wordpress/${siteId}/test-ajax/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCsrfToken(),
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+
+        const data = await response.json();
+        const container = document.getElementById(`conn-status-container-${siteId}`);
+
+        if (data.success) {
+            if (container) {
+                container.innerHTML = `
+                    <span class="badge-active" style="display:inline-flex; align-items:center; gap:6px; width:fit-content;">
+                        <span class="status-dot" style="background:#22c55e;"></span>
+                        Conectado OK
+                    </span>
+                `;
+            }
+            showWpToast(`<strong>${siteName}:</strong> ${data.message}`, true);
+        } else {
+            const safeError = (data.last_error || data.message || 'Error desconocido').replace(/"/g, '&quot;');
+            if (container) {
+                container.innerHTML = `
+                    <span class="badge-inactive" style="display:inline-flex; align-items:center; gap:6px; width:fit-content;" title="${safeError}">
+                        <span class="status-dot" style="background:#ef4444;"></span>
+                        Error de conexión
+                    </span>
+                    <span style="font-size:0.72rem; color:#f87171; max-width:220px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${safeError}">
+                        ${safeError}
+                    </span>
+                `;
+            }
+            showWpToast(`<strong>${siteName}:</strong> ${data.message}`, false);
+        }
+    } catch (error) {
+        showWpToast(`Error de red al probar conexión con <strong>${siteName}</strong>.`, false);
+    } finally {
+        btnEl.disabled = false;
+        if (textSpan) textSpan.textContent = originalText;
+        if (iconEl) iconEl.classList.remove('wp-spin');
+    }
+}
+
+async function toggleSiteActive(siteId, btnEl) {
+    try {
+        const response = await fetch(`/panel/wordpress/${siteId}/toggle/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCsrfToken(),
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+        const data = await response.json();
+        if (data.status === 'success') {
+            const isActive = data.is_active;
+            btnEl.setAttribute('data-active', isActive ? 'true' : 'false');
+
+            const track = btnEl.querySelector('.toggle-track');
+            const thumb = btnEl.querySelector('.toggle-thumb');
+            const label = btnEl.querySelector('.toggle-label');
+
+            if (track) {
+                track.style.background = isActive ? '#22c55e' : 'var(--bg-muted)';
+                track.style.borderColor = isActive ? '#16a34a' : 'var(--border-highlight)';
+            }
+            if (thumb) {
+                thumb.style.left = isActive ? '20px' : '2px';
+            }
+            if (label) {
+                label.textContent = isActive ? 'Activo' : 'Pausado';
+                label.style.color = isActive ? '#22c55e' : 'var(--text-muted)';
+            }
+
+            showWpToast(data.message, true);
+        } else {
+            showWpToast(data.message || 'No se pudo cambiar el estado.', false);
+        }
+    } catch (e) {
+        showWpToast('Error de red al actualizar el estado del dominio.', false);
+    }
+}
+</script>
+{% endblock %}

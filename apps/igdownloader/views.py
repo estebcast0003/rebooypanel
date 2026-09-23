@@ -145,6 +145,13 @@ def status_ajax(request, pk):
         except Exception:
             thumb_url = ''
 
+    wp_site_name = ''
+    if item.wp_site_id:
+        try:
+            wp_site_name = item.wp_site.name
+        except Exception:
+            wp_site_name = ''
+
     return JsonResponse({
         'id': item.id,
         'title': item.title or 'Reel de Instagram',
@@ -168,6 +175,9 @@ def status_ajax(request, pk):
         'fb_hashtags_source': item.fb_hashtags_source,
         'original_hashtags': item.original_hashtags or '',
         'fb_generated_at': item.fb_generated_at.strftime('%d %b %Y, %H:%M') if item.fb_generated_at else '',
+        'wp_post_url': item.wp_post_url or '',
+        'wp_article_title': item.wp_article_title or '',
+        'wp_site_name': wp_site_name,
     })
 
 
@@ -402,6 +412,13 @@ def generate_facebook_copy_ajax(request, pk):
     try:
         from .services.facebook_copy_service import analyze_video_for_facebook
         result = analyze_video_for_facebook(item, force_regenerate=force_regenerate)
+        wp_site_name = result.get('wp_site_name')
+        if not wp_site_name and item.wp_site_id:
+            try:
+                wp_site_name = item.wp_site.name
+            except Exception:
+                wp_site_name = ''
+
         return JsonResponse({
             'success': True,
             'id': item.id,
@@ -412,6 +429,9 @@ def generate_facebook_copy_ajax(request, pk):
             'generated_at': result['generated_at'],
             'from_cache': result.get('from_cache', False),
             'fb_status': item.fb_status,
+            'wp_post_url': result.get('wp_post_url') or item.wp_post_url or '',
+            'wp_article_title': result.get('wp_article_title') or item.wp_article_title or '',
+            'wp_site_name': wp_site_name or '',
         })
     except Exception as e:
         return JsonResponse({

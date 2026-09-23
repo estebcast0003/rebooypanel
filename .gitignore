@@ -38,3 +38,7 @@ staticfiles/
 exported_gemini_api_keys.txt
 *.pem
 *.key
+# Local Pi runtime state
+.atl/
+.codegraph/
+odd/

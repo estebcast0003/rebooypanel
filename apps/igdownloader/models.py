@@ -65,6 +65,19 @@ class InstagramDownload(models.Model):
     fb_error = models.TextField(blank=True, null=True)
     fb_generated_at = models.DateTimeField(blank=True, null=True)
 
+    # Publicación y artículo en WordPress
+    wp_post_url = models.URLField(max_length=500, blank=True, null=True, help_text="Permalink directo del artículo publicado en WordPress")
+    wp_post_id = models.PositiveIntegerField(null=True, blank=True, help_text="ID del post en WordPress")
+    wp_site = models.ForeignKey(
+        'wordpress_manager.WordPressSite',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='ig_articles'
+    )
+    wp_article_title = models.CharField(max_length=255, blank=True, null=True, help_text="Título del artículo en WordPress")
+    wp_article_content = models.TextField(blank=True, null=True, help_text="Contenido HTML del artículo en WordPress")
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

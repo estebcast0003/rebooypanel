@@ -52,6 +52,9 @@ urlpatterns = [
     # Custom Panel Admin
     path('panel/', include('panel_admin.urls')),
 
+    # Gestor de Dominios WordPress
+    path('panel/wordpress/', include('wordpress_manager.urls', namespace='wordpress_manager')),
+
     # Seguridad & Gestión de Sesiones
     path('seguridad/', include('accounts.urls')),
 

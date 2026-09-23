@@ -1,6 +1,7 @@
 import os
 import time
 import tempfile
+import logging
 import requests
 import yt_dlp
 from typing import Optional
@@ -14,22 +15,28 @@ from core.services.cli_proxy import (
     get_cli_proxy_model,
     create_video_part_from_file,
 )
+from wordpress_manager.services.wordpress_service import publish_article_to_wordpress
 from .instagram_service import (
     get_or_refresh_direct_url,
     clean_instagram_url,
     get_instagram_ydl_opts,
 )
 
+logger = logging.getLogger(__name__)
+
 
 class FacebookPostCopy(BaseModel):
     title: str = Field(
-        description="Título magnético y directo de máximo 80 caracteres con 1 o 2 emojis estratégicos."
+        description="Título magnético para el artículo y la publicación (máx 80-100 caracteres con emojis estratégicos)."
     )
     description: str = Field(
-        description="Texto completo de la descripción para Facebook integrando Gancho + Desarrollo + Llamado a la acción (CTA) con emojis bien equilibrados."
+        description="Copy para redes sociales (Facebook): primer párrafo descriptivo con gancho contundente basado en el video, desarrollo breve y llamado a la acción."
+    )
+    article_content: str = Field(
+        description="Artículo completo en formato HTML enriquecido (<p>, <h2>, <ul>, <li>, <strong>) desarrollando el tema del video con introducción, lecciones clave y conclusión."
     )
     hashtags: str = Field(
-        description="Entre 3 y 5 hashtags relevantes separados por espacio, por ejemplo: #Emprendimiento #Marketing #Negocios"
+        description="Entre 3 y 5 hashtags relevantes separados por espacio."
     )
 
 
@@ -108,12 +115,22 @@ def analyze_video_for_facebook(record, force_regenerate: bool = False) -> dict:
     genera el copy de estratega para Facebook, guarda el resultado y limpia archivos temporales.
     """
     if not force_regenerate and record.fb_status == "completed" and record.fb_title:
+        wp_site_name = None
+        if record.wp_site_id:
+            try:
+                wp_site_name = record.wp_site.name
+            except Exception:
+                wp_site_name = None
+
         return {
             "success": True,
             "title": record.fb_title,
             "description": record.fb_description,
             "hashtags": record.fb_hashtags,
             "hashtags_source": record.fb_hashtags_source,
+            "wp_post_url": record.wp_post_url,
+            "wp_article_title": record.wp_article_title,
+            "wp_site_name": wp_site_name,
             "generated_at": record.fb_generated_at.strftime("%d %b %Y, %H:%M")
             if record.fb_generated_at
             else "",
@@ -169,24 +186,29 @@ def analyze_video_for_facebook(record, force_regenerate: bool = False) -> dict:
             )
 
         system_instruction = (
-            "Actúas como un estratega de redes sociales y experto en análisis audiovisual. "
-            "Tu único propósito es extraer el contexto real de los videos que recibes y transformarlo en textos optimizados para Facebook. "
+            "Actúas como un estratega de redes sociales y redactor periodístico SEO especializado en análisis audiovisual. "
+            "Tu único propósito es extraer el contexto real de los videos que recibes y transformarlo en dos piezas clave de contenido de alto impacto: "
+            "1) Un artículo completo y profesional para publicación en blog/WordPress en formato HTML enriquecido (<p>, <h2>, <ul>, <li>, <strong>).\n"
+            "2) Un copy optimizado para redes sociales (Facebook) con gancho contundente, desarrollo breve y llamado a la acción.\n\n"
             "Tienes estrictamente prohibido generar contenido aleatorio, genérico o adivinar el contexto; todo tu texto debe estar "
             "fundamentado en los elementos visuales y auditivos del archivo subido.\n\n"
             "Proceso de Ejecución:\n"
             "1. Análisis Profundo: Procesa el video adjunto identificando el tema principal, las personas u objetos clave, "
-            "el diálogo (si lo hay), el tono emocional y el objetivo aparente del contenido.\n"
-            "2. Generación del Título: Escribe un título magnético y directo (máximo 80 caracteres) que capte la esencia exacta del video. "
-            "Debe incluir 1 o 2 emojis estratégicos. Evita el 'clickbait' engañoso; la promesa del título debe cumplirse en el video.\n"
-            "3. Generación de la Descripción:\n"
-            "   - Gancho (Hook): Una primera oración contundente que obligue al usuario a detener su scroll, basada en el momento más interesante del video.\n"
-            "   - Desarrollo: Un párrafo breve (2-3 líneas) que resuma el valor del video (educativo, entretenimiento, noticia) con un tono que coincida con la vibra del contenido.\n"
-            "   - Llamado a la Acción (CTA): Una invitación clara a interactuar (comentar una opinión específica, compartir, etiquetar a alguien) directamente relacionada con la temática del video.\n"
-            "   - Uso de Emojis: Emplea emojis como viñetas o para enfatizar emociones, manteniendo un equilibrio visual sin saturar.\n"
+            "el diálogo (si lo hay), el tono emocional y el valor o lección que transmite el contenido.\n"
+            "2. Generación del Título (title): Escribe un título magnético para el artículo y la publicación (máx 80-100 caracteres con emojis estratégicos) "
+            "que capte la esencia exacta del video sin caer en clickbait engañoso.\n"
+            "3. Generación del Copy para Facebook (description):\n"
+            "   - Gancho (Hook): Primer párrafo descriptivo con gancho contundente basado en el video para detener el scroll.\n"
+            "   - Desarrollo: Breve desarrollo del valor del video manteniendo el tono del contenido.\n"
+            "   - Llamado a la Acción (CTA): Pregunta o invitación clara a interactuar o debatir.\n"
+            "   - Uso de Emojis: Emplea emojis equilibrados para enfatizar emociones.\n"
+            "4. Generación del Artículo Web (article_content):\n"
+            "   - Escribe un artículo completo en formato HTML enriquecido utilizando etiquetas semánticas (<p>, <h2>, <ul>, <li>, <strong>) desarrollando el tema del video con introducción, lecciones clave y conclusión.\n"
+            "   - No incluyas etiquetas <html>, <head> o <body> ni <h1> (el título se gestiona de forma independiente).\n"
             f"{hashtag_instruction}"
         )
 
-        user_prompt = "Analiza detalladamente este video y genera el copy definitivo para Facebook cumpliendo estrictamente con el formato requerido."
+        user_prompt = "Analiza detalladamente este video y extrae el contexto audiovisual para generar tanto el artículo SEO en HTML enriquecido como el copy para Facebook cumpliendo estrictamente con el formato requerido."
 
         # 4. Ejecución con reintentos para resiliencia ante sobrecarga temporal
         max_attempts = 3
@@ -234,7 +256,7 @@ def analyze_video_for_facebook(record, force_regenerate: bool = False) -> dict:
             final_hashtags = parsed_data.hashtags.strip()
             hashtags_source = "ai"
 
-        # Guardar resultado en base de datos
+        # Guardar resultado inicial en base de datos
         record.fb_title = parsed_data.title.strip()
         record.fb_description = parsed_data.description.strip()
         record.fb_hashtags = final_hashtags
@@ -242,6 +264,40 @@ def analyze_video_for_facebook(record, force_regenerate: bool = False) -> dict:
         record.fb_status = "completed"
         record.fb_error = ""
         record.fb_generated_at = timezone.now()
+        record.wp_article_title = parsed_data.title.strip()
+        record.wp_article_content = parsed_data.article_content.strip()
+
+        # Publicar artículo en WordPress
+        wp_res = None
+        try:
+            wp_res = publish_article_to_wordpress(
+                title=parsed_data.title.strip(),
+                content_html=parsed_data.article_content.strip(),
+                instagram_url=record.instagram_url,
+            )
+            if wp_res:
+                record.wp_post_url = wp_res.get("post_url")
+                record.wp_post_id = wp_res.get("post_id")
+                record.wp_site_id = wp_res.get("site_id")
+        except (ValueError, RuntimeError) as wp_err:
+            logger.warning(
+                "[FacebookCopy] No se pudo publicar en WordPress para #%s: %s",
+                record.id,
+                wp_err,
+            )
+            record.wp_post_url = None
+            record.wp_post_id = None
+            record.wp_site_id = None
+        except Exception as wp_err:
+            logger.error(
+                "[FacebookCopy] Error inesperado publicando en WordPress para #%s: %s",
+                record.id,
+                wp_err,
+            )
+            record.wp_post_url = None
+            record.wp_post_id = None
+            record.wp_site_id = None
+
         record.save(
             update_fields=[
                 "fb_title",
@@ -251,8 +307,22 @@ def analyze_video_for_facebook(record, force_regenerate: bool = False) -> dict:
                 "fb_status",
                 "fb_error",
                 "fb_generated_at",
+                "wp_post_url",
+                "wp_post_id",
+                "wp_site",
+                "wp_article_title",
+                "wp_article_content",
             ]
         )
+
+        wp_site_name = None
+        if wp_res and wp_res.get("site_name"):
+            wp_site_name = wp_res["site_name"]
+        elif record.wp_site_id:
+            try:
+                wp_site_name = record.wp_site.name
+            except Exception:
+                wp_site_name = None
 
         return {
             "success": True,
@@ -260,6 +330,9 @@ def analyze_video_for_facebook(record, force_regenerate: bool = False) -> dict:
             "description": record.fb_description,
             "hashtags": record.fb_hashtags,
             "hashtags_source": record.fb_hashtags_source,
+            "wp_post_url": record.wp_post_url,
+            "wp_article_title": record.wp_article_title,
+            "wp_site_name": wp_site_name,
             "generated_at": record.fb_generated_at.strftime("%d %b %Y, %H:%M"),
             "from_cache": False,
         }

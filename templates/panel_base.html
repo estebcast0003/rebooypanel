@@ -823,6 +823,11 @@
                 <i data-lucide="cookie" style="color:#f59e0b;"></i>
                 Gestión de Cookies
             </a>
+            <a href="{% url 'wordpress_manager:site_list' %}"
+               class="nav-link {% if '/panel/wordpress/' in request.path %}active{% endif %}">
+                <i data-lucide="globe" style="color:#38bdf8;"></i>
+                Dominios WordPress
+            </a>
             {% endif %}
             {% endif %}
 

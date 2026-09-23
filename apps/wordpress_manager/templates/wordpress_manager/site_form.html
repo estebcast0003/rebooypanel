@@ -1,0 +1,269 @@
+{% extends 'panel_base.html' %}
+
+{% block title %}{{ action }} Dominio WordPress — Rebooy Panel{% endblock %}
+{% block breadcrumb %}
+    <a href="{% url 'wordpress_manager:site_list' %}" style="color:var(--text-secondary); text-decoration:none;">Dominios WordPress</a>
+    <span style="margin:0 6px; color:var(--text-muted);">/</span>
+    <span style="color:var(--text-primary); font-weight:600;">{{ action }}</span>
+{% endblock %}
+
+{% block content %}
+<div style="max-width:980px; margin:0 auto; padding-bottom:40px;">
+
+    <!-- ═════════ HEADER ═════════ -->
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; flex-wrap:wrap; gap:16px;">
+        <div style="display:flex; align-items:center; gap:14px;">
+            <a href="{% url 'wordpress_manager:site_list' %}" class="action-pill-btn" style="width:38px; height:38px;" title="Volver a lista de dominios">
+                <i data-lucide="arrow-left" style="width:18px; height:18px;"></i>
+            </a>
+            <div>
+                <h1 style="font-size:1.85rem; font-weight:800; letter-spacing:-0.03em; color:var(--text-primary); margin:0 0 4px; display:flex; align-items:center; gap:8px;">
+                    {{ action }} Dominio WordPress
+                </h1>
+                <p style="font-size:0.875rem; color:var(--text-muted); margin:0;">
+                    {% if action == 'Editar' %}
+                        Modifica los parámetros de conexión para <strong style="color:var(--text-primary);">{{ site.name }}</strong>.
+                    {% else %}
+                        Registra un nuevo sitio con su Contraseña de Aplicación para habilitar la publicación de artículos.
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═════════ FLASH MESSAGES ═════════ -->
+    {% if messages %}
+    <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:20px;">
+        {% for message in messages %}
+        <div class="{% if message.tags == 'error' %}alert-error{% else %}alert-success{% endif %}" style="display:flex; align-items:center; gap:10px;">
+            <i data-lucide="{% if message.tags == 'error' %}alert-triangle{% else %}check-circle-2{% endif %}" style="width:16px; height:16px; flex-shrink:0;"></i>
+            <span>{{ message }}</span>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:24px; align-items:start;">
+
+        <!-- ═════════ FORMULARIO PRINCIPAL ═════════ -->
+        <div class="shadcn-card" style="padding:30px;">
+            <form method="post" id="siteForm" style="display:flex; flex-direction:column; gap:20px;">
+                {% csrf_token %}
+
+                {% if form.non_field_errors %}
+                <div class="alert-error" style="margin-bottom:8px;">
+                    <i data-lucide="alert-circle" style="width:16px; height:16px; flex-shrink:0;"></i>
+                    <span>{{ form.non_field_errors|join:", " }}</span>
+                </div>
+                {% endif %}
+
+                <!-- Nombre del Sitio -->
+                <div>
+                    <label for="{{ form.name.id_for_label }}" style="display:flex; align-items:center; gap:6px; font-size:0.75rem; font-weight:700; color:var(--text-muted); margin-bottom:8px; text-transform:uppercase; letter-spacing:0.05em;">
+                        <i data-lucide="tag" style="width:13px; height:13px; color:#38bdf8;"></i>
+                        Nombre Descriptivo
+                    </label>
+                    <div style="position:relative;">
+                        <input type="text" name="name" id="{{ form.name.id_for_label }}"
+                               value="{{ form.name.value|default:'' }}"
+                               class="shadcn-input"
+                               placeholder="ej: Blog Noticias Tech"
+                               required
+                               style="width:100% !important;">
+                    </div>
+                    {% if form.name.errors %}
+                        <div style="margin-top:6px; font-size:0.78rem; color:#f87171;">{{ form.name.errors|join:", " }}</div>
+                    {% endif %}
+                </div>
+
+                <!-- URL del Sitio -->
+                <div>
+                    <label for="{{ form.site_url.id_for_label }}" style="display:flex; align-items:center; gap:6px; font-size:0.75rem; font-weight:700; color:var(--text-muted); margin-bottom:8px; text-transform:uppercase; letter-spacing:0.05em;">
+                        <i data-lucide="globe" style="width:13px; height:13px; color:#38bdf8;"></i>
+                        URL Raíz del Sitio
+                    </label>
+                    <div style="position:relative;">
+                        <input type="text" name="site_url" id="{{ form.site_url.id_for_label }}"
+                               value="{{ form.site_url.value|default:'' }}"
+                               class="shadcn-input"
+                               placeholder="https://ejemplo.com"
+                               required
+                               style="width:100% !important;">
+                    </div>
+                    <span style="font-size:0.72rem; color:var(--text-muted); margin-top:4px; display:block;">
+                        Se normaliza automáticamente sin barra final (ej: https://midominio.com).
+                    </span>
+                    {% if form.site_url.errors %}
+                        <div style="margin-top:6px; font-size:0.78rem; color:#f87171;">{{ form.site_url.errors|join:", " }}</div>
+                    {% endif %}
+                </div>
+
+                <!-- Usuario de WordPress -->
+                <div>
+                    <label for="{{ form.username.id_for_label }}" style="display:flex; align-items:center; gap:6px; font-size:0.75rem; font-weight:700; color:var(--text-muted); margin-bottom:8px; text-transform:uppercase; letter-spacing:0.05em;">
+                        <i data-lucide="user" style="width:13px; height:13px; color:#38bdf8;"></i>
+                        Usuario de WordPress
+                    </label>
+                    <div style="position:relative;">
+                        <input type="text" name="username" id="{{ form.username.id_for_label }}"
+                               value="{{ form.username.value|default:'' }}"
+                               class="shadcn-input"
+                               placeholder="ej: admin o editor_ia"
+                               required
+                               style="width:100% !important;">
+                    </div>
+                    {% if form.username.errors %}
+                        <div style="margin-top:6px; font-size:0.78rem; color:#f87171;">{{ form.username.errors|join:", " }}</div>
+                    {% endif %}
+                </div>
+
+                <!-- Contraseña de Aplicación -->
+                <div>
+                    <label for="{{ form.application_password.id_for_label }}" style="display:flex; align-items:center; gap:6px; font-size:0.75rem; font-weight:700; color:var(--text-muted); margin-bottom:8px; text-transform:uppercase; letter-spacing:0.05em;">
+                        <i data-lucide="key" style="width:13px; height:13px; color:#38bdf8;"></i>
+                        Contraseña de Aplicación (Application Password)
+                    </label>
+                    <div style="position:relative;">
+                        <input type="password" name="application_password" id="{{ form.application_password.id_for_label }}"
+                               value="{{ form.application_password.value|default:'' }}"
+                               class="shadcn-input"
+                               placeholder="xxxx xxxx xxxx xxxx"
+                               required
+                               style="width:100% !important; padding-right:44px !important;">
+                        <button type="button" onclick="togglePasswordVisibility('{{ form.application_password.id_for_label }}', this)"
+                                style="position:absolute; right:12px; top:50%; transform:translateY(-50%); background:transparent; border:none; color:var(--text-muted); cursor:pointer; padding:4px; display:flex; align-items:center; justify-content:center;"
+                                title="Mostrar / Ocultar contraseña">
+                            <i data-lucide="eye" class="eye-open" style="width:16px; height:16px;"></i>
+                            <i data-lucide="eye-off" class="eye-closed" style="width:16px; height:16px; display:none;"></i>
+                        </button>
+                    </div>
+                    <span style="font-size:0.72rem; color:var(--text-muted); margin-top:4px; display:block;">
+                        Los espacios entre bloques de letras se eliminan automáticamente.
+                    </span>
+                    {% if form.application_password.errors %}
+                        <div style="margin-top:6px; font-size:0.78rem; color:#f87171;">{{ form.application_password.errors|join:", " }}</div>
+                    {% endif %}
+                </div>
+
+                <!-- Opciones / Checkboxes -->
+                <div style="display:flex; flex-direction:column; gap:12px; padding:16px; background:rgba(255,255,255,0.02); border:1px solid var(--border-subtle); border-radius:12px;">
+                    <!-- Activo en pool -->
+                    <label style="display:flex; align-items:center; gap:10px; cursor:pointer; user-select:none; margin:0;">
+                        <input type="checkbox" name="is_active" id="{{ form.is_active.id_for_label }}"
+                               {% if form.is_active.value or form.is_active.value is None %}checked{% endif %}
+                               style="width:18px; height:18px; accent-color:#ef4444; border-radius:4px; cursor:pointer;">
+                        <div>
+                            <div style="font-size:0.85rem; font-weight:600; color:var(--text-primary);">Habilitado en el pool de rotación</div>
+                            <div style="font-size:0.74rem; color:var(--text-muted);">Los generadores de artículos podrán seleccionar este sitio para publicar automáticamente.</div>
+                        </div>
+                    </label>
+
+                    <!-- Probar conexión ahora -->
+                    <label style="display:flex; align-items:center; gap:10px; cursor:pointer; user-select:none; margin:0; border-top:1px solid var(--border-subtle); padding-top:10px;">
+                        <input type="checkbox" name="test_connection_on_save" id="id_test_connection_on_save" checked
+                               style="width:18px; height:18px; accent-color:#38bdf8; border-radius:4px; cursor:pointer;">
+                        <div>
+                            <div style="font-size:0.85rem; font-weight:600; color:var(--text-primary); display:flex; align-items:center; gap:6px;">
+                                <i data-lucide="zap" style="width:13px; height:13px; color:#38bdf8;"></i>
+                                Probar conexión de inmediato al guardar
+                            </div>
+                            <div style="font-size:0.74rem; color:var(--text-muted);">Realiza una petición a <code>/wp-json/wp/v2/users/me</code> para validar las credenciales.</div>
+                        </div>
+                    </label>
+                </div>
+
+                <!-- Botones de Acción -->
+                <div style="display:flex; align-items:center; justify-content:flex-end; gap:12px; margin-top:10px;">
+                    <a href="{% url 'wordpress_manager:site_list' %}" class="btn-ghost">
+                        Cancelar
+                    </a>
+                    <button type="submit" class="btn-brand" style="display:inline-flex; align-items:center; gap:8px;">
+                        <i data-lucide="check" style="width:15px; height:15px;"></i>
+                        {% if action == 'Editar' %}Guardar Cambios{% else %}Registrar Dominio{% endif %}
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- ═════════ TARJETA LATERAL DE AYUDA ═════════ -->
+        <div style="display:flex; flex-direction:column; gap:18px;">
+            <!-- Guía Contraseña de Aplicación -->
+            <div class="shadcn-card" style="padding:24px; border-left:4px solid #38bdf8 !important;">
+                <div style="display:flex; align-items:center; gap:10px; margin-bottom:14px;">
+                    <div style="width:32px; height:32px; border-radius:8px; background:rgba(56,189,248,0.12); display:flex; align-items:center; justify-content:center; color:#38bdf8;">
+                        <i data-lucide="help-circle" style="width:18px; height:18px;"></i>
+                    </div>
+                    <h3 style="font-size:0.95rem; font-weight:700; color:var(--text-primary); margin:0;">
+                        ¿Cómo generar la Contraseña?
+                    </h3>
+                </div>
+
+                <div style="display:flex; flex-direction:column; gap:12px; font-size:0.82rem; color:var(--text-secondary); line-height:1.5;">
+                    <div style="display:flex; gap:10px;">
+                        <span style="width:20px; height:20px; border-radius:50%; background:var(--bg-muted); display:flex; align-items:center; justify-content:center; font-size:0.75rem; font-weight:700; color:#38bdf8; flex-shrink:0;">1</span>
+                        <span>Ingresa a tu panel de WordPress (<code>/wp-admin</code>).</span>
+                    </div>
+                    <div style="display:flex; gap:10px;">
+                        <span style="width:20px; height:20px; border-radius:50%; background:var(--bg-muted); display:flex; align-items:center; justify-content:center; font-size:0.75rem; font-weight:700; color:#38bdf8; flex-shrink:0;">2</span>
+                        <span>En el menú lateral ve a <strong>Usuarios &rarr; Tu perfil</strong> (o Perfil).</span>
+                    </div>
+                    <div style="display:flex; gap:10px;">
+                        <span style="width:20px; height:20px; border-radius:50%; background:var(--bg-muted); display:flex; align-items:center; justify-content:center; font-size:0.75rem; font-weight:700; color:#38bdf8; flex-shrink:0;">3</span>
+                        <span>Baja hasta la sección <strong>Contraseñas de aplicación</strong>.</span>
+                    </div>
+                    <div style="display:flex; gap:10px;">
+                        <span style="width:20px; height:20px; border-radius:50%; background:var(--bg-muted); display:flex; align-items:center; justify-content:center; font-size:0.75rem; font-weight:700; color:#38bdf8; flex-shrink:0;">4</span>
+                        <span>Escribe un nombre (ej: <code>Rebooy Panel</code>) y presiona <strong>Añadir nueva contraseña</strong>.</span>
+                    </div>
+                    <div style="display:flex; gap:10px;">
+                        <span style="width:20px; height:20px; border-radius:50%; background:var(--bg-muted); display:flex; align-items:center; justify-content:center; font-size:0.75rem; font-weight:700; color:#38bdf8; flex-shrink:0;">5</span>
+                        <span>Copia la clave de 16 letras generada y pégala arriba.</span>
+                    </div>
+                </div>
+
+                <div style="margin-top:16px; padding:12px; border-radius:8px; background:rgba(56,189,248,0.06); border:1px solid rgba(56,189,248,0.18); font-size:0.76rem; color:var(--text-muted); display:flex; align-items:flex-start; gap:8px;">
+                    <i data-lucide="shield-check" style="width:16px; height:16px; color:#38bdf8; flex-shrink:0; margin-top:1px;"></i>
+                    <span>
+                        <strong>Seguro:</strong> Las contraseñas de aplicación no revelan tu contraseña maestra de WordPress y pueden revocarse en cualquier momento con un clic.
+                    </span>
+                </div>
+            </div>
+
+            <!-- Requisitos Previos -->
+            <div class="shadcn-card" style="padding:22px;">
+                <h4 style="font-size:0.85rem; font-weight:700; color:var(--text-primary); margin:0 0 10px; display:flex; align-items:center; gap:6px;">
+                    <i data-lucide="info" style="width:14px; height:14px; color:#f59e0b;"></i>
+                    Requisitos de WordPress
+                </h4>
+                <ul style="margin:0; padding-left:18px; font-size:0.78rem; color:var(--text-muted); display:flex; flex-direction:column; gap:6px; line-height:1.4;">
+                    <li>WordPress versión 5.6 o superior (incluye Application Passwords de forma nativa).</li>
+                    <li>La REST API debe estar habilitada (ruta predeterminada <code>/wp-json/wp/v2/</code> activa).</li>
+                    <li>El usuario debe contar con rol <strong>Editor</strong> o <strong>Administrador</strong> para poder crear entradas.</li>
+                </ul>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+function togglePasswordVisibility(inputId, btnEl) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+
+    const eyeOpen = btnEl.querySelector('.eye-open');
+    const eyeClosed = btnEl.querySelector('.eye-closed');
+
+    if (input.type === 'password') {
+        input.type = 'text';
+        if (eyeOpen) eyeOpen.style.display = 'none';
+        if (eyeClosed) eyeClosed.style.display = 'block';
+    } else {
+        input.type = 'password';
+        if (eyeOpen) eyeOpen.style.display = 'block';
+        if (eyeClosed) eyeClosed.style.display = 'none';
+    }
+}
+</script>
+{% endblock %}
