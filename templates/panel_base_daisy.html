@@ -1,0 +1,390 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es" data-theme="coffee">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Rebooy Panel{% endblock %}</title>
+
+    <!-- Favicon & Brand Identity -->
+    <link rel="icon" type="image/x-icon" href="{% static 'img/favicon.ico' %}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{% static 'img/favicon.png' %}">
+    <link rel="apple-touch-icon" href="{% static 'img/id.jpg' %}">
+
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- DaisyUI CSS 4.12.23 -->
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.23/dist/full.min.css" rel="stylesheet" type="text/css" />
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                }
+            }
+        }
+    </script>
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+
+    <!-- Preloader de Tema: Migra de 'dark' viejo a 'coffee' automáticamente -->
+    <script>
+        (function() {
+            let savedTheme = localStorage.getItem('panel_theme');
+            if (!savedTheme || savedTheme === 'dark') {
+                savedTheme = 'coffee';
+                localStorage.setItem('panel_theme', 'coffee');
+            }
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        })();
+    </script>
+
+    <style>
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            letter-spacing: -0.01em;
+        }
+
+        /* Trazo refinado, moderno y estilizado para íconos Lucide */
+        svg.lucide {
+            stroke-width: 1.75px;
+        }
+
+        /* Menú lateral: resaltado elegante de la página activa */
+        .menu li a.active {
+            background-color: oklch(var(--p) / 0.14) !important;
+            color: oklch(var(--p)) !important;
+            font-weight: 700 !important;
+        }
+        .menu li a.active svg.lucide {
+            color: oklch(var(--p)) !important;
+        }
+
+        /* ══════════════════════════════════════════════════════
+           TEMA OSCURO: COFFEE (OKLCH OFICIAL SOLICITADO)
+        ══════════════════════════════════════════════════════ */
+        [data-theme="coffee"] {
+            color-scheme: dark;
+            --b1: 24% 0.023 329.708;
+            --b2: 21% 0.021 329.708;
+            --b3: 16% 0.019 329.708;
+            --bc: 72.354% 0.092 79.129;
+            --p: 71.996% 0.123 62.756;
+            --pc: 14.399% 0.024 62.756;
+            --s: 34.465% 0.029 199.194;
+            --sc: 86.893% 0.005 199.194;
+            --a: 42.621% 0.074 224.389;
+            --ac: 88.524% 0.014 224.389;
+            --n: 16.51% 0.015 326.261;
+            --nc: 83.302% 0.003 326.261;
+            --in: 79.49% 0.063 184.558;
+            --inc: 15.898% 0.012 184.558;
+            --su: 74.722% 0.072 131.116;
+            --suc: 14.944% 0.014 131.116;
+            --wa: 88.15% 0.14 87.722;
+            --wac: 17.63% 0.028 87.722;
+            --er: 77.318% 0.128 31.871;
+            --erc: 15.463% 0.025 31.871;
+            --rounded-box: 1rem;
+            --rounded-btn: 0.5rem;
+            --rounded-badge: 1rem;
+            --animation-btn: 0.25s;
+            --animation-input: 0.2s;
+            --btn-focus-scale: 0.95;
+            --border-btn: 1px;
+        }
+
+        /* ══════════════════════════════════════════════════════
+           TEMA CLARO: LATTE (CONTRAPARTE CÁLIDA Y COHERENTE)
+        ══════════════════════════════════════════════════════ */
+        [data-theme="latte"] {
+            color-scheme: light;
+            --b1: 98% 0.012 79;
+            --b2: 94% 0.018 79;
+            --b3: 88% 0.025 79;
+            --bc: 25% 0.035 62;
+            --p: 55% 0.14 62;
+            --pc: 98% 0.01 62;
+            --s: 65% 0.06 199;
+            --sc: 20% 0.02 199;
+            --a: 60% 0.09 224;
+            --ac: 98% 0.01 224;
+            --n: 30% 0.035 326;
+            --nc: 95% 0.01 326;
+            --in: 60% 0.12 185;
+            --inc: 98% 0.01 185;
+            --su: 60% 0.14 131;
+            --suc: 98% 0.01 131;
+            --wa: 75% 0.16 87;
+            --wac: 25% 0.04 87;
+            --er: 65% 0.18 31;
+            --erc: 98% 0.01 31;
+            --rounded-box: 1rem;
+            --rounded-btn: 0.5rem;
+            --rounded-badge: 1rem;
+            --animation-btn: 0.25s;
+            --animation-input: 0.2s;
+            --btn-focus-scale: 0.95;
+            --border-btn: 1px;
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="min-h-screen bg-base-200 text-base-content">
+
+<!-- Layout de Contenedor Drawer Nativo DaisyUI -->
+<div class="drawer lg:drawer-open min-h-screen">
+    <input id="panel-drawer" type="checkbox" class="drawer-toggle" />
+
+    <!-- ═════════ VIEWPORT PRINCIPAL ═════════ -->
+    <div class="drawer-content flex flex-col min-w-0">
+
+        <!-- Topbar Navbar Nativa DaisyUI -->
+        <header class="navbar bg-base-100 border-b border-base-300 px-4 lg:px-6 sticky top-0 z-30 min-h-16 gap-3">
+            <!-- Botón Hamburger para Móviles -->
+            <label for="panel-drawer" class="btn btn-ghost btn-square btn-sm lg:hidden" title="Abrir Menú">
+                <i data-lucide="menu" class="w-5 h-5"></i>
+            </label>
+
+            <!-- Breadcrumbs Nativo DaisyUI -->
+            <div class="flex-1 min-w-0">
+                <div class="breadcrumbs text-xs font-medium py-0">
+                    <ul class="gap-1">
+                        {% block breadcrumb %}
+                        <li><a href="{% url 'dashboard' %}" class="opacity-60 hover:opacity-100 transition">Inicio</a></li>
+                        <li class="font-semibold text-primary">Panel</li>
+                        {% endblock %}
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Acciones Topbar -->
+            <div class="flex items-center gap-2">
+                <!-- Theme Switcher (Coffee 🌙 / Latte ☀️) -->
+                <button type="button" class="btn btn-ghost btn-circle btn-sm" onclick="toggleTheme()" title="Cambiar Tema (Coffee / Latte)">
+                    <i data-lucide="moon" id="themeIconMoon" class="w-4 h-4"></i>
+                    <i data-lucide="sun" id="themeIconSun" class="w-4 h-4 hidden"></i>
+                </button>
+
+                <!-- Menú de Usuario Dropdown DaisyUI -->
+                <div class="dropdown dropdown-end">
+                    <button tabindex="0" class="btn btn-ghost btn-circle avatar placeholder btn-sm">
+                        <div class="bg-primary text-primary-content rounded-full w-8 font-bold text-xs">
+                            {{ user.username|make_list|first|upper }}
+                        </div>
+                    </button>
+                    <ul tabindex="0" class="dropdown-content menu menu-sm p-3 shadow-2xl bg-base-100 border border-base-300 rounded-box w-56 mt-2 z-50 gap-1">
+                        <li class="menu-title px-2 py-1">
+                            <span class="font-bold text-base-content">{{ user.username }}</span>
+                            <span class="badge badge-primary badge-xs mt-0.5">{{ user.get_role_display }}</span>
+                        </li>
+                        <div class="divider my-1"></div>
+                        {% if user.role == 'superadmin' %}
+                        <li>
+                            <a href="{% url 'security_sessions' %}">
+                                <i data-lucide="shield-check" class="w-4 h-4 text-info"></i>
+                                Monitoreo Sesiones
+                            </a>
+                        </li>
+                        {% endif %}
+                        <li>
+                            <a href="{% url 'cookies_management' %}">
+                                <i data-lucide="cookie" class="w-4 h-4 text-warning"></i>
+                                Gestión Cookies
+                            </a>
+                        </li>
+                        <div class="divider my-1"></div>
+                        <li>
+                            <form method="post" action="{% url 'logout' %}" class="p-0">
+                                {% csrf_token %}
+                                <button type="submit" class="text-error flex items-center gap-2 w-full px-2 py-1.5 hover:bg-error/10 rounded-lg">
+                                    <i data-lucide="log-out" class="w-4 h-4"></i>
+                                    Cerrar Sesión
+                                </button>
+                            </form>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </header>
+
+        <!-- Área de Contenido Principal -->
+        <main class="flex-1 p-4 lg:p-8 min-w-0">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+    <!-- ═════════ SIDEBAR DRAWER-SIDE ═════════ -->
+    <div class="drawer-side z-40">
+        <label for="panel-drawer" aria-label="Cerrar menú" class="drawer-overlay"></label>
+        <aside class="w-64 min-h-full bg-base-100 border-r border-base-300 flex flex-col justify-between">
+
+            <!-- Logo y Menú de Navegación -->
+            <div class="flex flex-col">
+                <!-- Brand Header -->
+                <div class="h-16 flex items-center justify-between px-5 border-b border-base-300 shrink-0">
+                    <a href="{% url 'dashboard' %}" class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-lg overflow-hidden border border-primary/50 shadow shrink-0">
+                            <img src="{% static 'img/id.jpg' %}" alt="Rebooy Identity" class="w-full h-full object-cover">
+                        </div>
+                        <div class="flex flex-col leading-tight">
+                            <span class="font-extrabold text-base tracking-tight text-base-content">
+                                Rebooy<span class="text-primary">.</span>
+                            </span>
+                            <span class="text-[10px] font-bold opacity-60 tracking-wider">CREATOR STUDIO</span>
+                        </div>
+                    </a>
+                    <span class="badge badge-neutral badge-xs font-mono">v2.4</span>
+                </div>
+
+                <!-- Navigation Links (DaisyUI Menu) -->
+                <ul class="menu menu-md p-3 w-full gap-1">
+                    <li class="menu-title text-[11px] uppercase tracking-wider opacity-60 px-2 pt-2">General</li>
+                    <li>
+                        <a href="{% url 'dashboard' %}" class="{% if request.path == '/dashboard/' %}active font-semibold{% endif %}">
+                            <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+                            Dashboard
+                        </a>
+                    </li>
+
+                    {% if user.role == 'superadmin' or user.can_view_videoprompt or user.can_view_ig_downloader or user.can_view_fanpages or user.can_view_extractor %}
+                    <li class="menu-title text-[11px] uppercase tracking-wider opacity-60 px-2 pt-3">Herramientas IA</li>
+                    {% if user.role == 'superadmin' or user.can_view_videoprompt %}
+                    <li>
+                        <a href="{% url 'videoprompt:studio' %}" class="{% if '/video-prompt/' in request.path and '/api-keys/' not in request.path %}active font-semibold{% endif %}">
+                            <i data-lucide="video" class="w-4 h-4"></i>
+                            Video to Prompt
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    {% if user.role == 'superadmin' or user.can_view_ig_downloader %}
+                    <li>
+                        <a href="{% url 'igdownloader:index' %}" class="{% if '/ig-downloader/' in request.path %}active font-semibold{% endif %}">
+                            <i data-lucide="download" class="w-4 h-4"></i>
+                            IG Downloader
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    {% if user.role == 'superadmin' or user.can_view_fanpages %}
+                    <li>
+                        <a href="{% url 'fanpages:studio' %}" class="{% if '/fanpages/' in request.path %}active font-semibold{% endif %}">
+                            <i data-lucide="sparkles" class="w-4 h-4"></i>
+                            Fanpage Creator
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    {% if user.role == 'superadmin' or user.can_view_extractor %}
+                    <li>
+                        <a href="{% url 'extractor:dashboard' %}" class="{% if '/extractor/' in request.path %}active font-semibold{% endif %}">
+                            <i data-lucide="activity" class="w-4 h-4"></i>
+                            Fan Extractor
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% endif %}
+
+                    {% if user.role == 'superadmin' or user.can_manage_users or user.can_manage_api_keys %}
+                    <li class="menu-title text-[11px] uppercase tracking-wider opacity-60 px-2 pt-3">Administración</li>
+                    {% if user.role == 'superadmin' or user.can_manage_users %}
+                    <li>
+                        <a href="{% url 'user_list' %}" class="{% if request.path == '/panel/usuarios/' %}active font-semibold{% endif %}">
+                            <i data-lucide="users" class="w-4 h-4"></i>
+                            Usuarios
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'user_statistics' %}" class="{% if '/panel/usuarios/estadisticas/' in request.path %}active font-semibold{% endif %}">
+                            <i data-lucide="bar-chart-3" class="w-4 h-4"></i>
+                            Métricas por Usuario
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% if user.role == 'superadmin' %}
+                    <li>
+                        <a href="{% url 'security_sessions' %}" class="{% if '/seguridad/' in request.path %}active font-semibold{% endif %}">
+                            <i data-lucide="shield-check" class="w-4 h-4 text-info"></i>
+                            Sesiones Activas
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'cookies_management' %}" class="{% if '/panel/cookies/' in request.path %}active font-semibold{% endif %}">
+                            <i data-lucide="cookie" class="w-4 h-4 text-warning"></i>
+                            Gestión de Cookies
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'wordpress_manager:site_list' %}" class="{% if '/panel/wordpress/' in request.path %}active font-semibold{% endif %}">
+                            <i data-lucide="globe" class="w-4 h-4 text-primary"></i>
+                            Dominios WordPress
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% endif %}
+                </ul>
+            </div>
+
+            <!-- Footer con Identidad del Creador -->
+            <!-- <div class="p-4 border-t border-base-300 flex items-center gap-3 bg-base-200/50">
+                <div class="relative shrink-0">
+                    <img src="{% static 'img/id.jpg' %}" alt="Creador" class="w-9 h-9 rounded-full object-cover border-2 border-primary shadow">
+                    <span class="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-success border-2 border-base-100"></span>
+                </div>
+                <div class="min-w-0 flex-1">
+                    <div class="font-bold text-xs truncate text-base-content">Rebooy Studio</div>
+                    <div class="text-[10px] opacity-60">Identidad Creador</div>
+                </div>
+            </div> -->
+
+        </aside>
+    </div>
+</div>
+
+<script>
+    function toggleTheme() {
+        const currentTheme = document.documentElement.getAttribute('data-theme') || 'coffee';
+        const newTheme = currentTheme === 'coffee' ? 'latte' : 'coffee';
+        document.documentElement.setAttribute('data-theme', newTheme);
+        localStorage.setItem('panel_theme', newTheme);
+        updateThemeIcons(newTheme);
+    }
+
+    function updateThemeIcons(theme) {
+        const isCoffee = theme === 'coffee';
+        const moon = document.getElementById('themeIconMoon');
+        const sun = document.getElementById('themeIconSun');
+        if (moon && sun) {
+            if (isCoffee) {
+                moon.classList.remove('hidden');
+                sun.classList.add('hidden');
+            } else {
+                moon.classList.add('hidden');
+                sun.classList.remove('hidden');
+            }
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const currentTheme = document.documentElement.getAttribute('data-theme') || 'coffee';
+        updateThemeIcons(currentTheme);
+        if (window.lucide) {
+            lucide.createIcons();
+        }
+    });
+</script>
+
+{% block extra_js %}{% endblock %}
+</body>
+</html>

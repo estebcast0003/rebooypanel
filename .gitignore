@@ -10,6 +10,8 @@ __pycache__/
 # Database & SQLite
 *.sqlite3
 db.sqlite3
+db.sqlite3-shm
+db.sqlite3-wal
 
 # Environment variables & secrets
 .env
