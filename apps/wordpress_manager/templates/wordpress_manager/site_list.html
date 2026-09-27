@@ -115,24 +115,24 @@
         <!-- Segmented Control con Micro-Badges -->
         <div class="tabs tabs-boxed bg-base-200/80 border border-base-300/60 p-1 rounded-xl">
             <a href="{% url 'wordpress_manager:site_list' %}{% if query %}?q={{ query }}{% endif %}"
-               class="tab tab-sm rounded-lg text-xs font-semibold gap-1.5 transition-all {% if not status_filter %}tab-active bg-base-100 shadow-sm text-primary font-bold{% else %}text-base-content/70 hover:text-base-content{% endif %}">
+               class="tab tab-sm rounded-lg text-xs font-semibold gap-2 transition-all {% if not status_filter %}tab-active bg-base-100 shadow-sm text-primary font-bold{% else %}text-base-content/70 hover:text-base-content{% endif %}">
                Todos
-               <span class="badge badge-xs {% if not status_filter %}badge-primary text-primary-content{% else %}bg-base-300/80 text-base-content/70 border-none{% endif %} font-mono">{{ stats.total }}</span>
+               <span class="badge badge-md {% if not status_filter %}badge-primary text-primary-content font-bold{% else %}bg-base-300/80 text-base-content/70 border-none font-bold{% endif %} font-mono px-2.5">{{ stats.total }}</span>
             </a>
             <a href="?status=connected{% if query %}&q={{ query }}{% endif %}"
-               class="tab tab-sm rounded-lg text-xs font-semibold gap-1.5 transition-all {% if status_filter == 'connected' %}tab-active bg-base-100 shadow-sm text-primary font-bold{% else %}text-base-content/70 hover:text-base-content{% endif %}">
+               class="tab tab-sm rounded-lg text-xs font-semibold gap-2 transition-all {% if status_filter == 'connected' %}tab-active bg-base-100 shadow-sm text-primary font-bold{% else %}text-base-content/70 hover:text-base-content{% endif %}">
                Conectados
-               <span class="badge badge-xs {% if status_filter == 'connected' %}badge-primary text-primary-content{% else %}bg-base-300/80 text-base-content/70 border-none{% endif %} font-mono">{{ stats.connected }}</span>
+               <span class="badge badge-md {% if status_filter == 'connected' %}badge-primary text-primary-content font-bold{% else %}bg-base-300/80 text-base-content/70 border-none font-bold{% endif %} font-mono px-2.5">{{ stats.connected }}</span>
             </a>
             <a href="?status=error{% if query %}&q={{ query }}{% endif %}"
-               class="tab tab-sm rounded-lg text-xs font-semibold gap-1.5 transition-all {% if status_filter == 'error' %}tab-active bg-base-100 shadow-sm text-primary font-bold{% else %}text-base-content/70 hover:text-base-content{% endif %}">
+               class="tab tab-sm rounded-lg text-xs font-semibold gap-2 transition-all {% if status_filter == 'error' %}tab-active bg-base-100 shadow-sm text-primary font-bold{% else %}text-base-content/70 hover:text-base-content{% endif %}">
                Con Error
-               <span class="badge badge-xs {% if status_filter == 'error' %}badge-error text-error-content{% else %}bg-base-300/80 text-base-content/70 border-none{% endif %} font-mono">{{ stats.error }}</span>
+               <span class="badge badge-md {% if status_filter == 'error' %}badge-error text-error-content font-bold{% else %}bg-base-300/80 text-base-content/70 border-none font-bold{% endif %} font-mono px-2.5">{{ stats.error }}</span>
             </a>
             <a href="?status=untested{% if query %}&q={{ query }}{% endif %}"
-               class="tab tab-sm rounded-lg text-xs font-semibold gap-1.5 transition-all {% if status_filter == 'untested' %}tab-active bg-base-100 shadow-sm text-primary font-bold{% else %}text-base-content/70 hover:text-base-content{% endif %}">
+               class="tab tab-sm rounded-lg text-xs font-semibold gap-2 transition-all {% if status_filter == 'untested' %}tab-active bg-base-100 shadow-sm text-primary font-bold{% else %}text-base-content/70 hover:text-base-content{% endif %}">
                Sin Probar
-               <span class="badge badge-xs {% if status_filter == 'untested' %}badge-neutral text-neutral-content{% else %}bg-base-300/80 text-base-content/70 border-none{% endif %} font-mono">{{ stats.untested }}</span>
+               <span class="badge badge-md {% if status_filter == 'untested' %}badge-neutral text-neutral-content font-bold{% else %}bg-base-300/80 text-base-content/70 border-none font-bold{% endif %} font-mono px-2.5">{{ stats.untested }}</span>
             </a>
         </div>
     </div>

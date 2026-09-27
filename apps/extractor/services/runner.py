@@ -56,8 +56,6 @@ class JobEventManager:
 event_manager = JobEventManager()
 
 
-from extractor.services.alerts import check_and_trigger_growth_alerts
-
 @sync_to_async
 def _save_item_to_db(job_id: str, result: ExtractionResult):
     """Synchronous database persistence wrapped for async execution with busy retry."""
@@ -98,8 +96,6 @@ def _save_item_to_db(job_id: str, result: ExtractionResult):
                         page=page,
                         followers=result.followers,
                     )
-                    if prev_followers > 0 and result.followers > prev_followers:
-                        check_and_trigger_growth_alerts(page, prev_followers, result.followers)
 
                 item = ExtractionItem.objects.create(
                     job=job,

@@ -9,7 +9,6 @@ from django.shortcuts import get_object_or_404, render
 from django.views.decorators.http import require_http_methods
 
 from .models import ExtractionJob, ExtractorSetting, FacebookPage
-from .services.exporters import export_pages_to_csv, export_pages_to_excel
 from .services.runner import start_extraction_job, stream_job_events
 from .services.scheduler import scheduler
 
@@ -407,20 +406,6 @@ def save_cache_view(request):
 
 
 
-@login_required
-def export_csv_view(request):
-    """Streams user's stored Facebook pages as CSV."""
-    if not _has_extractor_access(request.user):
-        raise PermissionDenied("No tienes permisos para exportar.")
-    return export_pages_to_csv(_get_user_pages(request.user))
-
-
-@login_required
-def export_excel_view(request):
-    """Streams user's stored Facebook pages as Excel (.xlsx)."""
-    if not _has_extractor_access(request.user):
-        raise PermissionDenied("No tienes permisos para exportar.")
-    return export_pages_to_excel(_get_user_pages(request.user))
 
 
 @login_required
@@ -472,87 +457,4 @@ def get_stats_api_view(request):
     )
 
 
-# ----------------------------------------------------
-# Alerts & Webhooks API Endpoints
-# ----------------------------------------------------
-from extractor.services.alerts import send_test_alert
-
-
-@login_required
-@require_http_methods(["GET"])
-def get_alerts_config_api_view(request):
-    """Returns current webhook alert settings."""
-    if not _has_extractor_access(request.user):
-        return JsonResponse({"status": "error", "message": "Acceso denegado."}, status=403)
-
-    webhook_setting = ExtractorSetting.objects.filter(key="alert_webhook_url").first()
-    enabled_setting = ExtractorSetting.objects.filter(key="alerts_enabled").first()
-
-    webhook_url = webhook_setting.value if webhook_setting else getattr(settings, "EXTRACTOR_WEBHOOK_URL", "")
-    enabled = enabled_setting.value.lower() == "true" if enabled_setting else bool(webhook_url)
-
-    return JsonResponse({
-        "status": "ok",
-        "webhook_url": webhook_url or "",
-        "enabled": enabled,
-    })
-
-
-@login_required
-@require_http_methods(["POST"])
-def save_alerts_config_api_view(request):
-    """Saves webhook alert settings."""
-    if not _has_extractor_access(request.user):
-        return JsonResponse({"status": "error", "message": "Acceso denegado."}, status=403)
-
-    try:
-        data = json.loads(request.body.decode("utf-8"))
-    except Exception:
-        return JsonResponse({"status": "error", "message": "JSON inválido."}, status=400)
-
-    webhook_url = data.get("webhook_url", "").strip()
-    enabled = bool(data.get("enabled", True))
-
-    ExtractorSetting.objects.update_or_create(
-        key="alert_webhook_url",
-        defaults={"value": webhook_url}
-    )
-    ExtractorSetting.objects.update_or_create(
-        key="alerts_enabled",
-        defaults={"value": str(enabled)}
-    )
-
-    return JsonResponse({
-        "status": "ok",
-        "message": "Configuración de alertas guardada exitosamente.",
-        "webhook_url": webhook_url,
-        "enabled": enabled,
-    })
-
-
-@login_required
-@require_http_methods(["POST"])
-def test_alert_webhook_api_view(request):
-    """Sends a live test notification to the webhook URL."""
-    if not _has_extractor_access(request.user):
-        return JsonResponse({"status": "error", "message": "Acceso denegado."}, status=403)
-
-    try:
-        data = json.loads(request.body.decode("utf-8"))
-    except Exception:
-        data = {}
-
-    webhook_url = data.get("webhook_url", "").strip()
-    if not webhook_url:
-        webhook_setting = ExtractorSetting.objects.filter(key="alert_webhook_url").first()
-        webhook_url = webhook_setting.value if webhook_setting else getattr(settings, "EXTRACTOR_WEBHOOK_URL", "")
-
-    if not webhook_url:
-        return JsonResponse({"status": "error", "message": "Ingresá una URL de webhook para probar."}, status=400)
-
-    success, message = send_test_alert(webhook_url)
-    if success:
-        return JsonResponse({"status": "ok", "message": message})
-    else:
-        return JsonResponse({"status": "error", "message": message}, status=400)
 
