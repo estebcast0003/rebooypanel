@@ -1,64 +1,13 @@
-{% extends 'panel_base.html' %}
+{% extends 'panel_base_daisy.html' %}
 
 {% block title %}Video to Prompt Studio — Rebooy Panel{% endblock %}
-{% block breadcrumb %}Herramientas IA / Video to Prompt{% endblock %}
+{% block breadcrumb %}
+<li><span class="opacity-60">Herramientas IA</span></li>
+<li class="font-semibold text-primary">Video to Prompt</li>
+{% endblock %}
 
 {% block extra_css %}
 <style>
-    .segmented-pill-container {
-        display: inline-flex;
-        background: var(--pill-bg);
-        border: 1px solid var(--border-subtle);
-        border-radius: 9999px;
-        padding: 4px;
-        gap: 4px;
-    }
-    .pill-tab-btn {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 6px 16px;
-        border-radius: 9999px;
-        font-size: 0.8rem;
-        font-weight: 600;
-        color: var(--text-secondary);
-        background: transparent;
-        border: none;
-        cursor: pointer;
-        transition: all 0.2s ease;
-    }
-    .pill-tab-btn:hover { color: var(--text-primary); }
-    .pill-tab-btn.active {
-        background: var(--bg-card);
-        color: var(--text-primary);
-        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-        border: 1px solid var(--border-subtle);
-    }
-    .prompt-card-shadcn {
-        background-color: var(--bg-card);
-        border: 1px solid var(--border-subtle);
-        border-radius: 10px;
-        padding: 16px;
-        transition: all 0.2s ease;
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-        cursor: pointer;
-        position: relative;
-        overflow: hidden;
-    }
-    .prompt-card-shadcn:hover {
-        border-color: var(--border-highlight);
-        transform: translateY(-2px);
-        box-shadow: 0 8px 20px -4px rgba(0,0,0,0.12);
-    }
-    .kpi-mini-card {
-        background-color: var(--bg-card);
-        border: 1px solid var(--border-subtle);
-        border-radius: 8px;
-        padding: 16px;
-    }
-
     /* ── Markdown Prose Renderer ── */
     .md-prose {
         font-size: 0.88rem;
@@ -88,17 +37,17 @@
     }
     .md-prose li { margin: 0; }
     .md-prose code {
-        background: var(--bg-muted);
-        border: 1px solid var(--border-subtle);
+        background: oklch(var(--b2));
+        border: 1px solid oklch(var(--b3));
         border-radius: 4px;
         padding: 1px 6px;
         font-family: 'JetBrains Mono', 'Fira Code', monospace;
         font-size: 0.83em;
-        color: #ef4444;
+        color: oklch(var(--p));
     }
     .md-prose pre {
-        background: var(--bg-muted);
-        border: 1px solid var(--border-subtle);
+        background: oklch(var(--b2));
+        border: 1px solid oklch(var(--b3));
         border-radius: 8px;
         padding: 14px 18px;
         overflow-x: auto;
@@ -108,84 +57,59 @@
         background: none;
         border: none;
         padding: 0;
-        color: var(--text-primary);
+        color: oklch(var(--bc));
         font-size: 0.82rem;
     }
     .md-prose blockquote {
-        border-left: 3px solid #ef4444;
+        border-left: 3px solid oklch(var(--p));
         margin: 0.8em 0;
         padding: 8px 16px;
-        background: rgba(239,68,68,0.05);
+        background: oklch(var(--p) / 0.08);
         border-radius: 0 6px 6px 0;
-        color: var(--text-secondary);
+        color: oklch(var(--bc) / 0.8);
     }
-    .md-prose table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 0.83rem;
-        margin: 0.8em 0;
-    }
-    .md-prose th {
-        background: var(--bg-muted);
-        border: 1px solid var(--border-subtle);
-        padding: 8px 12px;
-        text-align: left;
-        font-weight: 700;
-        color: var(--text-primary);
-        font-size: 0.78rem;
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-    }
-    .md-prose td {
-        border: 1px solid var(--border-subtle);
-        padding: 8px 12px;
-        vertical-align: top;
-    }
-    .md-prose tr:nth-child(even) td { background: rgba(0,0,0,0.02); }
-    .md-prose hr {
-        border: none;
-        border-top: 1px solid var(--border-subtle);
-        margin: 1.4em 0;
-    }
-    .md-prose a { color: #3b82f6; text-decoration: none; }
-    .md-prose a:hover { text-decoration: underline; }
 </style>
 {% endblock %}
 
 {% block content %}
-<div style="max-width:1120px; margin:0 auto; display:flex; flex-direction:column; gap:28px;">
+<div class="max-w-6xl mx-auto flex flex-col gap-8 pb-12">
 
     <!-- ═════════ HEADER ═════════ -->
-    <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px;">
-        <div>
-            <h1 style="font-size:1.85rem; font-weight:800; letter-spacing:-0.03em; color:var(--text-primary); margin:0 0 6px; display:flex; align-items:center; gap:10px;">
-                Video to Prompt Studio
-            </h1>
-            <p style="font-size:0.875rem; color:var(--text-muted); margin:0;">
-                Analiza videos con Gemini IA y genera prompts cinematográficos escena por escena.
-            </p>
+    <div class="flex items-center justify-between flex-wrap gap-4">
+        <div class="flex items-center gap-3.5">
+            <div class="w-12 h-12 rounded-2xl bg-warning/10 text-warning border border-warning/20 flex items-center justify-center shrink-0 shadow-sm">
+                <i data-lucide="clapperboard" class="w-6 h-6"></i>
+            </div>
+            <div>
+                <h1 class="text-2xl lg:text-3xl font-extrabold tracking-tight text-base-content leading-tight">
+                    Video to Prompt Studio
+                </h1>
+                <p class="text-xs lg:text-sm text-base-content/65 mt-0.5 leading-relaxed">
+                    Analiza videos con Gemini IA y genera prompts cinematográficos escena por escena.
+                </p>
+            </div>
         </div>
     </div>
 
     <!-- ═════════ 1. TARJETA DE CREACIÓN DE PROMPT ═════════ -->
-    <div class="shadcn-card" style="padding:28px 32px; position:relative; overflow:hidden;">
+    <div class="card bg-base-100 shadow-sm border border-base-300 rounded-2xl p-6 lg:p-8">
         
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
-            <h2 style="font-size:1.15rem; font-weight:700; color:var(--text-primary); margin:0; display:flex; align-items:center; gap:8px;">
-                <i data-lucide="sparkles" style="width:18px; height:18px; color:#ef4444;"></i>
+        <div class="flex justify-between items-center mb-5 flex-wrap gap-3">
+            <h2 class="text-base font-bold text-base-content m-0 flex items-center gap-2">
+                <i data-lucide="sparkles" class="w-4 h-4 text-warning"></i>
                 Generar Nuevo Prompt
             </h2>
 
-            <!-- Indicador de Cuota Diaria -->
+            <!-- Indicador de Cuota Diaria con Badges Grandes -->
             <div>
                 {% if quota.is_unlimited %}
-                    <span class="badge-pill badge-admin" style="font-size:0.75rem; display:inline-flex; align-items:center; gap:5px;">
-                        <i data-lucide="infinity" style="width:13px; height:13px; color:#3b82f6;"></i>
+                    <span class="badge badge-neutral badge-md font-bold text-xs gap-1.5 px-3 py-1">
+                        <i data-lucide="infinity" class="w-3.5 h-3.5 text-info"></i>
                         Cuota Ilimitada
                     </span>
                 {% else %}
-                    <span id="quotaBadge" class="badge-pill {% if quota.remaining > 0 %}badge-user{% else %}badge-superadmin{% endif %}" style="font-size:0.75rem; display:inline-flex; align-items:center; gap:5px;">
-                        <i data-lucide="zap" style="width:13px; height:13px; {% if quota.remaining > 0 %}color:#ef4444;{% else %}color:#ef4444;{% endif %}"></i>
+                    <span id="quotaBadge" class="badge {% if quota.remaining > 0 %}badge-primary text-primary-content{% else %}badge-error text-white{% endif %} badge-md font-bold text-xs gap-1.5 px-3 py-1">
+                        <i data-lucide="zap" class="w-3.5 h-3.5"></i>
                         Cuota hoy: <strong id="quotaUsedText">{{ quota.used_today }}</strong> / {{ quota.limit }} prompts
                     </span>
                 {% endif %}
@@ -193,20 +117,20 @@
         </div>
 
         {% if not quota.can_generate %}
-        <div id="quotaExhaustedAlert" class="alert-error" style="margin-bottom:18px;">
-            <i data-lucide="alert-circle" style="width:16px; height:16px; flex-shrink:0;"></i>
+        <div id="quotaExhaustedAlert" class="alert alert-error text-white text-xs rounded-xl shadow-sm mb-5">
+            <i data-lucide="alert-circle" class="w-4 h-4 shrink-0"></i>
             <span>Has alcanzado tu límite diario de <strong>{{ quota.limit }} prompts</strong> por hoy. Tu cuota se reiniciará a medianoche.</span>
         </div>
         {% endif %}
 
-        <!-- Selector de Pestañas Segmented Pills: Enlace vs Subir Archivo -->
-        <div class="segmented-pill-container" style="margin-bottom:20px;">
-            <button type="button" id="tabUrlBtn" class="pill-tab-btn active" onclick="switchTab('url')">
-                <i data-lucide="link" style="width:14px; height:14px;"></i>
+        <!-- Selector Segmentado: Enlace vs Subir Archivo -->
+        <div class="tabs tabs-boxed bg-base-200/80 border border-base-300/60 p-1 rounded-xl w-fit mb-5">
+            <button type="button" id="tabUrlBtn" class="tab tab-sm rounded-lg text-xs font-semibold gap-1.5 transition-all tab-active bg-base-100 shadow-sm text-primary font-bold" onclick="switchTab('url')">
+                <i data-lucide="link" class="w-3.5 h-3.5"></i>
                 Enlace / URL
             </button>
-            <button type="button" id="tabUploadBtn" class="pill-tab-btn" onclick="switchTab('upload')">
-                <i data-lucide="upload-cloud" style="width:14px; height:14px;"></i>
+            <button type="button" id="tabUploadBtn" class="tab tab-sm rounded-lg text-xs font-semibold gap-1.5 transition-all text-base-content/70 hover:text-base-content" onclick="switchTab('upload')">
+                <i data-lucide="upload-cloud" class="w-3.5 h-3.5"></i>
                 Subir Video
             </button>
         </div>
@@ -215,40 +139,46 @@
             {% csrf_token %}
             <input type="hidden" name="input_type" id="inputTypeInput" value="link">
 
-            <div style="display:flex; flex-direction:column; gap:18px;">
+            <div class="flex flex-col gap-5">
                 <!-- Entrada 1: Pegar Enlace -->
                 <div id="urlSection">
-                    <label style="display:block; font-size:0.75rem; font-weight:700; color:var(--text-muted); margin-bottom:8px; text-transform:uppercase; letter-spacing:0.05em;">
+                    <label class="text-[11px] font-bold uppercase tracking-wider text-base-content/60 flex items-center gap-1.5 mb-2">
+                        <i data-lucide="link" class="w-3.5 h-3.5 text-warning"></i>
                         Enlace de Video (Facebook Reels, YouTube, TikTok)
                     </label>
-                    <div style="position:relative;">
-                        <i data-lucide="link" style="position:absolute; left:14px; top:50%; transform:translateY(-50%); width:15px; height:15px; color:var(--text-muted);"></i>
-                        <input type="url" name="video_url" id="videoUrlInput" placeholder="https://www.facebook.com/reel/..." {% if not quota.can_generate %}disabled{% endif %} class="shadcn-input" style="width:100%; padding-left:38px !important;">
+                    <div class="relative">
+                        <i data-lucide="link" class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-base-content/40"></i>
+                        <input type="url" name="video_url" id="videoUrlInput" placeholder="https://www.facebook.com/reel/..."
+                               {% if not quota.can_generate %}disabled{% endif %}
+                               class="input input-bordered w-full pl-10 pr-4 rounded-xl bg-base-200/40 border-base-300 text-sm focus:border-primary focus:outline-none h-11 font-mono">
                     </div>
                 </div>
 
                 <!-- Entrada 2: Subir Archivo -->
-                <div id="uploadSection" style="display:none;">
-                    <label style="display:block; font-size:0.75rem; font-weight:700; color:var(--text-muted); margin-bottom:8px; text-transform:uppercase; letter-spacing:0.05em;">
+                <div id="uploadSection" class="hidden">
+                    <label class="text-[11px] font-bold uppercase tracking-wider text-base-content/60 flex items-center gap-1.5 mb-2">
+                        <i data-lucide="upload-cloud" class="w-3.5 h-3.5 text-warning"></i>
                         Archivo de Video (Máx 50MB, 2 min)
                     </label>
-                    <div id="dropZone" style="border:2px dashed var(--border-subtle); border-radius:8px; padding:24px 16px; text-align:center; background:var(--bg-muted); {% if quota.can_generate %}cursor:pointer;{% else %}cursor:not-allowed; opacity:0.6;{% endif %} transition:all 0.2s;" {% if quota.can_generate %}onclick="document.getElementById('videoFileInput').click()"{% endif %}>
-                        <i data-lucide="film" style="width:32px; height:32px; color:var(--text-muted); margin:0 auto 8px; display:block;"></i>
-                        <p id="fileLabel" style="font-size:0.85rem; color:var(--text-primary); margin:0 0 4px; font-weight:600;">
+                    <div id="dropZone" class="border-2 border-dashed border-base-300 rounded-2xl p-8 text-center bg-base-200/40 hover:bg-primary/5 hover:border-primary transition cursor-pointer"
+                         {% if quota.can_generate %}onclick="document.getElementById('videoFileInput').click()"{% endif %}>
+                        <i data-lucide="film" class="w-8 h-8 text-warning mx-auto mb-2 opacity-80"></i>
+                        <p id="fileLabel" class="text-sm font-bold text-base-content mb-1">
                             Arrastra o haz clic para seleccionar video
                         </p>
-                        <span style="font-size:0.72rem; color:var(--text-muted);">Formatos soportados: MP4, MOV, MKV, WEBM</span>
-                        <input type="file" name="video_file" id="videoFileInput" accept="video/*" style="display:none;" {% if not quota.can_generate %}disabled{% endif %} onchange="handleFileSelected(this)">
+                        <span class="text-xs text-base-content/50">Formatos soportados: MP4, MOV, MKV, WEBM</span>
+                        <input type="file" name="video_file" id="videoFileInput" accept="video/*" class="hidden" {% if not quota.can_generate %}disabled{% endif %} onchange="handleFileSelected(this)">
                     </div>
                 </div>
 
-                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:16px;">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <!-- Idioma de salida -->
                     <div>
-                        <label style="display:block; font-size:0.75rem; font-weight:700; color:var(--text-muted); margin-bottom:8px; text-transform:uppercase; letter-spacing:0.05em;">
+                        <label class="text-[11px] font-bold uppercase tracking-wider text-base-content/60 flex items-center gap-1.5 mb-2">
+                            <i data-lucide="languages" class="w-3.5 h-3.5 text-warning"></i>
                             Idioma del Prompt
                         </label>
-                        <select name="prompt_language" {% if not quota.can_generate %}disabled{% endif %} class="shadcn-input" style="width:100%;">
+                        <select name="prompt_language" {% if not quota.can_generate %}disabled{% endif %} class="select select-bordered w-full rounded-xl bg-base-200/40 border-base-300 text-sm focus:border-primary h-11">
                             {% for code, name in languages %}
                                 <option value="{{ code }}" {% if code == 'es' %}selected{% endif %}>{{ name }}</option>
                             {% endfor %}
@@ -257,119 +187,123 @@
 
                     <!-- Contexto Adicional -->
                     <div>
-                        <label style="display:block; font-size:0.75rem; font-weight:700; color:var(--text-muted); margin-bottom:8px; text-transform:uppercase; letter-spacing:0.05em;">
+                        <label class="text-[11px] font-bold uppercase tracking-wider text-base-content/60 flex items-center gap-1.5 mb-2">
+                            <i data-lucide="message-square" class="w-3.5 h-3.5 text-warning"></i>
                             Instrucciones Extra (Opcional)
                         </label>
-                        <input type="text" name="additional_context" placeholder="Ej: Detalla la iluminación y atmósfera..." {% if not quota.can_generate %}disabled{% endif %} class="shadcn-input" style="width:100%;">
+                        <input type="text" name="additional_context" placeholder="Ej: Detalla la iluminación y atmósfera..."
+                               {% if not quota.can_generate %}disabled{% endif %}
+                               class="input input-bordered w-full rounded-xl bg-base-200/40 border-base-300 text-sm focus:border-primary focus:outline-none h-11">
                     </div>
                 </div>
 
                 <!-- Botón de Generar -->
-                <button type="submit" id="submitBtn" {% if not quota.can_generate %}disabled class="btn-brand" style="opacity:0.5; cursor:not-allowed; justify-content:center; padding:12px; font-size:0.92rem; margin-top:6px;"{% else %}class="btn-brand" style="justify-content:center; padding:12px; font-size:0.92rem; margin-top:6px;"{% endif %}>
-                    <i data-lucide="sparkles" style="width:16px; height:16px;"></i>
+                <button type="submit" id="submitBtn"
+                        {% if not quota.can_generate %}disabled class="btn btn-primary w-full rounded-xl gap-2 h-12 text-sm font-semibold opacity-50 cursor-not-allowed"{% else %}class="btn btn-primary w-full rounded-xl gap-2 h-12 text-sm font-semibold shadow-sm text-primary-content"{% endif %}>
+                    <i data-lucide="sparkles" class="w-4 h-4"></i>
                     {% if quota.can_generate %}Generar Prompt con IA{% else %}Cuota Diaria Alcanzada{% endif %}
                 </button>
             </div>
         </form>
 
         <!-- Estado de Procesamiento / Loading -->
-        <div id="processingCard" style="display:none; margin-top:20px; padding:18px; border-radius:8px; background:rgba(239,68,68,0.06); border:1px solid rgba(239,68,68,0.25);">
-            <div style="display:flex; align-items:center; gap:12px; margin-bottom:10px;">
-                <div style="width:22px; height:22px; border-radius:50%; border:2px solid #ef4444; border-top-color:transparent; animation:spin 1s linear infinite; flex-shrink:0;"></div>
-                <div style="flex:1; min-width:0;">
-                    <div id="processingTitle" style="font-size:0.875rem; font-weight:700; color:var(--text-primary);">Procesando video...</div>
-                    <div id="processingSub" style="font-size:0.75rem; color:var(--text-muted);">Analizando cinematografía y escenas con Gemini</div>
+        <div id="processingCard" class="hidden mt-5 p-4 rounded-xl bg-primary/10 border border-primary/20">
+            <div class="flex items-center gap-3 mb-2.5">
+                <div class="w-5 h-5 rounded-full border-2 border-primary border-t-transparent animate-spin shrink-0"></div>
+                <div class="flex-1 min-w-0">
+                    <div id="processingTitle" class="text-sm font-bold text-base-content">Procesando video...</div>
+                    <div id="processingSub" class="text-xs text-base-content/60">Analizando cinematografía y escenas con Gemini</div>
                 </div>
             </div>
-            <div style="height:5px; background:var(--border-subtle); border-radius:9999px; overflow:hidden;">
-                <div id="progressBar" style="height:100%; width:30%; background:linear-gradient(90deg, #dc2626, #ef4444); border-radius:9999px; transition:width 0.5s;"></div>
+            <div class="w-full h-1.5 bg-base-300/60 rounded-full overflow-hidden">
+                <div id="progressBar" class="h-full bg-primary transition-all duration-300" style="width:30%;"></div>
             </div>
         </div>
     </div>
 
     <!-- ═════════ 2. GALERÍA DE PROMPTS GENERADOS (HISTORIAL) ═════════ -->
-    <div>
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; flex-wrap:wrap; gap:12px;">
-            <div style="display:flex; align-items:center; gap:10px;">
-                <h2 style="font-size:1.25rem; font-weight:800; letter-spacing:-0.02em; color:var(--text-primary); margin:0; display:flex; align-items:center; gap:8px;">
-                    Historial de Prompts
-                </h2>
-            </div>
+    <div class="flex flex-col gap-5">
+        <div class="flex justify-between items-center flex-wrap gap-3">
+            <h2 class="text-xl font-bold tracking-tight text-base-content m-0 flex items-center gap-2">
+                Historial de Prompts
+            </h2>
 
             {% if user.role == 'superadmin' %}
-            <!-- Segmented Pill Tabs para Superadmin -->
-            <div class="segmented-pill-container">
-                <button type="button" id="tabMyPromptsBtn" class="pill-tab-btn active" onclick="switchHistoryTab('my')">
-                    <i data-lucide="user" style="width:13px; height:13px;"></i>
-                    Mis Prompts ({{ my_history_count }})
+            <!-- Segmented Tabs para Superadmin -->
+            <div class="tabs tabs-boxed bg-base-200/80 border border-base-300/60 p-1 rounded-xl">
+                <button type="button" id="tabMyPromptsBtn" class="tab tab-sm rounded-lg text-xs font-semibold gap-2 transition-all tab-active bg-base-100 shadow-sm text-primary font-bold" onclick="switchHistoryTab('my')">
+                    <i data-lucide="user" class="w-3.5 h-3.5"></i>
+                    Mis Prompts
+                    <span class="badge badge-primary badge-md font-mono font-bold px-2 text-primary-content">{{ my_history_count }}</span>
                 </button>
-                <button type="button" id="tabAllPromptsBtn" class="pill-tab-btn" onclick="switchHistoryTab('all')">
-                    <i data-lucide="globe" style="width:13px; height:13px;"></i>
-                    Otros Usuarios ({{ all_history_count }})
+                <button type="button" id="tabAllPromptsBtn" class="tab tab-sm rounded-lg text-xs font-semibold gap-2 transition-all text-base-content/70 hover:text-base-content" onclick="switchHistoryTab('all')">
+                    <i data-lucide="globe" class="w-3.5 h-3.5"></i>
+                    Otros Usuarios
+                    <span class="badge badge-neutral badge-md font-mono font-bold px-2">{{ all_history_count }}</span>
                 </button>
             </div>
             {% else %}
-            <span class="badge-pill badge-user" style="font-size:0.75rem;">{{ my_history_count }} registro{{ my_history_count|pluralize }}</span>
+            <span class="badge badge-neutral badge-md font-bold px-3 py-1">{{ my_history_count }} registro{{ my_history_count|pluralize }}</span>
             {% endif %}
         </div>
 
         <!-- SECCIÓN 1: MIS PROMPTS -->
         <div id="myPromptsSection">
-            <div id="historyGrid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:18px;">
+            <div id="historyGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {% for item in my_history %}
-                <div class="prompt-card-shadcn" id="history-item-{{ item.id }}" onclick="openPromptModal({{ item.id }})">
+                <div class="card bg-base-100 shadow-sm border border-base-300 rounded-2xl p-4 hover:border-primary/50 transition cursor-pointer flex flex-col justify-between" id="history-item-{{ item.id }}" onclick="openPromptModal({{ item.id }})">
                     <div>
                         <!-- Miniatura de Video -->
-                        <div style="width:100%; height:140px; border-radius:8px; background:var(--bg-muted); border:1px solid var(--border-subtle); overflow:hidden; position:relative; margin-bottom:12px; display:flex; align-items:center; justify-content:center;">
+                        <div class="w-full h-36 rounded-xl bg-base-200 border border-base-300 overflow-hidden relative mb-3 flex items-center justify-center">
                             {% if item.thumbnail %}
-                                <img src="{{ item.thumbnail.url }}" alt="Miniatura Video" style="width:100%; height:100%; object-fit:cover;" onerror="this.onerror=null; this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='flex';">
-                                <div style="display:none; width:100%; height:100%; align-items:center; justify-content:center;">
-                                    <i data-lucide="film" style="width:36px; height:36px; color:var(--text-muted); opacity:0.5;"></i>
+                                <img src="{{ item.thumbnail.url }}" alt="Miniatura Video" class="w-full h-full object-cover" onerror="this.onerror=null; this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='flex';">
+                                <div class="hidden w-full h-full items-center justify-center">
+                                    <i data-lucide="film" class="w-9 h-9 text-base-content/30"></i>
                                 </div>
                             {% else %}
-                                <i data-lucide="film" style="width:36px; height:36px; color:var(--text-muted); opacity:0.5;"></i>
+                                <i data-lucide="film" class="w-9 h-9 text-base-content/30"></i>
                             {% endif %}
-                            <div style="position:absolute; bottom:8px; left:8px;">
-                                <span class="badge-pill {% if item.status == 'completed' %}badge-admin{% elif item.status == 'processing' or item.status == 'pending' %}badge-superadmin{% else %}badge-user{% endif %}" style="font-size:0.65rem;">
+                            <div class="absolute bottom-2 left-2">
+                                <span class="badge {% if item.status == 'completed' %}badge-success text-white{% elif item.status == 'processing' or item.status == 'pending' %}badge-warning{% else %}badge-neutral{% endif %} badge-md font-bold text-xs px-2.5">
                                     {{ item.get_status_display }}
                                 </span>
                             </div>
                         </div>
 
                         <!-- Título y Origen -->
-                        <h3 style="font-size:0.95rem; font-weight:700; color:var(--text-primary); margin:0 0 4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                        <h3 class="font-bold text-sm text-base-content truncate mb-1">
                             Prompt #{{ item.id }}
                         </h3>
 
                         {% if item.video_url %}
-                        <div style="font-size:0.75rem; color:#ef4444; margin:0 0 8px; display:flex; align-items:center; gap:5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-                            <i data-lucide="link" style="width:12px; height:12px; flex-shrink:0;"></i>
-                            <span style="overflow:hidden; text-overflow:ellipsis;" title="{{ item.video_url }}">{{ item.video_url }}</span>
+                        <div class="text-xs text-primary font-mono truncate flex items-center gap-1.5 mb-1.5 opacity-90" title="{{ item.video_url }}">
+                            <i data-lucide="link" class="w-3.5 h-3.5 shrink-0"></i>
+                            <span class="truncate">{{ item.video_url }}</span>
                         </div>
                         {% else %}
-                        <div style="font-size:0.75rem; color:var(--text-muted); margin:0 0 8px; display:flex; align-items:center; gap:5px;">
-                            <i data-lucide="upload-cloud" style="width:12px; height:12px; flex-shrink:0;"></i>
+                        <div class="text-xs text-base-content/60 flex items-center gap-1.5 mb-1.5">
+                            <i data-lucide="upload-cloud" class="w-3.5 h-3.5 shrink-0"></i>
                             <span>Archivo Local</span>
                         </div>
                         {% endif %}
 
-                        <p style="font-size:0.72rem; color:var(--text-muted); margin:0 0 12px;">{{ item.created_at|date:"d M Y, H:i" }}</p>
+                        <p class="text-[11px] text-base-content/50 font-mono mb-3">{{ item.created_at|date:"d M Y, H:i" }}</p>
                     </div>
 
                     <!-- Acciones Rápidas -->
-                    <div style="display:flex; align-items:center; justify-content:space-between; border-top:1px solid var(--border-subtle); padding-top:10px;">
-                        <span style="font-size:0.78rem; color:#ef4444; font-weight:700; display:flex; align-items:center; gap:4px;">
-                            Ver Prompt <i data-lucide="arrow-right" style="width:13px; height:13px;"></i>
+                    <div class="flex items-center justify-between pt-3 border-t border-base-300/70">
+                        <span class="text-xs font-bold text-primary inline-flex items-center gap-1 hover:underline">
+                            Ver Prompt <i data-lucide="arrow-right" class="w-3 h-3"></i>
                         </span>
-                        <button type="button" class="action-btn action-btn-delete" title="Eliminar" onclick="event.stopPropagation(); openDeleteModal({{ item.id }})">
-                            <i data-lucide="trash-2" style="width:14px; height:14px;"></i>
+                        <button type="button" class="btn btn-ghost btn-square btn-xs border border-base-300 hover:border-error hover:bg-error/10 hover:text-error rounded-lg h-7 w-7 text-base-content/60 transition-all" title="Eliminar" onclick="event.stopPropagation(); openDeleteModal({{ item.id }})">
+                            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
                         </button>
                     </div>
                 </div>
                 {% empty %}
-                <div id="noHistoryMsg" class="shadcn-card" style="grid-column:1 / -1; text-align:center; padding:48px 20px; color:var(--text-muted);">
-                    <i data-lucide="clapperboard" style="width:40px; height:40px; margin:0 auto 12px; opacity:0.3;"></i>
-                    <p style="font-size:0.9rem; margin:0;">Aún no has generado ningún prompt. ¡Pega un enlace arriba para comenzar!</p>
+                <div id="noHistoryMsg" class="card bg-base-100 border border-base-300 rounded-2xl col-span-full text-center p-12 text-base-content/50">
+                    <i data-lucide="clapperboard" class="w-10 h-10 mx-auto mb-3 opacity-30 text-base-content"></i>
+                    <p class="text-sm font-semibold">Aún no has generado ningún prompt. ¡Pega un enlace arriba para comenzar!</p>
                 </div>
                 {% endfor %}
             </div>
@@ -377,71 +311,71 @@
 
         {% if user.role == 'superadmin' %}
         <!-- SECCIÓN 2: OTROS USUARIOS (SUPERADMIN) -->
-        <div id="allPromptsSection" style="display:none;">
-            <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:18px;">
+        <div id="allPromptsSection" class="hidden">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {% for item in all_history %}
-                <div class="prompt-card-shadcn" id="history-item-{{ item.id }}" onclick="openPromptModal({{ item.id }})">
+                <div class="card bg-base-100 shadow-sm border border-base-300 rounded-2xl p-4 hover:border-primary/50 transition cursor-pointer flex flex-col justify-between" id="history-item-{{ item.id }}" onclick="openPromptModal({{ item.id }})">
                     <div>
                         <!-- Miniatura con Badge Autor -->
-                        <div style="width:100%; height:140px; border-radius:8px; background:var(--bg-muted); border:1px solid var(--border-subtle); overflow:hidden; position:relative; margin-bottom:12px; display:flex; align-items:center; justify-content:center;">
+                        <div class="w-full h-36 rounded-xl bg-base-200 border border-base-300 overflow-hidden relative mb-3 flex items-center justify-center">
                             {% if item.thumbnail %}
-                                <img src="{{ item.thumbnail.url }}" alt="Miniatura Video" style="width:100%; height:100%; object-fit:cover;" onerror="this.onerror=null; this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='flex';">
-                                <div style="display:none; width:100%; height:100%; align-items:center; justify-content:center;">
-                                    <i data-lucide="film" style="width:36px; height:36px; color:var(--text-muted); opacity:0.5;"></i>
+                                <img src="{{ item.thumbnail.url }}" alt="Miniatura Video" class="w-full h-full object-cover" onerror="this.onerror=null; this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='flex';">
+                                <div class="hidden w-full h-full items-center justify-center">
+                                    <i data-lucide="film" class="w-9 h-9 text-base-content/30"></i>
                                 </div>
                             {% else %}
-                                <i data-lucide="film" style="width:36px; height:36px; color:var(--text-muted); opacity:0.5;"></i>
+                                <i data-lucide="film" class="w-9 h-9 text-base-content/30"></i>
                             {% endif %}
                             
                             <!-- Badge de Autor -->
-                            <div style="position:absolute; top:8px; left:8px;">
-                                <span class="badge-pill badge-superadmin" style="font-size:0.68rem; display:inline-flex; align-items:center; gap:4px;">
-                                    <i data-lucide="user" style="width:11px; height:11px;"></i>
+                            <div class="absolute top-2 left-2">
+                                <span class="badge badge-neutral badge-md font-bold text-xs gap-1 px-2.5">
+                                    <i data-lucide="user" class="w-3 h-3"></i>
                                     @{{ item.user.username }}
                                 </span>
                             </div>
 
-                            <div style="position:absolute; bottom:8px; left:8px;">
-                                <span class="badge-pill {% if item.status == 'completed' %}badge-admin{% elif item.status == 'processing' or item.status == 'pending' %}badge-superadmin{% else %}badge-user{% endif %}" style="font-size:0.65rem;">
+                            <div class="absolute bottom-2 left-2">
+                                <span class="badge {% if item.status == 'completed' %}badge-success text-white{% elif item.status == 'processing' or item.status == 'pending' %}badge-warning{% else %}badge-neutral{% endif %} badge-md font-bold text-xs px-2.5">
                                     {{ item.get_status_display }}
                                 </span>
                             </div>
                         </div>
 
                         <!-- Título y Origen -->
-                        <h3 style="font-size:0.95rem; font-weight:700; color:var(--text-primary); margin:0 0 4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                        <h3 class="font-bold text-sm text-base-content truncate mb-1">
                             Prompt #{{ item.id }}
                         </h3>
 
                         {% if item.video_url %}
-                        <div style="font-size:0.75rem; color:#ef4444; margin:0 0 8px; display:flex; align-items:center; gap:5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-                            <i data-lucide="link" style="width:12px; height:12px; flex-shrink:0;"></i>
-                            <span style="overflow:hidden; text-overflow:ellipsis;" title="{{ item.video_url }}">{{ item.video_url }}</span>
+                        <div class="text-xs text-primary font-mono truncate flex items-center gap-1.5 mb-1.5 opacity-90" title="{{ item.video_url }}">
+                            <i data-lucide="link" class="w-3.5 h-3.5 shrink-0"></i>
+                            <span class="truncate">{{ item.video_url }}</span>
                         </div>
                         {% else %}
-                        <div style="font-size:0.75rem; color:var(--text-muted); margin:0 0 8px; display:flex; align-items:center; gap:5px;">
-                            <i data-lucide="upload-cloud" style="width:12px; height:12px; flex-shrink:0;"></i>
+                        <div class="text-xs text-base-content/60 flex items-center gap-1.5 mb-1.5">
+                            <i data-lucide="upload-cloud" class="w-3.5 h-3.5 shrink-0"></i>
                             <span>Archivo Local</span>
                         </div>
                         {% endif %}
 
-                        <p style="font-size:0.72rem; color:var(--text-muted); margin:0 0 12px;">{{ item.created_at|date:"d M Y, H:i" }}</p>
+                        <p class="text-[11px] text-base-content/50 font-mono mb-3">{{ item.created_at|date:"d M Y, H:i" }}</p>
                     </div>
 
                     <!-- Acciones Rápidas -->
-                    <div style="display:flex; align-items:center; justify-content:space-between; border-top:1px solid var(--border-subtle); padding-top:10px;">
-                        <span style="font-size:0.78rem; color:#ef4444; font-weight:700; display:flex; align-items:center; gap:4px;">
-                            Ver Prompt <i data-lucide="arrow-right" style="width:13px; height:13px;"></i>
+                    <div class="flex items-center justify-between pt-3 border-t border-base-300/70">
+                        <span class="text-xs font-bold text-primary inline-flex items-center gap-1 hover:underline">
+                            Ver Prompt <i data-lucide="arrow-right" class="w-3 h-3"></i>
                         </span>
-                        <button type="button" class="action-btn action-btn-delete" title="Eliminar" onclick="event.stopPropagation(); openDeleteModal({{ item.id }})">
-                            <i data-lucide="trash-2" style="width:14px; height:14px;"></i>
+                        <button type="button" class="btn btn-ghost btn-square btn-xs border border-base-300 hover:border-error hover:bg-error/10 hover:text-error rounded-lg h-7 w-7 text-base-content/60 transition-all" title="Eliminar" onclick="event.stopPropagation(); openDeleteModal({{ item.id }})">
+                            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
                         </button>
                     </div>
                 </div>
                 {% empty %}
-                <div class="shadcn-card" style="grid-column:1 / -1; text-align:center; padding:48px 20px; color:var(--text-muted);">
-                    <i data-lucide="users" style="width:40px; height:40px; margin:0 auto 12px; opacity:0.3;"></i>
-                    <p style="font-size:0.9rem; margin:0;">Aún no hay prompts generados por otros usuarios.</p>
+                <div class="card bg-base-100 border border-base-300 rounded-2xl col-span-full text-center p-12 text-base-content/50">
+                    <i data-lucide="users" class="w-10 h-10 mx-auto mb-3 opacity-30 text-base-content"></i>
+                    <p class="text-sm font-semibold">Aún no hay prompts generados por otros usuarios.</p>
                 </div>
                 {% endfor %}
             </div>
@@ -451,223 +385,213 @@
 
 </div>
 
-<!-- ═════════ 3. MODAL RADIX / SHADCN: VISOR DE PROMPT COMPLETO ═════════ -->
-<div id="promptModal" style="display:none; position:fixed; inset:0; z-index:100000; background:var(--modal-backdrop); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); align-items:center; justify-content:center; padding:16px;">
-    <div class="shadcn-card" style="width:100%; max-width:920px; max-height:90vh; display:flex; flex-direction:column; animation:modalIn 0.22s ease-out; overflow:hidden;">
+<!-- ═════════ 3. MODAL: VISOR DE PROMPT COMPLETO ═════════ -->
+<div id="promptModal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-md hidden items-center justify-center p-4">
+    <div class="card bg-base-100 shadow-2xl border border-base-300 w-full max-w-4xl max-h-[90vh] flex flex-col rounded-2xl overflow-hidden p-0">
         
         <!-- Modal Header -->
-        <div style="padding:18px 24px; border-bottom:1px solid var(--border-subtle); display:flex; justify-content:space-between; align-items:center; flex-shrink:0;">
-            <div style="display:flex; align-items:center; gap:12px;">
-                <div style="width:36px; height:36px; border-radius:9999px; background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.25); display:flex; align-items:center; justify-content:center; color:#ef4444;">
-                    <i data-lucide="clapperboard" style="width:18px; height:18px;"></i>
+        <div class="p-5 lg:px-6 border-b border-base-300 flex justify-between items-center shrink-0">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-warning/10 border border-warning/20 flex items-center justify-center text-warning shrink-0">
+                    <i data-lucide="clapperboard" class="w-5 h-5"></i>
                 </div>
                 <div>
-                    <h3 id="modalPromptTitle" style="font-size:1.15rem; font-weight:700; color:var(--text-primary); margin:0;">Prompt de Video</h3>
-                    <div style="display:flex; align-items:center; gap:8px; margin-top:2px;">
-                        <span id="modalPromptStatus" class="badge-pill badge-admin">Completado</span>
-                        <span id="modalPromptDate" style="font-size:0.75rem; color:var(--text-muted);"></span>
+                    <h3 id="modalPromptTitle" class="text-base font-bold text-base-content m-0">Prompt de Video</h3>
+                    <div class="flex items-center gap-2 mt-0.5">
+                        <span id="modalPromptStatus" class="badge badge-success badge-md font-bold text-xs text-white">Completado</span>
+                        <span id="modalPromptDate" class="text-xs text-base-content/60 font-mono"></span>
                     </div>
                 </div>
             </div>
 
-            <div style="display:flex; align-items:center; gap:8px;">
-                <button type="button" class="btn-brand" style="padding:6px 16px; font-size:0.8rem;" onclick="copyFullPrompt()">
-                    <i data-lucide="copy" id="copyIcon" style="width:13px; height:13px;"></i>
+            <div class="flex items-center gap-2">
+                <button type="button" class="btn btn-primary btn-sm text-xs font-semibold rounded-xl gap-1.5 text-primary-content shadow-xs" onclick="copyFullPrompt()">
+                    <i data-lucide="copy" id="copyIcon" class="w-3.5 h-3.5"></i>
                     <span id="copyText">Copiar Markdown</span>
                 </button>
-                <button type="button" class="action-pill-btn" onclick="closePromptModal()">
-                    <i data-lucide="x"></i>
+                <button type="button" class="btn btn-ghost btn-square btn-xs rounded-lg text-base-content/60 hover:text-base-content" onclick="closePromptModal()">
+                    <i data-lucide="x" class="w-4 h-4"></i>
                 </button>
             </div>
         </div>
 
         <!-- Banner de Enlace del Reel / Fuente del Video -->
-        <div id="modalVideoSource" style="padding:10px 24px; background:var(--bg-muted); border-bottom:1px solid var(--border-subtle); display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; font-size:0.8rem;">
-            <div style="display:flex; align-items:center; gap:8px; min-width:0; flex:1;">
-                <i data-lucide="link" style="width:14px; height:14px; color:#ef4444; flex-shrink:0;"></i>
-                <span style="color:var(--text-muted); flex-shrink:0;">Enlace del Video:</span>
-                <span id="modalVideoUrlText" style="color:var(--text-primary); font-family:monospace; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:600;"></span>
+        <div id="modalVideoSource" class="p-3 px-6 bg-base-200/50 border-b border-base-300 flex items-center justify-between flex-wrap gap-2 text-xs">
+            <div class="flex items-center gap-2 min-w-0 flex-1">
+                <i data-lucide="link" class="w-3.5 h-3.5 text-primary shrink-0"></i>
+                <span class="text-base-content/60 shrink-0">Enlace del Video:</span>
+                <span id="modalVideoUrlText" class="text-base-content font-mono font-bold truncate"></span>
             </div>
-            <div style="display:flex; align-items:center; gap:8px;">
-                <a id="modalVideoUrlBtn" href="#" target="_blank" rel="noopener noreferrer" class="btn-ghost" style="padding:4px 12px; font-size:0.75rem; text-decoration:none;">
-                    <i data-lucide="external-link" style="width:12px; height:12px;"></i>
+            <div class="flex items-center gap-2">
+                <a id="modalVideoUrlBtn" href="#" target="_blank" rel="noopener noreferrer" class="btn btn-ghost btn-xs gap-1 border border-base-300 rounded-lg text-xs">
+                    <i data-lucide="external-link" class="w-3 h-3"></i>
                     Abrir Video
                 </a>
             </div>
         </div>
 
-        <!-- Segmented Pill Tabs del Modal -->
-        <div style="padding:10px 24px; border-bottom:1px solid var(--border-subtle); background:var(--bg-card); flex-shrink:0;">
-            <div class="segmented-pill-container">
-                <button type="button" id="tabStructuredBtn" class="pill-tab-btn active" onclick="switchPromptView('structured')">
-                    <i data-lucide="film" style="width:14px; height:14px;"></i>
+        <!-- Segmented Tabs del Modal -->
+        <div class="p-2.5 px-6 border-b border-base-300 bg-base-200/40 shrink-0">
+            <div class="tabs tabs-boxed bg-base-200/80 border border-base-300/60 p-1 rounded-xl w-fit">
+                <button type="button" id="tabStructuredBtn" class="tab tab-sm rounded-lg text-xs font-semibold gap-1.5 transition-all tab-active bg-base-100 shadow-sm text-primary font-bold" onclick="switchPromptView('structured')">
+                    <i data-lucide="film" class="w-3.5 h-3.5"></i>
                     Ficha y Escenas
                 </button>
                 {% if user.role == 'superadmin' or user.can_view_stats %}
-                <button type="button" id="tabStatsBtn" class="pill-tab-btn" onclick="switchPromptView('stats')">
-                    <i data-lucide="bar-chart-2" style="width:14px; height:14px;"></i>
+                <button type="button" id="tabStatsBtn" class="tab tab-sm rounded-lg text-xs font-semibold gap-1.5 transition-all text-base-content/70 hover:text-base-content" onclick="switchPromptView('stats')">
+                    <i data-lucide="bar-chart-2" class="w-3.5 h-3.5"></i>
                     Stats del Reel
                 </button>
                 {% endif %}
-                <button type="button" id="tabRawBtn" class="pill-tab-btn" onclick="switchPromptView('raw')">
-                    <i data-lucide="file-text" style="width:14px; height:14px;"></i>
+                <button type="button" id="tabRawBtn" class="tab tab-sm rounded-lg text-xs font-semibold gap-1.5 transition-all text-base-content/70 hover:text-base-content" onclick="switchPromptView('raw')">
+                    <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
                     Markdown Completo
                 </button>
             </div>
         </div>
 
         <!-- Modal Body con Scroll Independiente -->
-        <div style="padding:24px; overflow-y:auto; flex:1;">
+        <div class="p-6 overflow-y-auto flex-1">
 
             <!-- Vista 1: Estructurada (Cards) -->
             <div id="structuredView">
                 <!-- Fichas de Estilo y Cinematografía -->
-                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:16px; margin-bottom:24px;">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                     <!-- Estilo -->
-                    <div style="background:var(--bg-muted); border:1px solid var(--border-subtle); border-radius:8px; padding:18px;">
-                        <h4 style="font-size:0.85rem; font-weight:700; color:#ef4444; margin:0 0 12px; display:flex; align-items:center; gap:6px;">
-                            <i data-lucide="palette" style="width:15px; height:15px;"></i>
+                    <div class="card bg-base-200/50 border border-base-300 rounded-xl p-4">
+                        <h4 class="text-xs font-bold uppercase tracking-wider text-primary m-0 mb-3 flex items-center gap-1.5">
+                            <i data-lucide="palette" class="w-4 h-4"></i>
                             Estilo Visual
                         </h4>
-                        <div id="styleList" style="font-size:0.82rem; color:var(--text-secondary); display:flex; flex-direction:column; gap:8px; line-height:1.5;"></div>
+                        <div id="styleList" class="text-xs text-base-content/75 flex flex-col gap-2 leading-relaxed"></div>
                     </div>
 
                     <!-- Cinematografía -->
-                    <div style="background:var(--bg-muted); border:1px solid var(--border-subtle); border-radius:8px; padding:18px;">
-                        <h4 style="font-size:0.85rem; font-weight:700; color:#3b82f6; margin:0 0 12px; display:flex; align-items:center; gap:6px;">
-                            <i data-lucide="camera" style="width:15px; height:15px;"></i>
+                    <div class="card bg-base-200/50 border border-base-300 rounded-xl p-4">
+                        <h4 class="text-xs font-bold uppercase tracking-wider text-warning m-0 mb-3 flex items-center gap-1.5">
+                            <i data-lucide="camera" class="w-4 h-4"></i>
                             Cinematografía
                         </h4>
-                        <div id="cinematographyList" style="font-size:0.82rem; color:var(--text-secondary); display:flex; flex-direction:column; gap:8px; line-height:1.5;"></div>
+                        <div id="cinematographyList" class="text-xs text-base-content/75 flex flex-col gap-2 leading-relaxed"></div>
                     </div>
                 </div>
 
                 <!-- Desglose de Escenas -->
-                <h4 style="font-size:0.95rem; font-weight:800; color:var(--text-primary); margin:0 0 16px; display:flex; align-items:center; gap:8px;">
-                    <i data-lucide="layers" style="width:16px; height:16px; color:#ef4444;"></i>
+                <h4 class="text-sm font-bold text-base-content m-0 mb-4 flex items-center gap-2">
+                    <i data-lucide="layers" class="w-4 h-4 text-warning"></i>
                     Desglose Escena por Escena
                 </h4>
-                <div id="scenesContainer" style="display:flex; flex-direction:column; gap:14px;"></div>
+                <div id="scenesContainer" class="flex flex-col gap-3.5"></div>
             </div>
 
             <!-- Vista 2: Stats del Reel (Métricas) -->
-            <div id="statsView" style="display:none;">
-                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:16px; margin-bottom:24px;">
+            <div id="statsView" class="hidden">
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
                     
                     <!-- Vistas -->
-                    <div class="kpi-mini-card">
-                        <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px; color:var(--text-muted); font-size:0.75rem; text-transform:uppercase; font-weight:700;">
-                            <i data-lucide="eye" style="width:15px; height:15px; color:#3b82f6;"></i>
-                            Reproducciones
+                    <div class="card bg-base-200/50 border border-base-300 rounded-xl p-4 text-center">
+                        <div class="text-[10px] text-base-content/60 uppercase font-bold flex items-center justify-center gap-1 mb-1">
+                            <i data-lucide="eye" class="w-3 h-3 text-warning"></i>
+                            Vistas
                         </div>
-                        <div id="statViews" style="font-size:1.6rem; font-weight:800; color:var(--text-primary);">--</div>
+                        <div id="statViews" class="text-xl font-extrabold font-mono text-base-content">--</div>
                     </div>
 
                     <!-- Likes -->
-                    <div class="kpi-mini-card">
-                        <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px; color:var(--text-muted); font-size:0.75rem; text-transform:uppercase; font-weight:700;">
-                            <i data-lucide="heart" style="width:15px; height:15px; color:#ef4444;"></i>
+                    <div class="card bg-base-200/50 border border-base-300 rounded-xl p-4 text-center">
+                        <div class="text-[10px] text-base-content/60 uppercase font-bold flex items-center justify-center gap-1 mb-1">
+                            <i data-lucide="heart" class="w-3 h-3 text-error"></i>
                             Me Gusta
                         </div>
-                        <div id="statLikes" style="font-size:1.6rem; font-weight:800; color:var(--text-primary);">--</div>
+                        <div id="statLikes" class="text-xl font-extrabold font-mono text-error">--</div>
                     </div>
 
                     <!-- Comentarios -->
-                    <div class="kpi-mini-card">
-                        <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px; color:var(--text-muted); font-size:0.75rem; text-transform:uppercase; font-weight:700;">
-                            <i data-lucide="message-circle" style="width:15px; height:15px; color:#22c55e;"></i>
+                    <div class="card bg-base-200/50 border border-base-300 rounded-xl p-4 text-center">
+                        <div class="text-[10px] text-base-content/60 uppercase font-bold flex items-center justify-center gap-1 mb-1">
+                            <i data-lucide="message-circle" class="w-3 h-3 text-success"></i>
                             Comentarios
                         </div>
-                        <div id="statComments" style="font-size:1.6rem; font-weight:800; color:var(--text-primary);">--</div>
+                        <div id="statComments" class="text-xl font-extrabold font-mono text-success">--</div>
                     </div>
 
                     <!-- Duración -->
-                    <div class="kpi-mini-card">
-                        <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px; color:var(--text-muted); font-size:0.75rem; text-transform:uppercase; font-weight:700;">
-                            <i data-lucide="clock" style="width:15px; height:15px; color:#facc15;"></i>
+                    <div class="card bg-base-200/50 border border-base-300 rounded-xl p-4 text-center">
+                        <div class="text-[10px] text-base-content/60 uppercase font-bold flex items-center justify-center gap-1 mb-1">
+                            <i data-lucide="clock" class="w-3 h-3 text-warning"></i>
                             Duración
                         </div>
-                        <div id="statDuration" style="font-size:1.6rem; font-weight:800; color:var(--text-primary);">--</div>
+                        <div id="statDuration" class="text-xl font-extrabold font-mono text-base-content">--</div>
                     </div>
 
                 </div>
 
                 <!-- Detalles adicionales -->
-                <div style="background:var(--bg-muted); border:1px solid var(--border-subtle); border-radius:8px; padding:20px; display:flex; flex-direction:column; gap:12px;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-subtle); padding-bottom:10px;">
-                        <span style="color:var(--text-muted); font-size:0.85rem; display:flex; align-items:center; gap:6px;">
-                            <i data-lucide="calendar" style="width:15px; height:15px; color:#ef4444;"></i>
+                <div class="card bg-base-200/50 border border-base-300 rounded-xl p-5 flex flex-col gap-3 text-xs">
+                    <div class="flex justify-between items-center pb-2.5 border-b border-base-300">
+                        <span class="text-base-content/60 flex items-center gap-1.5">
+                            <i data-lucide="calendar" class="w-3.5 h-3.5 text-warning"></i>
                             Fecha de Publicación Original:
                         </span>
-                        <strong id="statUploadDate" style="color:var(--text-primary); font-size:0.88rem;">--</strong>
+                        <strong id="statUploadDate" class="text-base-content font-mono font-bold">--</strong>
                     </div>
 
-                    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-subtle); padding-bottom:10px;">
-                        <span style="color:var(--text-muted); font-size:0.85rem; display:flex; align-items:center; gap:6px;">
-                            <i data-lucide="user" style="width:15px; height:15px; color:#3b82f6;"></i>
+                    <div class="flex justify-between items-center pb-2.5 border-b border-base-300">
+                        <span class="text-base-content/60 flex items-center gap-1.5">
+                            <i data-lucide="user" class="w-3.5 h-3.5 text-primary"></i>
                             Canal / Creador:
                         </span>
-                        <strong id="statUploader" style="color:var(--text-primary); font-size:0.88rem;">--</strong>
+                        <strong id="statUploader" class="text-base-content font-bold">--</strong>
                     </div>
 
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <span style="color:var(--text-muted); font-size:0.85rem; display:flex; align-items:center; gap:6px;">
-                            <i data-lucide="cpu" style="width:15px; height:15px; color:#22c55e;"></i>
+                    <div class="flex justify-between items-center">
+                        <span class="text-base-content/60 flex items-center gap-1.5">
+                            <i data-lucide="cpu" class="w-3.5 h-3.5 text-success"></i>
                             Modelo de Análisis:
                         </span>
-                        <strong style="color:#22c55e; font-size:0.88rem;">Gemini 2.5 Flash</strong>
+                        <strong class="text-success font-bold font-mono">Gemini 2.5 Flash</strong>
                     </div>
                 </div>
             </div>
 
             <!-- Vista 3: Código Fuente Markdown -->
-            <div id="rawView" style="display:none; margin:-24px; margin-top:0;">
-                <!-- Toolbar pegado arriba -->
-                <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 20px; border-bottom:1px solid var(--border-subtle); background:var(--bg-muted);">
-                    <div style="display:flex; align-items:center; gap:6px;">
-                        <i data-lucide="code-2" style="width:14px; height:14px; color:var(--text-muted);"></i>
-                        <span style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em;">Código fuente Markdown</span>
+            <div id="rawView" class="hidden -m-6 mt-0">
+                <div class="flex items-center justify-between p-3 px-6 border-b border-base-300 bg-base-200/60">
+                    <div class="flex items-center gap-1.5 text-xs text-base-content/60 font-bold uppercase tracking-wider">
+                        <i data-lucide="code-2" class="w-3.5 h-3.5"></i>
+                        <span>Código fuente Markdown</span>
                     </div>
-                    <button type="button" class="btn-ghost" style="font-size:0.75rem; padding:4px 12px;" onclick="copyFullPrompt()">
-                        <i data-lucide="copy" style="width:13px; height:13px;"></i>
+                    <button type="button" class="btn btn-ghost btn-xs gap-1 border border-base-300 rounded-lg text-xs" onclick="copyFullPrompt()">
+                        <i data-lucide="copy" class="w-3 h-3"></i>
                         Copiar
                     </button>
                 </div>
-                <!-- Bloque de código sin radius propio -->
                 <textarea id="rawMarkdownContent" readonly
-                    style="display:block; width:100%; height:480px; padding:20px 24px;
-                           font-family:'JetBrains Mono','Fira Code','Cascadia Code',monospace;
-                           font-size:0.8rem; line-height:1.7;
-                           color:var(--text-secondary);
-                           background:var(--bg-card);
-                           border:none; outline:none; resize:none;
-                           border-radius:0;
-                           white-space:pre; overflow-wrap:normal; overflow-x:auto;"></textarea>
+                    class="textarea w-full h-[460px] p-6 font-mono text-xs text-base-content bg-base-100 border-none outline-none resize-none rounded-none leading-relaxed block overflow-x-auto whitespace-pre"></textarea>
             </div>
         </div>
-
 
     </div>
 </div>
 
-<!-- ═════════ 4. MODAL RADIX / SHADCN: CONFIRMAR ELIMINACIÓN ═════════ -->
-<div id="deleteConfirmModal" style="display:none; position:fixed; inset:0; z-index:100000; background:var(--modal-backdrop); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); align-items:center; justify-content:center; padding:16px;">
-    <div class="shadcn-card" style="width:100%; max-width:440px; padding:28px; animation:modalIn 0.22s ease-out; text-align:center; position:relative; overflow:hidden;">
-        <div style="width:48px; height:48px; border-radius:9999px; background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.3); display:flex; align-items:center; justify-content:center; margin:0 auto 16px; color:#ef4444;">
-            <i data-lucide="trash-2" style="width:22px; height:22px;"></i>
+<!-- ═════════ 4. MODAL: CONFIRMAR ELIMINACIÓN ═════════ -->
+<div id="deleteConfirmModal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-md hidden items-center justify-center p-4">
+    <div class="card bg-base-100 shadow-2xl border border-base-300 w-full max-w-sm p-6 rounded-2xl text-center">
+        <div class="w-12 h-12 rounded-2xl bg-error/10 text-error border border-error/20 flex items-center justify-center mx-auto mb-3.5">
+            <i data-lucide="trash-2" class="w-5 h-5"></i>
         </div>
 
-        <h3 style="font-size:1.15rem; font-weight:700; color:var(--text-primary); margin:0 0 8px;">¿Eliminar este prompt?</h3>
-        <p style="font-size:0.85rem; color:var(--text-secondary); margin:0 0 24px; line-height:1.5;">
+        <h3 class="text-base font-bold text-base-content mb-1">¿Eliminar este prompt?</h3>
+        <p class="text-xs text-base-content/60 leading-relaxed mb-6">
             Esta acción no se puede deshacer. Se eliminará el registro junto con sus escenas y ficha técnica.
         </p>
 
-        <div style="display:flex; gap:10px; justify-content:center;">
-            <button type="button" class="btn-ghost" style="flex:1; justify-content:center;" onclick="closeDeleteModal()">
+        <div class="flex justify-end gap-2.5">
+            <button type="button" class="btn btn-ghost btn-sm flex-1 rounded-xl border border-base-300 text-xs font-semibold" onclick="closeDeleteModal()">
                 Cancelar
             </button>
-            <button type="button" id="confirmDeleteBtn" class="btn-danger" style="flex:1; justify-content:center;" onclick="executeDeletePrompt()">
-                <i data-lucide="trash-2" style="width:14px; height:14px;"></i>
+            <button type="button" id="confirmDeleteBtn" class="btn btn-error btn-sm text-white flex-1 rounded-xl text-xs font-semibold gap-1.5 shadow-xs" onclick="executeDeletePrompt()">
+                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
                 Eliminar
             </button>
         </div>
@@ -684,11 +608,31 @@ let promptIdToDelete = null;
 function switchTab(type) {
     const isUpload = type === 'upload';
     document.getElementById('inputTypeInput').value = isUpload ? 'file' : 'link';
-    document.getElementById('uploadSection').style.display = isUpload ? 'block' : 'none';
-    document.getElementById('urlSection').style.display = isUpload ? 'none' : 'block';
     
-    document.getElementById('tabUploadBtn').classList.toggle('active', isUpload);
-    document.getElementById('tabUrlBtn').classList.toggle('active', !isUpload);
+    const uploadSec = document.getElementById('uploadSection');
+    const urlSec = document.getElementById('urlSection');
+    if (uploadSec) uploadSec.classList.toggle('hidden', !isUpload);
+    if (urlSec) urlSec.classList.toggle('hidden', isUpload);
+    
+    const tabUploadBtn = document.getElementById('tabUploadBtn');
+    const tabUrlBtn = document.getElementById('tabUrlBtn');
+    
+    if (tabUploadBtn) {
+        tabUploadBtn.classList.toggle('tab-active', isUpload);
+        tabUploadBtn.classList.toggle('bg-base-100', isUpload);
+        tabUploadBtn.classList.toggle('shadow-sm', isUpload);
+        tabUploadBtn.classList.toggle('text-primary', isUpload);
+        tabUploadBtn.classList.toggle('font-bold', isUpload);
+        tabUploadBtn.classList.toggle('text-base-content/70', !isUpload);
+    }
+    if (tabUrlBtn) {
+        tabUrlBtn.classList.toggle('tab-active', !isUpload);
+        tabUrlBtn.classList.toggle('bg-base-100', !isUpload);
+        tabUrlBtn.classList.toggle('shadow-sm', !isUpload);
+        tabUrlBtn.classList.toggle('text-primary', !isUpload);
+        tabUrlBtn.classList.toggle('font-bold', !isUpload);
+        tabUrlBtn.classList.toggle('text-base-content/70', isUpload);
+    }
 }
 
 function handleFileSelected(input) {
@@ -698,15 +642,27 @@ function handleFileSelected(input) {
 }
 
 function switchPromptView(view) {
-    document.getElementById('structuredView').style.display = view === 'structured' ? 'block' : 'none';
+    const structuredView = document.getElementById('structuredView');
     const statsView = document.getElementById('statsView');
-    if (statsView) statsView.style.display = view === 'stats' ? 'block' : 'none';
-    document.getElementById('rawView').style.display = view === 'raw' ? 'block' : 'none';
+    const rawView = document.getElementById('rawView');
 
-    document.getElementById('tabStructuredBtn').classList.toggle('active', view === 'structured');
-    const tabStatsBtn = document.getElementById('tabStatsBtn');
-    if (tabStatsBtn) tabStatsBtn.classList.toggle('active', view === 'stats');
-    document.getElementById('tabRawBtn').classList.toggle('active', view === 'raw');
+    if (structuredView) structuredView.classList.toggle('hidden', view !== 'structured');
+    if (statsView) statsView.classList.toggle('hidden', view !== 'stats');
+    if (rawView) rawView.classList.toggle('hidden', view !== 'raw');
+
+    ['tabStructuredBtn', 'tabStatsBtn', 'tabRawBtn'].forEach(btnId => {
+        const btn = document.getElementById(btnId);
+        if (!btn) return;
+        const isActive = (btnId === 'tabStructuredBtn' && view === 'structured') ||
+                         (btnId === 'tabStatsBtn' && view === 'stats') ||
+                         (btnId === 'tabRawBtn' && view === 'raw');
+        btn.classList.toggle('tab-active', isActive);
+        btn.classList.toggle('bg-base-100', isActive);
+        btn.classList.toggle('shadow-sm', isActive);
+        btn.classList.toggle('text-primary', isActive);
+        btn.classList.toggle('font-bold', isActive);
+        btn.classList.toggle('text-base-content/70', !isActive);
+    });
 }
 
 // Envío del formulario
@@ -717,8 +673,10 @@ document.getElementById('videoPromptForm').addEventListener('submit', async func
     const submitBtn = document.getElementById('submitBtn');
     
     submitBtn.disabled = true;
-    document.getElementById('processingCard').style.display = 'block';
-    document.getElementById('progressBar').style.width = '20%';
+    const procCard = document.getElementById('processingCard');
+    if (procCard) procCard.classList.remove('hidden');
+    const progBar = document.getElementById('progressBar');
+    if (progBar) progBar.style.width = '20%';
 
     try {
         const response = await fetch("{% url 'videoprompt:generate_prompt_ajax' %}", {
@@ -735,31 +693,11 @@ document.getElementById('videoPromptForm').addEventListener('submit', async func
         } else {
             resetForm();
             const errMsg = data.message || 'Error al iniciar el análisis.';
-            const isTrulyNoKey = errMsg.includes('CLI_SECRET_KEY no está configurada') || errMsg.includes('Clave de API no configurada');
-            if (isTrulyNoKey) {
-                showCustomAlert({
-                    title: 'Clave de API no configurada',
-                    message: errMsg + '<br><br><span style="color:var(--text-muted); font-size:0.8rem;">Asegurate de configurar <code>CLI_SECRET_KEY</code> en las variables de entorno del servidor.</span>',
-                    type: 'warning',
-                    icon: 'key-round',
-                    cancelText: 'Cerrar'
-                });
-            } else {
-                showCustomAlert({
-                    title: 'No se pudo iniciar el análisis',
-                    message: errMsg,
-                    type: 'error',
-                    cancelText: 'Entendido'
-                });
-            }
+            alert(errMsg);
         }
     } catch (err) {
         resetForm();
-        showCustomAlert({
-            title: 'Error de Red',
-            message: 'Error al conectar con el servidor. Por favor verificá tu conexión.',
-            type: 'error'
-        });
+        alert('Error al conectar con el servidor. Por favor verificá tu conexión.');
     }
 });
 
@@ -778,14 +716,16 @@ function startPolling(promptId) {
             if (data.status === 'processing' || data.status === 'pending') {
                 if (progress < 90) {
                     progress += 8;
-                    progBar.style.width = progress + '%';
+                    if (progBar) progBar.style.width = progress + '%';
                 }
             } else if (data.status === 'completed') {
                 clearInterval(interval);
-                progBar.style.width = '100%';
-                progBar.style.background = 'linear-gradient(90deg, #16a34a, #22c55e)';
-                procTitle.innerHTML = '<span style="color:#22c55e;">¡Análisis Completado con Éxito!</span>';
-                procSub.innerText = 'Abriendo prompt cinematográfico...';
+                if (progBar) {
+                    progBar.style.width = '100%';
+                    progBar.className = 'h-full bg-success transition-all duration-300';
+                }
+                if (procTitle) procTitle.innerHTML = '<span class="text-success">¡Análisis Completado con Éxito!</span>';
+                if (procSub) procSub.innerText = 'Abriendo prompt cinematográfico...';
                 
                 setTimeout(() => {
                     resetForm();
@@ -798,86 +738,56 @@ function startPolling(promptId) {
                         if (noHist) noHist.remove();
                         
                         const thumbImg = data.thumbnail_url 
-                            ? `<img src="${data.thumbnail_url}" alt="Miniatura Video" style="width:100%; height:100%; object-fit:cover;" onerror="this.onerror=null; this.outerHTML='<i data-lucide=\\\'film\\\' style=\\\'width:36px; height:36px; color:var(--text-muted); opacity:0.5;\\\'></i>'; lucide.createIcons();">` 
-                            : `<i data-lucide="film" style="width:36px; height:36px; color:var(--text-muted); opacity:0.5;"></i>`;
+                            ? `<img src="${data.thumbnail_url}" alt="Miniatura Video" class="w-full h-full object-cover">` 
+                            : `<i data-lucide="film" class="w-9 h-9 text-base-content/30"></i>`;
                         
                         const linkInfo = data.video_url 
-                            ? `<div style="font-size:0.75rem; color:#ef4444; margin:0 0 8px; display:flex; align-items:center; gap:5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-                                   <i data-lucide="link" style="width:12px; height:12px; flex-shrink:0;"></i>
-                                   <span style="overflow:hidden; text-overflow:ellipsis;" title="${data.video_url}">${data.video_url}</span>
+                            ? `<div class="text-xs text-primary font-mono truncate flex items-center gap-1.5 mb-1.5 opacity-90" title="${data.video_url}">
+                                   <i data-lucide="link" class="w-3.5 h-3.5 shrink-0"></i>
+                                   <span class="truncate">${data.video_url}</span>
                                </div>`
-                            : `<div style="font-size:0.75rem; color:var(--text-muted); margin:0 0 8px; display:flex; align-items:center; gap:5px;">
-                                   <i data-lucide="upload-cloud" style="width:12px; height:12px; flex-shrink:0;"></i>
+                            : `<div class="text-xs text-base-content/60 flex items-center gap-1.5 mb-1.5">
+                                   <i data-lucide="upload-cloud" class="w-3.5 h-3.5 shrink-0"></i>
                                    <span>Archivo Local</span>
                                </div>`;
                         
                         const newCardHtml = `
-                        <div class="prompt-card-shadcn" id="history-item-${data.id}" onclick="openPromptModal(${data.id})">
+                        <div class="card bg-base-100 shadow-sm border border-base-300 rounded-2xl p-4 hover:border-primary/50 transition cursor-pointer flex flex-col justify-between" id="history-item-${data.id}" onclick="openPromptModal(${data.id})">
                             <div>
-                                <div style="width:100%; height:140px; border-radius:8px; background:var(--bg-muted); border:1px solid var(--border-subtle); overflow:hidden; position:relative; margin-bottom:12px; display:flex; align-items:center; justify-content:center;">
+                                <div class="w-full h-36 rounded-xl bg-base-200 border border-base-300 overflow-hidden relative mb-3 flex items-center justify-center">
                                     ${thumbImg}
-                                    <div style="position:absolute; bottom:8px; left:8px;">
-                                        <span class="badge-pill badge-admin" style="font-size:0.65rem;">
+                                    <div class="absolute bottom-2 left-2">
+                                        <span class="badge badge-success text-white badge-md font-bold text-xs px-2.5">
                                             ${data.status_display}
                                         </span>
                                     </div>
                                 </div>
-                                <h3 style="font-size:0.95rem; font-weight:700; color:var(--text-primary); margin:0 0 4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                                <h3 class="font-bold text-sm text-base-content truncate mb-1">
                                     Prompt #${data.id}
                                 </h3>
                                 ${linkInfo}
-                                <p style="font-size:0.72rem; color:var(--text-muted); margin:0 0 12px;">${data.created_at}</p>
+                                <p class="text-[11px] text-base-content/50 font-mono mb-3">${data.created_at}</p>
                             </div>
-                            <div style="display:flex; align-items:center; justify-content:space-between; border-top:1px solid var(--border-subtle); padding-top:10px;">
-                                <span style="font-size:0.78rem; color:#ef4444; font-weight:700; display:flex; align-items:center; gap:4px;">
-                                    Ver Prompt <i data-lucide="arrow-right" style="width:13px; height:13px;"></i>
+                            <div class="flex items-center justify-between pt-3 border-t border-base-300/70">
+                                <span class="text-xs font-bold text-primary inline-flex items-center gap-1 hover:underline">
+                                    Ver Prompt <i data-lucide="arrow-right" class="w-3 h-3"></i>
                                 </span>
-                                <button type="button" class="action-btn action-btn-delete" title="Eliminar" onclick="event.stopPropagation(); openDeleteModal(${data.id})">
-                                    <i data-lucide="trash-2" style="width:14px; height:14px;"></i>
+                                <button type="button" class="btn btn-ghost btn-square btn-xs border border-base-300 hover:border-error hover:bg-error/10 hover:text-error rounded-lg h-7 w-7 text-base-content/60 transition-all" title="Eliminar" onclick="event.stopPropagation(); openDeleteModal(${data.id})">
+                                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
                                 </button>
                             </div>
                         </div>`;
-                        historyGrid.insertAdjacentHTML('afterbegin', newCardHtml);
-                        lucide.createIcons();
+                        if (historyGrid) historyGrid.insertAdjacentHTML('afterbegin', newCardHtml);
+                        if (window.lucide) lucide.createIcons();
                     }
                 }, 800);
             } else if (data.status === 'failed') {
                 clearInterval(interval);
-                procTitle.innerHTML = '<span style="color:#ef4444;">Fallo en el Análisis</span>';
-                procSub.innerText = data.error_message || 'Error al procesar el video.';
+                if (procTitle) procTitle.innerHTML = '<span class="text-error">Fallo en el Análisis</span>';
+                if (procSub) procSub.innerText = data.error_message || 'Error al procesar el video.';
                 setTimeout(() => {
                     resetForm();
-                    const rawError = data.error_message || 'Error desconocido al procesar el video.';
-                    const lowerErr = rawError.toLowerCase();
-                    const isTrulyNoKey = rawError.includes('CLI_SECRET_KEY no está configurada') ||
-                                         rawError.includes('No hay ninguna clave de IA');
-
-                    if (isTrulyNoKey) {
-                        showCustomAlert({
-                            title: 'Clave de API no configurada',
-                            message: 'No está configurada la clave del Proxy CLI en las variables de entorno.<br><br><span style="color:var(--text-muted); font-size:0.8rem;">Asegurate de configurar <code>CLI_SECRET_KEY</code> en las variables de entorno de Dokploy.</span>',
-                            type: 'warning',
-                            icon: 'key-round',
-                            cancelText: 'Cerrar'
-                        });
-                    } else if (rawError.includes('503') || lowerErr.includes('alta demanda') || lowerErr.includes('high demand') || lowerErr.includes('sobrecarga') || lowerErr.includes('cuota') || rawError.includes('429') || lowerErr.includes('resourceexhausted') || lowerErr.includes('unavailable')) {
-                        showCustomAlert({
-                            title: 'Pico de Demanda en Google Gemini',
-                            message: `${rawError}<br><br><span style="color:var(--text-muted); font-size:0.8rem;">Tus claves están configuradas correctamente. Los servidores de Google Gemini reportaron una saturación temporal de cuota/demanda. Por favor esperá 1 o 2 minutos y volvé a intentarlo.</span>`,
-                            type: 'warning',
-                            icon: 'alert-triangle',
-                            actionText: canManageKeys ? '<i data-lucide="key" style="width:14px; height:14px; margin-right:4px;"></i> Ver Estado de Claves' : null,
-                            actionUrl: canManageKeys ? apiKeysUrl : null,
-                            cancelText: 'Entendido'
-                        });
-                    } else {
-                        showCustomAlert({
-                            title: 'Fallo en el Análisis',
-                            message: rawError,
-                            type: 'error',
-                            cancelText: 'Entendido'
-                        });
-                    }
+                    alert(data.error_message || 'Error desconocido al procesar el video.');
                 }, 1000);
             }
         } catch (err) {
@@ -887,14 +797,19 @@ function startPolling(promptId) {
 }
 
 function resetForm() {
-    document.getElementById('submitBtn').disabled = false;
+    const submitBtn = document.getElementById('submitBtn');
+    if (submitBtn) submitBtn.disabled = false;
     const procCard = document.getElementById('processingCard');
-    procCard.style.display = 'none';
-    document.getElementById('processingTitle').innerText = 'Procesando video...';
-    document.getElementById('processingSub').innerText = 'Analizando cinematografía y escenas';
+    if (procCard) procCard.classList.add('hidden');
+    const procTitle = document.getElementById('processingTitle');
+    if (procTitle) procTitle.innerText = 'Procesando video...';
+    const procSub = document.getElementById('processingSub');
+    if (procSub) procSub.innerText = 'Analizando cinematografía y escenas';
     const progBar = document.getElementById('progressBar');
-    progBar.style.width = '0%';
-    progBar.style.background = 'linear-gradient(90deg, #dc2626, #ef4444)';
+    if (progBar) {
+        progBar.style.width = '0%';
+        progBar.className = 'h-full bg-primary transition-all duration-300';
+    }
 }
 
 function formatNumber(num) {
@@ -910,7 +825,7 @@ async function openPromptModal(id) {
         const data = await res.json();
         openPromptModalData(data);
     } catch (e) {
-        showToast('No se pudo cargar el prompt.', 'error');
+        alert('No se pudo cargar el prompt.');
     }
 }
 
@@ -920,25 +835,26 @@ function openPromptModalData(data) {
     
     const badge = document.getElementById('modalPromptStatus');
     badge.innerText = data.status_display;
-    badge.className = data.status === 'completed' ? 'badge-pill badge-admin' : 'badge-pill badge-superadmin';
+    badge.className = data.status === 'completed' ? 'badge badge-success text-white badge-md font-bold' : 'badge badge-warning badge-md font-bold';
 
     const sourceBlock = document.getElementById('modalVideoSource');
     const urlText = document.getElementById('modalVideoUrlText');
     const urlBtn = document.getElementById('modalVideoUrlBtn');
     
     if (data.video_url) {
-        sourceBlock.style.display = 'flex';
+        sourceBlock.classList.remove('hidden');
+        sourceBlock.classList.add('flex');
         urlText.innerText = data.video_url;
         urlText.title = data.video_url;
         urlBtn.href = data.video_url;
-        urlBtn.style.display = 'inline-flex';
     } else if (data.video_file_url) {
-        sourceBlock.style.display = 'flex';
+        sourceBlock.classList.remove('hidden');
+        sourceBlock.classList.add('flex');
         urlText.innerText = 'Archivo subido localmente';
         urlBtn.href = data.video_file_url;
-        urlBtn.style.display = 'inline-flex';
     } else {
-        sourceBlock.style.display = 'none';
+        sourceBlock.classList.add('hidden');
+        sourceBlock.classList.remove('flex');
     }
 
     if (data.stats) {
@@ -961,16 +877,15 @@ function openPromptModalData(data) {
     currentRawMarkdown = data.prompt_data.full_prompt_markdown || JSON.stringify(data.prompt_data, null, 2);
     document.getElementById('rawMarkdownContent').value = currentRawMarkdown;
 
-
     const styleList = document.getElementById('styleList');
     styleList.innerHTML = '';
     if (data.prompt_data.style) {
         const s = data.prompt_data.style;
         styleList.innerHTML = `
-            <div><strong style="color:var(--text-primary);">Textura Visual:</strong> ${s.visual_texture || 'N/A'}</div>
-            <div><strong style="color:var(--text-primary);">Iluminación:</strong> ${s.lighting_quality || 'N/A'}</div>
-            <div><strong style="color:var(--text-primary);">Paleta de Color:</strong> ${s.color_palette || 'N/A'}</div>
-            <div><strong style="color:var(--text-primary);">Atmósfera:</strong> ${s.atmosphere || 'N/A'}</div>
+            <div><strong class="text-base-content">Textura Visual:</strong> ${s.visual_texture || 'N/A'}</div>
+            <div><strong class="text-base-content">Iluminación:</strong> ${s.lighting_quality || 'N/A'}</div>
+            <div><strong class="text-base-content">Paleta de Color:</strong> ${s.color_palette || 'N/A'}</div>
+            <div><strong class="text-base-content">Atmósfera:</strong> ${s.atmosphere || 'N/A'}</div>
         `;
     }
 
@@ -979,10 +894,10 @@ function openPromptModalData(data) {
     if (data.prompt_data.cinematography) {
         const c = data.prompt_data.cinematography;
         cineList.innerHTML = `
-            <div><strong style="color:var(--text-primary);">Cámara:</strong> ${c.camera || 'N/A'}</div>
-            <div><strong style="color:var(--text-primary);">Lentes:</strong> ${c.lens || 'N/A'}</div>
-            <div><strong style="color:var(--text-primary);">Luces:</strong> ${c.lighting || 'N/A'}</div>
-            <div><strong style="color:var(--text-primary);">Mood:</strong> ${c.mood || 'N/A'}</div>
+            <div><strong class="text-base-content">Cámara:</strong> ${c.camera || 'N/A'}</div>
+            <div><strong class="text-base-content">Lentes:</strong> ${c.lens || 'N/A'}</div>
+            <div><strong class="text-base-content">Luces:</strong> ${c.lighting || 'N/A'}</div>
+            <div><strong class="text-base-content">Mood:</strong> ${c.mood || 'N/A'}</div>
         `;
     }
 
@@ -993,67 +908,77 @@ function openPromptModalData(data) {
             let dialogsHtml = '';
             if (sc.dialogue && sc.dialogue.length > 0) {
                 dialogsHtml = `
-                    <div style="margin-top:10px; padding-top:10px; border-top:1px solid var(--border-subtle);">
-                        <strong style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase;">Diálogo:</strong>
-                        <ul style="margin:6px 0 0; padding-left:18px; font-size:0.82rem; color:var(--text-secondary); line-height:1.4;">
-                            ${sc.dialogue.map(d => `<li><strong>${d.speaker}</strong> (${d.tone}): "${d.text}"</li>`).join('')}
+                    <div class="mt-2.5 pt-2.5 border-t border-base-300">
+                        <strong class="text-[11px] font-bold uppercase text-base-content/50">Diálogo:</strong>
+                        <ul class="mt-1 pl-4 text-xs text-base-content/75 flex flex-col gap-1 list-disc">
+                            ${sc.dialogue.map(d => `<li><strong class="text-base-content">${d.speaker}</strong> (${d.tone}): "${d.text}"</li>`).join('')}
                         </ul>
                     </div>
                 `;
             }
 
             const card = document.createElement('div');
-            card.style.cssText = 'background:var(--bg-muted); border:1px solid var(--border-subtle); border-radius:8px; padding:18px;';
+            card.className = 'card bg-base-200/50 border border-base-300 rounded-xl p-4';
             card.innerHTML = `
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                    <span style="font-weight:700; color:var(--text-primary); font-size:0.9rem;">Escena ${idx + 1}</span>
-                    <span class="badge-pill badge-user" style="font-size:0.72rem;">${sc.start_time} - ${sc.end_time}</span>
+                <div class="flex justify-between items-center mb-2">
+                    <span class="font-bold text-sm text-base-content">Escena ${idx + 1}</span>
+                    <span class="badge badge-neutral badge-md font-mono font-bold text-xs">${sc.start_time} - ${sc.end_time}</span>
                 </div>
-                <p style="font-size:0.85rem; color:var(--text-secondary); margin:0 0 8px; line-height:1.5;">${sc.action_description}</p>
+                <p class="text-xs text-base-content/80 leading-relaxed mb-2">${sc.action_description}</p>
                 ${dialogsHtml}
-                ${sc.background_sound ? `<div style="font-size:0.78rem; color:var(--text-muted); margin-top:8px;"><strong>Sonido de fondo:</strong> ${sc.background_sound}</div>` : ''}
+                ${sc.background_sound ? `<div class="text-[11px] text-base-content/60 mt-2 font-mono"><strong>Sonido de fondo:</strong> ${sc.background_sound}</div>` : ''}
             `;
             scenesContainer.appendChild(card);
         });
     } else {
-        scenesContainer.innerHTML = '<p style="font-size:0.85rem; color:var(--text-muted);">No se desglosaron escenas individuales.</p>';
+        scenesContainer.innerHTML = '<p class="text-xs text-base-content/50">No se desglosaron escenas individuales.</p>';
     }
 
     switchPromptView('structured');
 
     const modal = document.getElementById('promptModal');
-    modal.style.display = 'flex';
-    document.body.style.overflow = 'hidden';
-    lucide.createIcons();
+    if (modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        document.body.style.overflow = 'hidden';
+        if (window.lucide) lucide.createIcons();
+    }
 }
 
 function closePromptModal() {
     const modal = document.getElementById('promptModal');
-    modal.style.display = 'none';
-    document.body.style.overflow = 'auto';
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+        document.body.style.overflow = 'auto';
+    }
 }
 
 function openDeleteModal(id) {
     promptIdToDelete = id;
     const modal = document.getElementById('deleteConfirmModal');
-    modal.style.display = 'flex';
-    document.body.style.overflow = 'hidden';
-    lucide.createIcons();
+    if (modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        document.body.style.overflow = 'hidden';
+        if (window.lucide) lucide.createIcons();
+    }
 }
 
 function closeDeleteModal() {
     promptIdToDelete = null;
     const modal = document.getElementById('deleteConfirmModal');
-    modal.style.display = 'none';
-    document.body.style.overflow = 'auto';
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+        document.body.style.overflow = 'auto';
+    }
 }
 
 async function executeDeletePrompt() {
     if (!promptIdToDelete) return;
     const btn = document.getElementById('confirmDeleteBtn');
-    btn.disabled = true;
-    btn.innerHTML = '<i data-lucide="loader-2" class="animate-spin" style="width:14px; height:14px;"></i> Eliminando...';
-    lucide.createIcons();
+    if (btn) btn.disabled = true;
 
     try {
         const res = await fetch(`/video-prompt/delete-ajax/${promptIdToDelete}/`, {
@@ -1067,16 +992,13 @@ async function executeDeletePrompt() {
             const item = document.getElementById('history-item-' + promptIdToDelete);
             if (item) item.remove();
             closeDeleteModal();
-            showToast('Prompt eliminado correctamente', 'success');
         } else {
-            showToast('No se pudo eliminar el prompt.', 'error');
+            alert('No se pudo eliminar el prompt.');
         }
     } catch (e) {
-        showToast('Error al conectar con el servidor.', 'error');
+        alert('Error al conectar con el servidor.');
     } finally {
-        btn.disabled = false;
-        btn.innerHTML = '<i data-lucide="trash-2" style="width:14px; height:14px;"></i> Eliminar';
-        lucide.createIcons();
+        if (btn) btn.disabled = false;
     }
 }
 
@@ -1086,10 +1008,10 @@ window.addEventListener('keydown', (e) => {
         closeDeleteModal();
     }
 });
-document.getElementById('promptModal').addEventListener('click', (e) => {
+document.getElementById('promptModal')?.addEventListener('click', (e) => {
     if (e.target.id === 'promptModal') closePromptModal();
 });
-document.getElementById('deleteConfirmModal').addEventListener('click', (e) => {
+document.getElementById('deleteConfirmModal')?.addEventListener('click', (e) => {
     if (e.target.id === 'deleteConfirmModal') closeDeleteModal();
 });
 
@@ -1100,21 +1022,38 @@ function switchHistoryTab(tab) {
     const tabMyBtn = document.getElementById('tabMyPromptsBtn');
     const tabAllBtn = document.getElementById('tabAllPromptsBtn');
 
-    if (mySection) mySection.style.display = isMy ? 'block' : 'none';
-    if (allSection) allSection.style.display = isMy ? 'none' : 'block';
+    if (mySection) mySection.classList.toggle('hidden', !isMy);
+    if (allSection) allSection.classList.toggle('hidden', isMy);
 
-    if (tabMyBtn) tabMyBtn.classList.toggle('active', isMy);
-    if (tabAllBtn) tabAllBtn.classList.toggle('active', !isMy);
-    lucide.createIcons();
+    if (tabMyBtn) {
+        tabMyBtn.classList.toggle('tab-active', isMy);
+        tabMyBtn.classList.toggle('bg-base-100', isMy);
+        tabMyBtn.classList.toggle('shadow-sm', isMy);
+        tabMyBtn.classList.toggle('text-primary', isMy);
+        tabMyBtn.classList.toggle('font-bold', isMy);
+        tabMyBtn.classList.toggle('text-base-content/70', !isMy);
+    }
+    if (tabAllBtn) {
+        tabAllBtn.classList.toggle('tab-active', !isMy);
+        tabAllBtn.classList.toggle('bg-base-100', !isMy);
+        tabAllBtn.classList.toggle('shadow-sm', !isMy);
+        tabAllBtn.classList.toggle('text-primary', !isMy);
+        tabAllBtn.classList.toggle('font-bold', !isMy);
+        tabAllBtn.classList.toggle('text-base-content/70', isMy);
+    }
+    if (window.lucide) lucide.createIcons();
 }
 
 function copyFullPrompt() {
     if (!currentRawMarkdown) return;
     navigator.clipboard.writeText(currentRawMarkdown).then(() => {
-        document.getElementById('copyText').innerText = '¡Copiado!';
-        setTimeout(() => {
-            document.getElementById('copyText').innerText = 'Copiar Markdown';
-        }, 2000);
+        const copyText = document.getElementById('copyText');
+        if (copyText) {
+            copyText.innerText = '¡Copiado!';
+            setTimeout(() => {
+                copyText.innerText = 'Copiar Markdown';
+            }, 2000);
+        }
     });
 }
 </script>
