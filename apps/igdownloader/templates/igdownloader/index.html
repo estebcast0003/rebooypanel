@@ -119,6 +119,23 @@
                             </a>
                         </div>
 
+                        <!-- Miniatura del Reel -->
+                        <div class="w-full h-40 rounded-xl bg-base-200 border border-base-300 overflow-hidden relative mb-3 flex items-center justify-center">
+                            {% if item.thumbnail %}
+                                <img src="{{ item.thumbnail.url }}" alt="{{ item.title }}" class="w-full h-full object-cover" onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.classList.remove('hidden');">
+                                <div class="hidden w-full h-full items-center justify-center">
+                                    <i data-lucide="film" class="w-9 h-9 text-base-content/30"></i>
+                                </div>
+                            {% else %}
+                                <i data-lucide="film" class="w-9 h-9 text-base-content/30"></i>
+                            {% endif %}
+                            {% if item.duration_seconds %}
+                            <div class="absolute bottom-2 right-2 bg-black/80 text-white font-mono text-[10px] font-bold px-1.5 py-0.5 rounded">
+                                {{ item.duration_seconds|floatformat:0 }}s
+                            </div>
+                            {% endif %}
+                        </div>
+
                         <!-- Título (Clamp a 2 líneas limpias) -->
                         <h3 class="font-bold text-sm text-base-content line-clamp-2 min-h-[2.6em] mb-3 leading-snug" title="{{ item.title }}">
                             {{ item.title|default:'Reel de Instagram' }}
@@ -225,6 +242,23 @@
                                 <span>Ver Reel</span>
                                 <i data-lucide="external-link" class="w-3 h-3"></i>
                             </a>
+                        </div>
+
+                        <!-- Miniatura del Reel -->
+                        <div class="w-full h-40 rounded-xl bg-base-200 border border-base-300 overflow-hidden relative mb-3 flex items-center justify-center">
+                            {% if item.thumbnail %}
+                                <img src="{{ item.thumbnail.url }}" alt="{{ item.title }}" class="w-full h-full object-cover" onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.classList.remove('hidden');">
+                                <div class="hidden w-full h-full items-center justify-center">
+                                    <i data-lucide="film" class="w-9 h-9 text-base-content/30"></i>
+                                </div>
+                            {% else %}
+                                <i data-lucide="film" class="w-9 h-9 text-base-content/30"></i>
+                            {% endif %}
+                            {% if item.duration_seconds %}
+                            <div class="absolute bottom-2 right-2 bg-black/80 text-white font-mono text-[10px] font-bold px-1.5 py-0.5 rounded">
+                                {{ item.duration_seconds|floatformat:0 }}s
+                            </div>
+                            {% endif %}
                         </div>
 
                         <!-- Título (Clamp a 2 líneas) -->
@@ -343,7 +377,7 @@
             
             <!-- Miniatura Grande con Overlay -->
             <div class="w-full h-64 rounded-xl bg-base-200 border border-base-300 overflow-hidden relative flex items-center justify-center">
-                <img id="modalThumbnailImg" src="" alt="Miniatura Reel" class="w-full h-full object-cover hidden" onerror="this.style.display='none'; const ph = document.getElementById('modalThumbnailPlaceholder'); if(ph) ph.style.display='flex';">
+                <img id="modalThumbnailImg" src="" alt="Miniatura Reel" class="w-full h-full object-cover" style="display:none;" onerror="this.style.display='none'; const ph = document.getElementById('modalThumbnailPlaceholder'); if(ph) ph.style.display='flex';">
                 <div id="modalThumbnailPlaceholder" class="flex items-center justify-center">
                     <i data-lucide="film" class="w-12 h-12 text-base-content/30"></i>
                 </div>
@@ -674,6 +708,16 @@ function insertNewHistoryItem(item) {
     const noHist = document.getElementById('noHistoryMsg');
     if (noHist) noHist.remove();
 
+    const thumbHtml = item.thumbnail_url
+        ? `<div class="w-full h-40 rounded-xl bg-base-200 border border-base-300 overflow-hidden relative mb-3 flex items-center justify-center">
+               <img src="${item.thumbnail_url}" alt="${item.title || 'Reel'}" class="w-full h-full object-cover">
+               ${item.duration_seconds ? `<div class="absolute bottom-2 right-2 bg-black/80 text-white font-mono text-[10px] font-bold px-1.5 py-0.5 rounded">${Math.round(item.duration_seconds)}s</div>` : ''}
+           </div>`
+        : `<div class="w-full h-40 rounded-xl bg-base-200 border border-base-300 overflow-hidden relative mb-3 flex items-center justify-center">
+               <i data-lucide="film" class="w-9 h-9 text-base-content/30"></i>
+               ${item.duration_seconds ? `<div class="absolute bottom-2 right-2 bg-black/80 text-white font-mono text-[10px] font-bold px-1.5 py-0.5 rounded">${Math.round(item.duration_seconds)}s</div>` : ''}
+           </div>`;
+
     const cardHtml = `
     <div class="card bg-base-100 shadow-sm border border-base-300 rounded-2xl p-4 hover:border-primary/50 transition cursor-pointer flex flex-col justify-between" id="history-item-${item.id}" onclick="openIgModal(${item.id})" role="button" tabindex="0">
         <div>
@@ -687,6 +731,8 @@ function insertNewHistoryItem(item) {
                     <i data-lucide="external-link" class="w-3 h-3"></i>
                 </a>
             </div>
+
+            ${thumbHtml}
 
             <h3 class="font-bold text-sm text-base-content line-clamp-2 min-h-[2.6em] mb-3 leading-snug" title="${item.title}">
                 ${item.title || 'Reel de Instagram'}
@@ -799,11 +845,12 @@ function openIgModalData(item) {
     const thumbPh = document.getElementById('modalThumbnailPlaceholder');
     if (item.thumbnail_url) {
         thumbImg.src = item.thumbnail_url;
-        thumbImg.classList.remove('hidden');
-        if (thumbPh) thumbPh.classList.add('hidden');
+        thumbImg.style.display = 'block';
+        if (thumbPh) thumbPh.style.display = 'none';
     } else {
-        thumbImg.classList.add('hidden');
-        if (thumbPh) thumbPh.classList.remove('hidden');
+        thumbImg.src = '';
+        thumbImg.style.display = 'none';
+        if (thumbPh) thumbPh.style.display = 'flex';
     }
 
     document.getElementById('modalDownloadBtn').href = `/ig-downloader/download/${item.id}/`;
