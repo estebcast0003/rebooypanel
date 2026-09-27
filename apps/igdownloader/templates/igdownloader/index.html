@@ -1,442 +1,202 @@
-{% extends 'panel_base.html' %}
+{% extends 'panel_base_daisy.html' %}
+{% load static %}
 
 {% block title %}IG Downloader — Rebooy Panel{% endblock %}
-{% block breadcrumb %}Herramientas IA / IG Downloader{% endblock %}
-
-{% block extra_css %}
-<style>
-    .segmented-pill-container {
-        display: inline-flex;
-        background: var(--pill-bg);
-        border: 1px solid var(--border-subtle);
-        border-radius: 9999px;
-        padding: 4px;
-        gap: 4px;
-    }
-    .pill-tab-btn {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 6px 16px;
-        border-radius: 9999px;
-        font-size: 0.8rem;
-        font-weight: 600;
-        color: var(--text-secondary);
-        background: transparent;
-        border: none;
-        cursor: pointer;
-        transition: all 0.2s ease;
-    }
-    .pill-tab-btn:hover { color: var(--text-primary); }
-    .pill-tab-btn.active {
-        background: var(--bg-card);
-        color: var(--text-primary);
-        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-        border: 1px solid var(--border-subtle);
-    }
-    .prompt-card-shadcn {
-        background-color: var(--bg-card);
-        border: 1px solid var(--border-subtle);
-        border-radius: 12px;
-        padding: 16px;
-        transition: all 0.2s ease;
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-        cursor: pointer;
-        position: relative;
-        overflow: hidden;
-        touch-action: manipulation;
-        -webkit-tap-highlight-color: transparent;
-        user-select: none;
-    }
-    @media (hover: hover) {
-        .prompt-card-shadcn:hover {
-            border-color: var(--border-highlight);
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px -4px rgba(0,0,0,0.12);
-        }
-    }
-    .prompt-card-shadcn:active {
-        transform: scale(0.985);
-    }
-    .btn-fb-card, .btn-brand, .btn-ghost, .action-pill-btn, .action-btn {
-        touch-action: manipulation;
-        -webkit-tap-highlight-color: transparent;
-    }
-    .ig-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        padding: 3px 8px;
-        border-radius: 9999px;
-        font-size: 0.7rem;
-        font-weight: 600;
-        background: rgba(225, 48, 108, 0.12);
-        color: #e1306c;
-        border: 1px solid rgba(225, 48, 108, 0.25);
-    }
-    .btn-fb-card {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 6px;
-        width: 100%;
-        padding: 7px 12px;
-        font-size: 0.78rem;
-        font-weight: 600;
-        border-radius: 7px;
-        border: 1px solid rgba(59, 130, 246, 0.35);
-        background: rgba(59, 130, 246, 0.09);
-        color: #3b82f6;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        text-decoration: none;
-    }
-    .btn-fb-card:hover {
-        background: rgba(59, 130, 246, 0.2);
-        border-color: #3b82f6;
-        color: #60a5fa;
-    }
-    .btn-fb-card.completed {
-        border-color: rgba(34, 197, 94, 0.4);
-        background: rgba(34, 197, 94, 0.12);
-        color: #22c55e;
-    }
-    .btn-fb-card.completed:hover {
-        background: rgba(34, 197, 94, 0.22);
-        border-color: #22c55e;
-        color: #4ade80;
-    }
-    .btn-fb-card:disabled {
-        opacity: 0.65;
-        cursor: not-allowed;
-    }
-    .fb-copy-section {
-        border-top: 1px solid var(--border-subtle);
-        padding-top: 20px;
-        margin-top: 6px;
-        display: flex;
-        flex-direction: column;
-        gap: 14px;
-    }
-    .fb-copy-card {
-        background: var(--bg-muted);
-        border: 1px solid var(--border-subtle);
-        border-radius: 10px;
-        padding: 14px;
-        position: relative;
-        transition: border-color 0.2s ease;
-    }
-    .fb-copy-card:hover {
-        border-color: var(--border-highlight);
-    }
-    .fb-copy-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 8px;
-    }
-    .fb-copy-label {
-        font-size: 0.72rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-        color: var(--text-muted);
-    }
-    .fb-copy-btn-mini {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        padding: 4px 8px;
-        font-size: 0.72rem;
-        font-weight: 600;
-        border-radius: 4px;
-        border: 1px solid var(--border-subtle);
-        background: var(--bg-card);
-        color: var(--text-secondary);
-        cursor: pointer;
-        transition: all 0.15s ease;
-        touch-action: manipulation;
-    }
-    .fb-copy-btn-mini:hover {
-        color: var(--text-primary);
-        border-color: var(--text-muted);
-    }
-    .fb-copy-content {
-        font-size: 0.88rem;
-        line-height: 1.55;
-        color: var(--text-primary);
-        margin: 0;
-        white-space: pre-wrap;
-        word-break: break-word;
-    }
-    .ig-modal-overlay {
-        display: none;
-        position: fixed;
-        inset: 0;
-        z-index: 100000;
-        background: var(--modal-backdrop, rgba(0, 0, 0, 0.7));
-        backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
-        align-items: center;
-        justify-content: center;
-        padding: 16px;
-        overscroll-behavior: contain;
-    }
-    .ig-modal-dialog {
-        width: 100%;
-        max-width: 680px;
-        max-height: 90vh;
-        display: flex;
-        flex-direction: column;
-        animation: modalIn 0.22s ease-out;
-        overflow: hidden;
-    }
-    .ig-modal-header {
-        padding: 18px 24px;
-        border-bottom: 1px solid var(--border-subtle);
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-shrink: 0;
-    }
-    .ig-modal-body {
-        padding: 24px;
-        overflow-y: auto;
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        gap: 20px;
-        -webkit-overflow-scrolling: touch;
-    }
-    .ig-modal-thumbnail {
-        width: 100%;
-        height: 250px;
-        border-radius: 12px;
-        background: var(--bg-muted);
-        border: 1px solid var(--border-subtle);
-        overflow: hidden;
-        position: relative;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-    @media (max-width: 640px) {
-        .history-grid-responsive {
-            grid-template-columns: 1fr !important;
-        }
-        #igModal, #deleteModal {
-            padding: 8px !important;
-        }
-        .ig-modal-dialog {
-            max-height: 95vh !important;
-            border-radius: 12px !important;
-            width: 100% !important;
-        }
-        .ig-modal-header {
-            padding: 12px 16px !important;
-        }
-        .ig-modal-body {
-            padding: 14px 14px 18px !important;
-            gap: 14px !important;
-        }
-        .ig-modal-thumbnail {
-            height: 165px !important;
-        }
-        .fb-copy-section {
-            padding-top: 14px !important;
-            gap: 12px !important;
-        }
-    }
-</style>
+{% block breadcrumb %}
+<li><span class="opacity-60">Herramientas IA</span></li>
+<li class="font-semibold text-primary">IG Downloader</li>
 {% endblock %}
 
 {% block content %}
-<div style="max-width:1200px; margin:0 auto; display:flex; flex-direction:column; gap:28px;">
+<div class="max-w-6xl mx-auto flex flex-col gap-8 pb-12">
 
-    <!-- ═════════ 1. FORMULARIO DE DESCARGA SHADCN ═════════ -->
-    <div class="shadcn-card" style="padding:24px 28px;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; flex-wrap:wrap; gap:12px;">
-            <div style="display:flex; align-items:center; gap:12px;">
-                <div style="width:38px; height:38px; border-radius:10px; background:linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888); display:flex; align-items:center; justify-content:center; color:#ffffff; box-shadow:0 3px 12px rgba(225,48,108,0.35); flex-shrink:0;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+    <!-- ═════════ 1. FORMULARIO DE DESCARGA ═════════ -->
+    <div class="card bg-base-100 shadow-sm border border-base-300 rounded-2xl p-6 lg:p-8">
+        <div class="flex justify-between items-center mb-5 flex-wrap gap-3">
+            <div class="flex items-center gap-3.5">
+                <div class="w-12 h-12 rounded-2xl bg-warning/10 text-warning border border-warning/20 flex items-center justify-center shrink-0 shadow-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
                         <rect width="20" height="20" x="2" y="2" rx="5" ry="5"></rect>
                         <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
                         <line x1="17.5" x2="17.51" y1="6.5" y2="6.5"></line>
                     </svg>
                 </div>
                 <div>
-                    <h2 style="font-size:1.15rem; font-weight:700; color:var(--text-primary); margin:0;">
+                    <h1 class="text-xl lg:text-2xl font-extrabold tracking-tight text-base-content leading-tight m-0">
                         Descargar Video de Instagram
-                    </h2>
-                    <p style="font-size:0.75rem; color:var(--text-muted); margin:2px 0 0;">
+                    </h1>
+                    <p class="text-xs lg:text-sm text-base-content/65 mt-0.5 leading-relaxed m-0">
                         Descarga Reels y videos en alta resolución sin marca de agua al instante.
                     </p>
                 </div>
             </div>
-            <span class="badge-pill badge-admin" style="font-size:0.72rem;">
-                <i data-lucide="infinity" style="width:12px; height:12px;"></i>
+            <span class="badge badge-neutral badge-md font-bold text-xs gap-1.5 px-3 py-1">
+                <i data-lucide="infinity" class="w-3.5 h-3.5 text-warning"></i>
                 Descargas Ilimitadas
             </span>
         </div>
 
         <form id="igDownloadForm">
             {% csrf_token %}
-            <div style="display:flex; flex-direction:column; gap:14px;">
+            <div class="flex flex-col gap-4">
                 <div>
-                    <label style="display:block; font-size:0.75rem; font-weight:700; color:var(--text-muted); margin-bottom:8px; text-transform:uppercase; letter-spacing:0.05em;">
+                    <label class="text-[11px] font-bold uppercase tracking-wider text-base-content/60 flex items-center gap-1.5 mb-2">
+                        <i data-lucide="link" class="w-3.5 h-3.5 text-warning"></i>
                         Enlace de Instagram (Reel o Video)
                     </label>
-                    <div style="position:relative;">
-                        <i data-lucide="link" style="position:absolute; left:14px; top:50%; transform:translateY(-50%); width:16px; height:16px; color:var(--text-muted);"></i>
-                        <input type="url" name="instagram_url" id="igUrlInput" required placeholder="https://www.instagram.com/reel/... o https://www.instagram.com/p/..." class="shadcn-input" style="width:100%; padding-left:40px !important;">
+                    <div class="relative">
+                        <i data-lucide="link" class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-base-content/40"></i>
+                        <input type="url" name="instagram_url" id="igUrlInput" required 
+                               placeholder="https://www.instagram.com/reel/... o https://www.instagram.com/p/..." 
+                               class="input input-bordered w-full pl-10 pr-4 rounded-xl bg-base-200/40 border-base-300 text-sm focus:border-primary focus:outline-none h-11 font-mono">
                     </div>
                 </div>
 
-                <button type="submit" id="submitBtn" class="btn-brand" style="justify-content:center; padding:12px; font-size:0.92rem;">
-                    <i data-lucide="download" style="width:16px; height:16px;"></i>
+                <button type="submit" id="submitBtn" class="btn btn-primary w-full rounded-xl gap-2 h-12 text-sm font-semibold shadow-xs text-primary-content">
+                    <i data-lucide="download" class="w-4 h-4"></i>
                     Descargar Video Sin Marca de Agua
                 </button>
             </div>
         </form>
 
         <!-- Loading State Card -->
-        <div id="processingCard" style="display:none; margin-top:20px; padding:18px; border-radius:8px; background:rgba(225,48,108,0.06); border:1px solid rgba(225,48,108,0.25);">
-            <div style="display:flex; align-items:center; gap:12px; margin-bottom:10px;">
-                <div style="width:22px; height:22px; border-radius:50%; border:2px solid #e1306c; border-top-color:transparent; animation:spin 1s linear infinite; flex-shrink:0;"></div>
-                <div style="flex:1; min-width:0;">
-                    <div id="processingTitle" style="font-size:0.875rem; font-weight:700; color:var(--text-primary);">Conectando con Instagram...</div>
-                    <div id="processingSub" style="font-size:0.75rem; color:var(--text-muted);">Extrayendo stream original sin marca de agua y miniatura</div>
+        <div id="processingCard" class="hidden mt-5 p-4 rounded-xl bg-primary/10 border border-primary/20">
+            <div class="flex items-center gap-3 mb-2.5">
+                <div class="w-5 h-5 rounded-full border-2 border-primary border-t-transparent animate-spin shrink-0"></div>
+                <div class="flex-1 min-w-0">
+                    <div id="processingTitle" class="text-sm font-bold text-base-content">Conectando con Instagram...</div>
+                    <div id="processingSub" class="text-xs text-base-content/60">Extrayendo stream original sin marca de agua y miniatura</div>
                 </div>
             </div>
-            <div style="height:5px; background:var(--border-subtle); border-radius:9999px; overflow:hidden;">
-                <div id="progressBar" style="height:100%; width:30%; background:linear-gradient(90deg, #f09433, #e1306c, #bc1888); border-radius:9999px; transition:width 0.4s;"></div>
+            <div class="w-full h-1.5 bg-base-300/60 rounded-full overflow-hidden">
+                <div id="progressBar" class="h-full bg-primary transition-all duration-300" style="width:30%;"></div>
             </div>
         </div>
     </div>
 
-    <!-- ═════════ 2. HISTORIAL DE DESCARGAS (CARDS) ═════════ -->
-    <div>
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; flex-wrap:wrap; gap:12px;">
-            <div style="display:flex; align-items:center; gap:10px;">
-                <h2 style="font-size:1.25rem; font-weight:800; letter-spacing:-0.02em; color:var(--text-primary); margin:0; display:flex; align-items:center; gap:8px;">
+    <!-- ═════════ 2. HISTORIAL DE DESCARGAS ═════════ -->
+    <div class="flex flex-col gap-5">
+        <div class="flex justify-between items-center flex-wrap gap-3">
+            <div class="flex items-center gap-2">
+                <h2 class="text-xl font-bold tracking-tight text-base-content m-0">
                     Historial de Descargas
                 </h2>
             </div>
 
             {% if user.role == 'superadmin' %}
-            <div class="segmented-pill-container">
-                <button type="button" id="tabMyBtn" class="pill-tab-btn active" onclick="switchHistoryTab('my')">
-                    <i data-lucide="user" style="width:13px; height:13px;"></i>
-                    Mis Descargas ({{ my_history_count }})
+            <div class="tabs tabs-boxed bg-base-200/80 border border-base-300/60 p-1 rounded-xl">
+                <button type="button" id="tabMyBtn" class="tab tab-sm rounded-lg text-xs font-semibold gap-2 transition-all tab-active bg-base-100 shadow-sm text-primary font-bold" onclick="switchHistoryTab('my')">
+                    <i data-lucide="user" class="w-3.5 h-3.5"></i>
+                    Mis Descargas
+                    <span class="badge badge-primary badge-md font-mono font-bold px-2 text-primary-content">{{ my_history_count }}</span>
                 </button>
-                <button type="button" id="tabAllBtn" class="pill-tab-btn" onclick="switchHistoryTab('all')">
-                    <i data-lucide="globe" style="width:13px; height:13px;"></i>
-                    Todos los Usuarios ({{ all_history_count }})
+                <button type="button" id="tabAllBtn" class="tab tab-sm rounded-lg text-xs font-semibold gap-2 transition-all text-base-content/70 hover:text-base-content" onclick="switchHistoryTab('all')">
+                    <i data-lucide="globe" class="w-3.5 h-3.5"></i>
+                    Todos los Usuarios
+                    <span class="badge badge-neutral badge-md font-mono font-bold px-2">{{ all_history_count }}</span>
                 </button>
             </div>
             {% else %}
-            <span class="badge-pill badge-user" style="font-size:0.75rem;">{{ my_history_count }} descarga{{ my_history_count|pluralize }}</span>
+            <span class="badge badge-neutral badge-md font-bold px-3 py-1">{{ my_history_count }} descarga{{ my_history_count|pluralize }}</span>
             {% endif %}
         </div>
 
         <!-- SECCIÓN 1: MIS DESCARGAS -->
         <div id="mySection">
-            <div id="myHistoryGrid" class="history-grid-responsive" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(270px, 1fr)); gap:18px;">
+            <div id="myHistoryGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {% for item in my_history %}
-                <div class="prompt-card-shadcn" id="history-item-{{ item.id }}" onclick="openIgModal({{ item.id }})" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ') { event.preventDefault(); openIgModal({{ item.id }}); }">
+                <div class="card bg-base-100 shadow-sm border border-base-300 rounded-2xl p-4 hover:border-primary/50 transition cursor-pointer flex flex-col justify-between" id="history-item-{{ item.id }}" onclick="openIgModal({{ item.id }})" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ') { event.preventDefault(); openIgModal({{ item.id }}); }">
                     <div>
                         <!-- Fila Superior: Badge Uploader + Enlace Externo -->
-                        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; gap:8px;">
-                            <span class="ig-badge" style="font-size:0.75rem; font-weight:700; max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#e1306c" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"></line></svg>
+                        <div class="flex items-center justify-between mb-3 gap-2">
+                            <span class="badge badge-neutral badge-md font-bold text-xs gap-1.5 px-2.5 truncate max-w-[170px]">
+                                <i data-lucide="instagram" class="w-3 h-3 text-warning"></i>
                                 @{{ item.uploader|default:'instagram' }}
                             </span>
-                            <a href="{{ item.instagram_url }}" target="_blank" rel="noopener noreferrer" style="font-size:0.72rem; color:#e1306c; text-decoration:none; display:inline-flex; align-items:center; gap:3px; font-weight:600;" onclick="event.stopPropagation();" title="Abrir en Instagram">
+                            <a href="{{ item.instagram_url }}" target="_blank" rel="noopener noreferrer" class="text-xs text-primary font-bold hover:underline inline-flex items-center gap-1" onclick="event.stopPropagation();" title="Abrir en Instagram">
                                 <span>Ver Reel</span>
-                                <i data-lucide="external-link" style="width:11px; height:11px;"></i>
+                                <i data-lucide="external-link" class="w-3 h-3"></i>
                             </a>
                         </div>
 
                         <!-- Título (Clamp a 2 líneas limpias) -->
-                        <h3 style="font-size:0.9rem; font-weight:700; color:var(--text-primary); margin:0 0 14px; line-height:1.4; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; min-height:2.6em;" title="{{ item.title }}">
+                        <h3 class="font-bold text-sm text-base-content line-clamp-2 min-h-[2.6em] mb-3 leading-snug" title="{{ item.title }}">
                             {{ item.title|default:'Reel de Instagram' }}
                         </h3>
 
                         <!-- Widget Analítico de Métricas (Likes, Comentarios, Duración) -->
-                        <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:6px; background:var(--bg-muted); border:1px solid var(--border-subtle); border-radius:10px; padding:10px 6px; margin-bottom:12px;">
+                        <div class="grid grid-cols-3 gap-1.5 p-2.5 rounded-xl bg-base-200/50 border border-base-300 text-center mb-3">
                             <!-- Likes -->
-                            <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;">
-                                <div style="display:flex; align-items:center; gap:4px; font-size:0.68rem; color:var(--text-muted); font-weight:600; margin-bottom:2px;">
-                                    <i data-lucide="heart" style="width:11px; height:11px; color:#f43f5e;"></i>
+                            <div class="flex flex-col items-center justify-center">
+                                <div class="flex items-center gap-1 text-[10px] text-base-content/60 font-semibold mb-0.5">
+                                    <i data-lucide="heart" class="w-3 h-3 text-error"></i>
                                     <span>Likes</span>
                                 </div>
-                                <span style="font-size:0.85rem; font-weight:800; color:var(--text-primary);">
+                                <span class="font-mono font-bold text-xs text-base-content">
                                     {{ item.formatted_likes|default:'--' }}
                                 </span>
                             </div>
 
-                            <!-- Coments -->
-                            <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; border-left:1px solid var(--border-subtle); border-right:1px solid var(--border-subtle);">
-                                <div style="display:flex; align-items:center; gap:4px; font-size:0.68rem; color:var(--text-muted); font-weight:600; margin-bottom:2px;">
-                                    <i data-lucide="message-circle" style="width:11px; height:11px; color:#3b82f6;"></i>
+                            <!-- Comments -->
+                            <div class="flex flex-col items-center justify-center border-x border-base-300">
+                                <div class="flex items-center gap-1 text-[10px] text-base-content/60 font-semibold mb-0.5">
+                                    <i data-lucide="message-circle" class="w-3 h-3 text-info"></i>
                                     <span>Coments</span>
                                 </div>
-                                <span style="font-size:0.85rem; font-weight:800; color:var(--text-primary);">
+                                <span class="font-mono font-bold text-xs text-base-content">
                                     {{ item.formatted_comments|default:'--' }}
                                 </span>
                             </div>
 
                             <!-- Duración -->
-                            <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;">
-                                <div style="display:flex; align-items:center; gap:4px; font-size:0.68rem; color:var(--text-muted); font-weight:600; margin-bottom:2px;">
-                                    <i data-lucide="clock" style="width:11px; height:11px; color:#eab308;"></i>
+                            <div class="flex flex-col items-center justify-center">
+                                <div class="flex items-center gap-1 text-[10px] text-base-content/60 font-semibold mb-0.5">
+                                    <i data-lucide="clock" class="w-3 h-3 text-warning"></i>
                                     <span>Duración</span>
                                 </div>
-                                <span style="font-size:0.85rem; font-weight:800; color:var(--text-primary);">
+                                <span class="font-mono font-bold text-xs text-base-content">
                                     {% if item.duration_seconds %}{{ item.duration_seconds|floatformat:0 }}s{% else %}--{% endif %}
                                 </span>
                             </div>
                         </div>
 
                         <!-- Meta Info: Fecha y Ver Portada -->
-                        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
-                            <span style="font-size:0.72rem; color:var(--text-muted); display:inline-flex; align-items:center; gap:4px;">
-                                <i data-lucide="calendar" style="width:11px; height:11px; opacity:0.7;"></i>
+                        <div class="flex items-center justify-between text-xs text-base-content/50 font-mono mb-2">
+                            <span class="flex items-center gap-1">
+                                <i data-lucide="calendar" class="w-3 h-3 opacity-60"></i>
                                 {{ item.created_at|date:"d M, H:i" }}
                             </span>
-                            <span style="font-size:0.7rem; color:var(--primary-brand); font-weight:600; display:inline-flex; align-items:center; gap:3px;">
-                                <i data-lucide="eye" style="width:11px; height:11px;"></i>
-                                Ver portada en modal
+                            <span class="text-primary font-semibold text-[11px] flex items-center gap-1 hover:underline">
+                                <i data-lucide="eye" class="w-3 h-3"></i>
+                                Ver detalles
                             </span>
                         </div>
                     </div>
 
-                    <!-- Acciones Rápidas (Estructuradas en 2 filas limpias) -->
-                    <div style="display:flex; flex-direction:column; gap:8px; border-top:1px solid var(--border-subtle); padding-top:12px; margin-top:8px;">
-                        <!-- Fila 1: Botón Copy con IA destacado a lo ancho -->
-                        <button type="button" id="card-fb-btn-{{ item.id }}" class="btn-fb-card {% if item.fb_status == 'completed' %}completed{% endif %}" onclick="event.stopPropagation(); handleCardFbClick({{ item.id }});" title="{% if item.fb_status == 'completed' %}Ver Copy para Facebook{% else %}Generar Copy para Facebook con IA{% endif %}">
-                            <i data-lucide="{% if item.fb_status == 'completed' %}check-circle-2{% else %}sparkles{% endif %}" style="width:13px; height:13px;"></i>
+                    <!-- Acciones Rápidas -->
+                    <div class="flex flex-col gap-2 pt-3 border-t border-base-300/70 mt-2">
+                        <!-- Fila 1: Botón Copy con IA -->
+                        <button type="button" id="card-fb-btn-{{ item.id }}" class="btn btn-sm w-full gap-2 rounded-xl text-xs font-semibold border border-base-300 {% if item.fb_status == 'completed' %}bg-success/15 text-success border-success/30 font-bold{% else %}bg-base-200/60 hover:border-primary hover:text-primary{% endif %} transition-all" onclick="event.stopPropagation(); handleCardFbClick({{ item.id }});" title="{% if item.fb_status == 'completed' %}Ver Copy para Facebook{% else %}Generar Copy para Facebook con IA{% endif %}">
+                            <i data-lucide="{% if item.fb_status == 'completed' %}check-circle-2{% else %}sparkles{% endif %}" class="w-3.5 h-3.5"></i>
                             <span>{% if item.fb_status == 'completed' %}Ver Copy FB{% else %}Generar Copy FB con IA{% endif %}</span>
                         </button>
 
                         <!-- Fila 2: Descargar + Eliminar -->
-                        <div style="display:flex; align-items:center; gap:8px;">
-                            <a href="{% url 'igdownloader:download_video_stream' item.id %}" class="btn-brand" style="flex:1; justify-content:center; padding:7px 12px; font-size:0.75rem; text-decoration:none;" onclick="event.stopPropagation();">
-                                <i data-lucide="download" style="width:13px; height:13px;"></i>
-                                Descargar Video
+                        <div class="flex items-center gap-2">
+                            <a href="{% url 'igdownloader:download_video_stream' item.id %}" class="btn btn-primary btn-sm flex-1 text-xs text-primary-content gap-1.5 rounded-xl font-semibold shadow-xs" onclick="event.stopPropagation();">
+                                <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                                Descargar
                             </a>
-                            <button type="button" class="action-btn action-btn-delete" title="Eliminar" style="flex-shrink:0;" onclick="event.stopPropagation(); openDeleteModal({{ item.id }})">
-                                <i data-lucide="trash-2" style="width:14px; height:14px;"></i>
+                            <button type="button" class="btn btn-ghost btn-square btn-sm border border-base-300 hover:border-error hover:bg-error/10 hover:text-error rounded-xl h-8 w-8 text-base-content/60 transition-all shrink-0" title="Eliminar" onclick="event.stopPropagation(); openDeleteModal({{ item.id }})">
+                                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
                             </button>
                         </div>
                     </div>
                 </div>
                 {% empty %}
-                <div id="noHistoryMsg" class="shadcn-card" style="grid-column:1 / -1; text-align:center; padding:48px 20px; color:var(--text-muted);">
-                    <i data-lucide="film" style="width:40px; height:40px; margin:0 auto 12px; opacity:0.3;"></i>
-                    <p style="font-size:0.9rem; margin:0;">Aún no has descargado ningún reel. ¡Pega un enlace arriba para comenzar!</p>
+                <div id="noHistoryMsg" class="card bg-base-100 border border-base-300 rounded-2xl col-span-full text-center p-12 text-base-content/50">
+                    <i data-lucide="film" class="w-10 h-10 mx-auto mb-3 opacity-30 text-base-content"></i>
+                    <p class="text-sm font-semibold">Aún no has descargado ningún reel. ¡Pega un enlace arriba para comenzar!</p>
                 </div>
                 {% endfor %}
             </div>
@@ -444,107 +204,104 @@
 
         {% if user.role == 'superadmin' %}
         <!-- SECCIÓN 2: TODOS LOS USUARIOS (SUPERADMIN) -->
-        <div id="allSection" style="display:none;">
-            <div id="allHistoryGrid" class="history-grid-responsive" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(270px, 1fr)); gap:18px;">
+        <div id="allSection" class="hidden">
+            <div id="allHistoryGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {% for item in all_history %}
-                <div class="prompt-card-shadcn" id="all-history-item-{{ item.id }}" onclick="openIgModal({{ item.id }})" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ') { event.preventDefault(); openIgModal({{ item.id }}); }">
+                <div class="card bg-base-100 shadow-sm border border-base-300 rounded-2xl p-4 hover:border-primary/50 transition cursor-pointer flex flex-col justify-between" id="all-history-item-{{ item.id }}" onclick="openIgModal({{ item.id }})" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ') { event.preventDefault(); openIgModal({{ item.id }}); }">
                     <div>
-                        <!-- Fila Superior: Badge Uploader + Badge Usuario (Superadmin) + Enlace Externo -->
-                        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; gap:8px;">
-                            <div style="display:flex; align-items:center; gap:6px;">
-                                <span class="ig-badge" style="font-size:0.75rem; font-weight:700; max-width:140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#e1306c" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"></line></svg>
+                        <!-- Fila Superior: Badge Uploader + Badge Usuario + Enlace Externo -->
+                        <div class="flex items-center justify-between mb-3 gap-2">
+                            <div class="flex items-center gap-1.5 truncate">
+                                <span class="badge badge-neutral badge-md font-bold text-xs gap-1.5 px-2.5 truncate max-w-[130px]">
+                                    <i data-lucide="instagram" class="w-3 h-3 text-warning"></i>
                                     @{{ item.uploader|default:'instagram' }}
                                 </span>
-                                <span class="badge-pill badge-superadmin" style="font-size:0.65rem; display:inline-flex; align-items:center; gap:3px; padding:2px 6px;">
-                                    <i data-lucide="user" style="width:10px; height:10px;"></i>
+                                <span class="badge badge-primary badge-md font-mono font-bold text-xs gap-1 px-2 text-primary-content">
+                                    <i data-lucide="user" class="w-2.5 h-2.5"></i>
                                     {{ item.user.username }}
                                 </span>
                             </div>
-                            <a href="{{ item.instagram_url }}" target="_blank" rel="noopener noreferrer" style="font-size:0.72rem; color:#e1306c; text-decoration:none; display:inline-flex; align-items:center; gap:3px; font-weight:600;" onclick="event.stopPropagation();" title="Abrir en Instagram">
+                            <a href="{{ item.instagram_url }}" target="_blank" rel="noopener noreferrer" class="text-xs text-primary font-bold hover:underline inline-flex items-center gap-1 shrink-0" onclick="event.stopPropagation();" title="Abrir en Instagram">
                                 <span>Ver Reel</span>
-                                <i data-lucide="external-link" style="width:11px; height:11px;"></i>
+                                <i data-lucide="external-link" class="w-3 h-3"></i>
                             </a>
                         </div>
 
-                        <!-- Título (Clamp a 2 líneas limpias) -->
-                        <h3 style="font-size:0.9rem; font-weight:700; color:var(--text-primary); margin:0 0 14px; line-height:1.4; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; min-height:2.6em;" title="{{ item.title }}">
+                        <!-- Título (Clamp a 2 líneas) -->
+                        <h3 class="font-bold text-sm text-base-content line-clamp-2 min-h-[2.6em] mb-3 leading-snug" title="{{ item.title }}">
                             {{ item.title|default:'Reel de Instagram' }}
                         </h3>
 
-                        <!-- Widget Analítico de Métricas (Likes, Comentarios, Duración) -->
-                        <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:6px; background:var(--bg-muted); border:1px solid var(--border-subtle); border-radius:10px; padding:10px 6px; margin-bottom:12px;">
-                            <!-- Likes -->
-                            <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;">
-                                <div style="display:flex; align-items:center; gap:4px; font-size:0.68rem; color:var(--text-muted); font-weight:600; margin-bottom:2px;">
-                                    <i data-lucide="heart" style="width:11px; height:11px; color:#f43f5e;"></i>
+                        <!-- Widget Analítico de Métricas -->
+                        <div class="grid grid-cols-3 gap-1.5 p-2.5 rounded-xl bg-base-200/50 border border-base-300 text-center mb-3">
+                            <div class="flex flex-col items-center justify-center">
+                                <div class="flex items-center gap-1 text-[10px] text-base-content/60 font-semibold mb-0.5">
+                                    <i data-lucide="heart" class="w-3 h-3 text-error"></i>
                                     <span>Likes</span>
                                 </div>
-                                <span style="font-size:0.85rem; font-weight:800; color:var(--text-primary);">
+                                <span class="font-mono font-bold text-xs text-base-content">
                                     {{ item.formatted_likes|default:'--' }}
                                 </span>
                             </div>
 
-                            <!-- Coments -->
-                            <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; border-left:1px solid var(--border-subtle); border-right:1px solid var(--border-subtle);">
-                                <div style="display:flex; align-items:center; gap:4px; font-size:0.68rem; color:var(--text-muted); font-weight:600; margin-bottom:2px;">
-                                    <i data-lucide="message-circle" style="width:11px; height:11px; color:#3b82f6;"></i>
+                            <div class="flex flex-col items-center justify-center border-x border-base-300">
+                                <div class="flex items-center gap-1 text-[10px] text-base-content/60 font-semibold mb-0.5">
+                                    <i data-lucide="message-circle" class="w-3 h-3 text-info"></i>
                                     <span>Coments</span>
                                 </div>
-                                <span style="font-size:0.85rem; font-weight:800; color:var(--text-primary);">
+                                <span class="font-mono font-bold text-xs text-base-content">
                                     {{ item.formatted_comments|default:'--' }}
                                 </span>
                             </div>
 
-                            <!-- Duración -->
-                            <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;">
-                                <div style="display:flex; align-items:center; gap:4px; font-size:0.68rem; color:var(--text-muted); font-weight:600; margin-bottom:2px;">
-                                    <i data-lucide="clock" style="width:11px; height:11px; color:#eab308;"></i>
+                            <div class="flex flex-col items-center justify-center">
+                                <div class="flex items-center gap-1 text-[10px] text-base-content/60 font-semibold mb-0.5">
+                                    <i data-lucide="clock" class="w-3 h-3 text-warning"></i>
                                     <span>Duración</span>
                                 </div>
-                                <span style="font-size:0.85rem; font-weight:800; color:var(--text-primary);">
+                                <span class="font-mono font-bold text-xs text-base-content">
                                     {% if item.duration_seconds %}{{ item.duration_seconds|floatformat:0 }}s{% else %}--{% endif %}
                                 </span>
                             </div>
                         </div>
 
                         <!-- Meta Info: Fecha y Ver Portada -->
-                        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
-                            <span style="font-size:0.72rem; color:var(--text-muted); display:inline-flex; align-items:center; gap:4px;">
-                                <i data-lucide="calendar" style="width:11px; height:11px; opacity:0.7;"></i>
+                        <div class="flex items-center justify-between text-xs text-base-content/50 font-mono mb-2">
+                            <span class="flex items-center gap-1">
+                                <i data-lucide="calendar" class="w-3 h-3 opacity-60"></i>
                                 {{ item.created_at|date:"d M, H:i" }}
                             </span>
-                            <span style="font-size:0.7rem; color:var(--primary-brand); font-weight:600; display:inline-flex; align-items:center; gap:3px;">
-                                <i data-lucide="eye" style="width:11px; height:11px;"></i>
-                                Ver portada en modal
+                            <span class="text-primary font-semibold text-[11px] flex items-center gap-1 hover:underline">
+                                <i data-lucide="eye" class="w-3 h-3"></i>
+                                Ver detalles
                             </span>
                         </div>
                     </div>
 
-                    <!-- Acciones Rápidas (Estructuradas en 2 filas limpias) -->
-                    <div style="display:flex; flex-direction:column; gap:8px; border-top:1px solid var(--border-subtle); padding-top:12px; margin-top:8px;">
-                        <!-- Fila 1: Botón Copy con IA destacado a lo ancho -->
-                        <button type="button" id="all-card-fb-btn-{{ item.id }}" class="btn-fb-card {% if item.fb_status == 'completed' %}completed{% endif %}" onclick="event.stopPropagation(); handleCardFbClick({{ item.id }});" title="{% if item.fb_status == 'completed' %}Ver Copy para Facebook{% else %}Generar Copy para Facebook con IA{% endif %}">
-                            <i data-lucide="{% if item.fb_status == 'completed' %}check-circle-2{% else %}sparkles{% endif %}" style="width:13px; height:13px;"></i>
+                    <!-- Acciones Rápidas -->
+                    <div class="flex flex-col gap-2 pt-3 border-t border-base-300/70 mt-2">
+                        <!-- Fila 1: Botón Copy con IA -->
+                        <button type="button" id="all-card-fb-btn-{{ item.id }}" class="btn btn-sm w-full gap-2 rounded-xl text-xs font-semibold border border-base-300 {% if item.fb_status == 'completed' %}bg-success/15 text-success border-success/30 font-bold{% else %}bg-base-200/60 hover:border-primary hover:text-primary{% endif %} transition-all" onclick="event.stopPropagation(); handleCardFbClick({{ item.id }});" title="{% if item.fb_status == 'completed' %}Ver Copy para Facebook{% else %}Generar Copy para Facebook con IA{% endif %}">
+                            <i data-lucide="{% if item.fb_status == 'completed' %}check-circle-2{% else %}sparkles{% endif %}" class="w-3.5 h-3.5"></i>
                             <span>{% if item.fb_status == 'completed' %}Ver Copy FB{% else %}Generar Copy FB con IA{% endif %}</span>
                         </button>
 
                         <!-- Fila 2: Descargar + Eliminar -->
-                        <div style="display:flex; align-items:center; gap:8px;">
-                            <a href="{% url 'igdownloader:download_video_stream' item.id %}" class="btn-brand" style="flex:1; justify-content:center; padding:7px 12px; font-size:0.75rem; text-decoration:none;" onclick="event.stopPropagation();">
-                                <i data-lucide="download" style="width:13px; height:13px;"></i>
-                                Descargar Video
+                        <div class="flex items-center gap-2">
+                            <a href="{% url 'igdownloader:download_video_stream' item.id %}" class="btn btn-primary btn-sm flex-1 text-xs text-primary-content gap-1.5 rounded-xl font-semibold shadow-xs" onclick="event.stopPropagation();">
+                                <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                                Descargar
                             </a>
-                            <button type="button" class="action-btn action-btn-delete" title="Eliminar" style="flex-shrink:0;" onclick="event.stopPropagation(); openDeleteModal({{ item.id }})">
-                                <i data-lucide="trash-2" style="width:14px; height:14px;"></i>
+                            <button type="button" class="btn btn-ghost btn-square btn-sm border border-base-300 hover:border-error hover:bg-error/10 hover:text-error rounded-xl h-8 w-8 text-base-content/60 transition-all shrink-0" title="Eliminar" onclick="event.stopPropagation(); openDeleteModal({{ item.id }})">
+                                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
                             </button>
                         </div>
                     </div>
                 </div>
                 {% empty %}
-                <div class="shadcn-card" style="grid-column:1 / -1; text-align:center; padding:48px 20px; color:var(--text-muted);">
-                    <i data-lucide="users" style="width:40px; height:40px; margin:0 auto 12px; opacity:0.3;"></i>
-                    <p style="font-size:0.9rem; margin:0;">No hay descargas de otros usuarios aún.</p>
+                <div class="card bg-base-100 border border-base-300 rounded-2xl col-span-full text-center p-12 text-base-content/50">
+                    <i data-lucide="users" class="w-10 h-10 mx-auto mb-3 opacity-30 text-base-content"></i>
+                    <p class="text-sm font-semibold">No hay descargas de otros usuarios aún.</p>
                 </div>
                 {% endfor %}
             </div>
@@ -553,309 +310,313 @@
     </div>
 
 </div>
-{% endblock %}
 
-{% block modals %}
 <!-- ═════════ 3. MODAL INTERACTIVO: VISOR DE REEL ═════════ -->
-<div id="igModal" class="ig-modal-overlay" style="display:none; position:fixed; inset:0; z-index:100000; background:var(--modal-backdrop, rgba(0,0,0,0.7)); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); align-items:center; justify-content:center; padding:16px;">
-    <div class="shadcn-card ig-modal-dialog">
+<div id="igModal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-md hidden items-center justify-center p-4">
+    <div class="card bg-base-100 shadow-2xl border border-base-300 w-full max-w-2xl max-h-[90vh] flex flex-col rounded-2xl overflow-hidden p-0">
         
         <!-- Header -->
-        <div class="ig-modal-header">
-            <div style="display:flex; align-items:center; gap:12px;">
-                <div style="width:36px; height:36px; border-radius:9999px; background:rgba(225,48,108,0.12); border:1px solid rgba(225,48,108,0.25); display:flex; align-items:center; justify-content:center; color:#e1306c;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e1306c" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"></line></svg>
+        <div class="p-5 lg:px-6 border-b border-base-300 flex justify-between items-center shrink-0">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-warning/10 text-warning border border-warning/20 flex items-center justify-center shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                        <rect width="20" height="20" x="2" y="2" rx="5" ry="5"></rect>
+                        <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                        <line x1="17.5" x2="17.51" y1="6.5" y2="6.5"></line>
+                    </svg>
                 </div>
                 <div>
-                    <h3 id="modalTitle" style="font-size:1.1rem; font-weight:700; color:var(--text-primary); margin:0;">Reel de Instagram</h3>
-                    <div style="display:flex; align-items:center; gap:8px; margin-top:2px;">
-                        <span id="modalStatus" class="badge-pill badge-admin">Completado</span>
-                        <span id="modalDate" style="font-size:0.75rem; color:var(--text-muted);"></span>
+                    <h3 id="modalTitle" class="text-base font-bold text-base-content m-0">Reel de Instagram</h3>
+                    <div class="flex items-center gap-2 mt-0.5">
+                        <span id="modalStatus" class="badge badge-success text-white badge-md font-bold text-xs">Completado</span>
+                        <span id="modalDate" class="text-xs text-base-content/60 font-mono"></span>
                     </div>
                 </div>
             </div>
-            <button type="button" class="action-pill-btn" onclick="closeIgModal()" aria-label="Cerrar modal">
-                <i data-lucide="x"></i>
+            <button type="button" class="btn btn-ghost btn-square btn-xs rounded-lg text-base-content/60 hover:text-base-content" onclick="closeIgModal()" aria-label="Cerrar modal">
+                <i data-lucide="x" class="w-4 h-4"></i>
             </button>
         </div>
 
         <!-- Body -->
-        <div class="ig-modal-body">
+        <div class="p-6 overflow-y-auto flex-1 flex flex-col gap-5">
             
             <!-- Miniatura Grande con Overlay -->
-            <div class="ig-modal-thumbnail">
-                <img id="modalThumbnailImg" src="" alt="Miniatura Reel" style="width:100%; height:100%; object-fit:cover; display:none;" onerror="this.style.display='none'; const ph = document.getElementById('modalThumbnailPlaceholder'); if(ph) ph.style.display='flex';">
-                <div id="modalThumbnailPlaceholder" style="display:flex; align-items:center; justify-content:center;">
-                    <i data-lucide="film" style="width:48px; height:48px; color:var(--text-muted); opacity:0.4;"></i>
+            <div class="w-full h-64 rounded-xl bg-base-200 border border-base-300 overflow-hidden relative flex items-center justify-center">
+                <img id="modalThumbnailImg" src="" alt="Miniatura Reel" class="w-full h-full object-cover hidden" onerror="this.style.display='none'; const ph = document.getElementById('modalThumbnailPlaceholder'); if(ph) ph.style.display='flex';">
+                <div id="modalThumbnailPlaceholder" class="flex items-center justify-center">
+                    <i data-lucide="film" class="w-12 h-12 text-base-content/30"></i>
                 </div>
-                <div style="position:absolute; bottom:12px; left:12px;">
-                    <span id="modalUploader" class="ig-badge" style="font-size:0.78rem; padding:4px 10px;">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"></line></svg>
+                <div class="absolute bottom-3 left-3">
+                    <span id="modalUploader" class="badge badge-neutral badge-md font-bold text-xs gap-1 px-3 py-1">
+                        <i data-lucide="instagram" class="w-3 h-3 text-warning"></i>
                         @uploader
                     </span>
                 </div>
-                <div id="modalDurationBadge" style="display:none; position:absolute; bottom:12px; right:12px; background:rgba(0,0,0,0.75); color:#fff; font-size:0.75rem; font-weight:700; padding:4px 8px; border-radius:6px;">
+                <div id="modalDurationBadge" class="hidden absolute bottom-3 right-3 bg-black/80 text-white font-mono text-xs font-bold px-2 py-1 rounded-lg">
                 </div>
             </div>
 
             <!-- Métricas del Reel en Modal -->
-            <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; background:var(--bg-muted); border:1px solid var(--border-subtle); border-radius:8px; padding:10px 14px;">
-                <div style="display:flex; align-items:center; gap:8px;">
-                    <div style="width:28px; height:28px; border-radius:6px; background:rgba(244,63,94,0.12); color:#f43f5e; display:flex; align-items:center; justify-content:center;">
-                        <i data-lucide="heart" style="width:14px; height:14px;"></i>
+            <div class="grid grid-cols-3 gap-2 p-3 bg-base-200/50 border border-base-300 rounded-xl">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-lg bg-error/10 text-error flex items-center justify-center shrink-0">
+                        <i data-lucide="heart" class="w-4 h-4"></i>
                     </div>
                     <div>
-                        <div style="font-size:0.68rem; color:var(--text-muted); font-weight:600;">Likes</div>
-                        <div id="modalLikesText" style="font-size:0.88rem; font-weight:800; color:var(--text-primary);">--</div>
+                        <div class="text-[10px] text-base-content/60 font-semibold uppercase">Likes</div>
+                        <div id="modalLikesText" class="font-bold font-mono text-sm text-base-content">--</div>
                     </div>
                 </div>
-                <div style="display:flex; align-items:center; gap:8px; border-left:1px solid var(--border-subtle); padding-left:10px;">
-                    <div style="width:28px; height:28px; border-radius:6px; background:rgba(59,130,246,0.12); color:#3b82f6; display:flex; align-items:center; justify-content:center;">
-                        <i data-lucide="message-circle" style="width:14px; height:14px;"></i>
+                <div class="flex items-center gap-2.5 border-l border-base-300 pl-3">
+                    <div class="w-8 h-8 rounded-lg bg-info/10 text-info flex items-center justify-center shrink-0">
+                        <i data-lucide="message-circle" class="w-4 h-4"></i>
                     </div>
                     <div>
-                        <div style="font-size:0.68rem; color:var(--text-muted); font-weight:600;">Coments</div>
-                        <div id="modalCommentsText" style="font-size:0.88rem; font-weight:800; color:var(--text-primary);">--</div>
+                        <div class="text-[10px] text-base-content/60 font-semibold uppercase">Coments</div>
+                        <div id="modalCommentsText" class="font-bold font-mono text-sm text-base-content">--</div>
                     </div>
                 </div>
-                <div style="display:flex; align-items:center; gap:8px; border-left:1px solid var(--border-subtle); padding-left:10px;">
-                    <div style="width:28px; height:28px; border-radius:6px; background:rgba(234,179,8,0.12); color:#eab308; display:flex; align-items:center; justify-content:center;">
-                        <i data-lucide="clock" style="width:14px; height:14px;"></i>
+                <div class="flex items-center gap-2.5 border-l border-base-300 pl-3">
+                    <div class="w-8 h-8 rounded-lg bg-warning/10 text-warning flex items-center justify-center shrink-0">
+                        <i data-lucide="clock" class="w-4 h-4"></i>
                     </div>
                     <div>
-                        <div style="font-size:0.68rem; color:var(--text-muted); font-weight:600;">Duración</div>
-                        <div id="modalDurationText" style="font-size:0.88rem; font-weight:800; color:var(--text-primary);">--</div>
+                        <div class="text-[10px] text-base-content/60 font-semibold uppercase">Duración</div>
+                        <div id="modalDurationText" class="font-bold font-mono text-sm text-base-content">--</div>
                     </div>
                 </div>
             </div>
 
-            <!-- Descripción / Título -->
-            <div style="background:var(--bg-muted); border:1px solid var(--border-subtle); border-radius:8px; padding:16px;">
-                <div style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; margin-bottom:6px;">
+            <!-- Descripción / Pie de foto -->
+            <div class="bg-base-200/50 border border-base-300 rounded-xl p-4">
+                <div class="text-[11px] font-bold uppercase tracking-wider text-base-content/60 mb-1.5">
                     Descripción / Pie de foto
                 </div>
-                <p id="modalDescription" style="font-size:0.88rem; color:var(--text-primary); margin:0; line-height:1.5; white-space:pre-wrap; word-break:break-word;"></p>
+                <p id="modalDescription" class="text-xs text-base-content leading-relaxed m-0 whitespace-pre-wrap break-words"></p>
             </div>
 
             <!-- Botones de Acción -->
-            <div style="display:flex; flex-direction:column; gap:10px;">
-                <a id="modalDownloadBtn" href="#" class="btn-brand" style="justify-content:center; padding:12px 20px; font-size:0.92rem; text-decoration:none;">
-                    <i data-lucide="download" style="width:16px; height:16px;"></i>
+            <div class="flex flex-col gap-2.5">
+                <a id="modalDownloadBtn" href="#" class="btn btn-primary w-full rounded-xl gap-2 h-11 text-xs font-semibold shadow-xs text-primary-content">
+                    <i data-lucide="download" class="w-4 h-4"></i>
                     Descargar Video Sin Marca de Agua
                 </a>
 
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-                    <a id="modalIgLink" href="#" target="_blank" rel="noopener noreferrer" class="btn-ghost" style="justify-content:center; text-decoration:none;">
-                        <i data-lucide="external-link" style="width:14px; height:14px;"></i>
+                <div class="grid grid-cols-2 gap-2.5">
+                    <a id="modalIgLink" href="#" target="_blank" rel="noopener noreferrer" class="btn btn-ghost btn-sm rounded-xl border border-base-300 text-xs gap-1.5 h-10 text-base-content/75">
+                        <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
                         Abrir en Instagram
                     </a>
-                    <button type="button" class="btn-ghost" style="justify-content:center;" onclick="copyModalUrl()">
-                        <i data-lucide="copy" style="width:14px; height:14px;"></i>
+                    <button type="button" class="btn btn-ghost btn-sm rounded-xl border border-base-300 text-xs gap-1.5 h-10 text-base-content/75" onclick="copyModalUrl()">
+                        <i data-lucide="copy" class="w-3.5 h-3.5"></i>
                         <span id="copyBtnText">Copiar Enlace</span>
                     </button>
                 </div>
             </div>
 
             <!-- ═════════ SECCIÓN IA: ESTRATEGIA & COPY PARA FACEBOOK ═════════ -->
-            <div class="fb-copy-section">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <div style="display:flex; align-items:center; gap:8px;">
-                        <div style="width:28px; height:28px; border-radius:6px; background:rgba(59,130,246,0.12); color:#3b82f6; display:flex; align-items:center; justify-content:center;">
-                            <i data-lucide="sparkles" style="width:16px; height:16px;"></i>
+            <div class="border-t border-base-300/70 pt-5 mt-1 flex flex-col gap-4">
+                <div class="flex justify-between items-center flex-wrap gap-2">
+                    <div class="flex items-center gap-2">
+                        <div class="w-7 h-7 rounded-lg bg-warning/10 text-warning flex items-center justify-center shrink-0">
+                            <i data-lucide="sparkles" class="w-4 h-4"></i>
                         </div>
-                        <h4 style="font-size:0.95rem; font-weight:700; color:var(--text-primary); margin:0;">
+                        <h4 class="text-sm font-bold text-base-content m-0">
                             Estrategia & Copy para Facebook
                         </h4>
                     </div>
-                    <div style="display:flex; align-items:center; gap:8px;">
-                        <span id="fbSectionBadge" class="badge-pill badge-user" style="font-size:0.7rem;">Sin generar</span>
-                        <button type="button" id="fbRegenerateBtn" class="fb-copy-btn-mini" style="display:none;" onclick="triggerFacebookCopy(currentModalId, true)" title="Volver a generar copy con IA">
-                            <i data-lucide="refresh-cw" style="width:11px; height:11px;"></i>
+                    <div class="flex items-center gap-2">
+                        <span id="fbSectionBadge" class="badge badge-neutral badge-md font-bold text-xs px-2.5">Sin generar</span>
+                        <button type="button" id="fbRegenerateBtn" class="btn btn-ghost btn-xs gap-1 border border-base-300 rounded-lg text-xs hidden" onclick="triggerFacebookCopy(currentModalId, true)" title="Volver a generar copy con IA">
+                            <i data-lucide="refresh-cw" class="w-3 h-3"></i>
                             <span>Regenerar</span>
                         </button>
                     </div>
                 </div>
 
                 <!-- Estado 1: Sin generar -->
-                <div id="fbStateIdle" style="background:var(--bg-muted); border:1px dashed var(--border-subtle); border-radius:10px; padding:20px; text-align:center;">
-                    <p style="font-size:0.84rem; color:var(--text-secondary); margin:0 0 14px; max-width:480px; margin-left:auto; margin-right:auto; line-height:1.5;">
+                <div id="fbStateIdle" class="bg-base-200/50 border border-dashed border-base-300 rounded-xl p-5 text-center">
+                    <p class="text-xs text-base-content/70 m-0 mb-3.5 max-w-lg mx-auto leading-relaxed">
                         Extraé el contexto audiovisual del video con <strong>Gemini</strong>: redacta un artículo para WordPress con el embed de Instagram y genera el copy social optimizado junto al enlace directo para el primer comentario.
                     </p>
-                    <button type="button" id="fbGenerateBtnMain" class="btn-brand" style="display:inline-flex; align-items:center; gap:8px; padding:10px 18px; font-size:0.86rem; margin:0 auto;" onclick="triggerFacebookCopy(currentModalId, false)">
-                        <i data-lucide="sparkles" style="width:15px; height:15px;"></i>
+                    <button type="button" id="fbGenerateBtnMain" class="btn btn-primary btn-sm rounded-xl gap-2 text-xs font-semibold shadow-xs text-primary-content" onclick="triggerFacebookCopy(currentModalId, false)">
+                        <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
                         <span>Generar Copy con IA</span>
                     </button>
                 </div>
 
                 <!-- Estado 2: Procesando con Gemini -->
-                <div id="fbStateLoading" style="display:none; background:rgba(59,130,246,0.06); border:1px solid rgba(59,130,246,0.25); border-radius:10px; padding:24px 18px; text-align:center;">
-                    <div style="display:flex; justify-content:center; margin-bottom:12px;">
-                        <div style="width:26px; height:26px; border-radius:50%; border:2.5px solid #3b82f6; border-top-color:transparent; animation:spin 1s linear infinite;"></div>
+                <div id="fbStateLoading" class="hidden bg-primary/10 border border-primary/20 rounded-xl p-6 text-center">
+                    <div class="flex justify-center mb-3">
+                        <div class="w-6 h-6 rounded-full border-2 border-primary border-t-transparent animate-spin"></div>
                     </div>
-                    <div style="font-size:0.9rem; font-weight:700; color:var(--text-primary); margin-bottom:4px;">
+                    <div class="text-sm font-bold text-base-content mb-1">
                         Analizando video y audio con IA...
                     </div>
-                    <div style="font-size:0.78rem; color:var(--text-muted); max-width:440px; margin:0 auto; line-height:1.45;">
+                    <div class="text-xs text-base-content/60 max-w-md mx-auto leading-relaxed">
                         Descargando stream efímero, extrayendo contexto audiovisual, redactando artículo para WordPress con embed de Instagram y generando copy social con enlace para el primer comentario.
                     </div>
                 </div>
 
                 <!-- Estado 3: Completado (Resultados) -->
-                <div id="fbStateCompleted" style="display:none; flex-direction:column; gap:12px;">
+                <div id="fbStateCompleted" class="hidden flex-col gap-3">
                     <!-- Bloque Título -->
-                    <div class="fb-copy-card">
-                        <div class="fb-copy-header">
-                            <span class="fb-copy-label">Título sugerido (máx 80 caracteres con emojis)</span>
-                            <button type="button" class="fb-copy-btn-mini" onclick="copyFbElement('fbTitleText', this)">
-                                <i data-lucide="copy" style="width:11px; height:11px;"></i>
+                    <div class="card bg-base-200/50 border border-base-300 rounded-xl p-3.5">
+                        <div class="flex justify-between items-center mb-1.5">
+                            <span class="text-[11px] font-bold uppercase tracking-wider text-base-content/60">Título sugerido</span>
+                            <button type="button" class="btn btn-ghost btn-xs gap-1 border border-base-300 rounded-lg text-xs" onclick="copyFbElement('fbTitleText', this)">
+                                <i data-lucide="copy" class="w-3 h-3"></i>
                                 <span>Copiar</span>
                             </button>
                         </div>
-                        <p id="fbTitleText" class="fb-copy-content" style="font-weight:700;"></p>
+                        <p id="fbTitleText" class="text-xs font-bold text-base-content m-0 leading-relaxed"></p>
                     </div>
 
                     <!-- Bloque Descripción -->
-                    <div class="fb-copy-card">
-                        <div class="fb-copy-header">
-                            <span class="fb-copy-label">Descripción (Hook + Desarrollo + CTA)</span>
-                            <button type="button" class="fb-copy-btn-mini" onclick="copyFbElement('fbDescText', this)">
-                                <i data-lucide="copy" style="width:11px; height:11px;"></i>
+                    <div class="card bg-base-200/50 border border-base-300 rounded-xl p-3.5">
+                        <div class="flex justify-between items-center mb-1.5">
+                            <span class="text-[11px] font-bold uppercase tracking-wider text-base-content/60">Descripción (Hook + Desarrollo + CTA)</span>
+                            <button type="button" class="btn btn-ghost btn-xs gap-1 border border-base-300 rounded-lg text-xs" onclick="copyFbElement('fbDescText', this)">
+                                <i data-lucide="copy" class="w-3 h-3"></i>
                                 <span>Copiar</span>
                             </button>
                         </div>
-                        <p id="fbDescText" class="fb-copy-content"></p>
+                        <p id="fbDescText" class="text-xs text-base-content leading-relaxed m-0 whitespace-pre-wrap break-words"></p>
                     </div>
 
                     <!-- Bloque Hashtags -->
-                    <div class="fb-copy-card">
-                        <div class="fb-copy-header">
-                            <div style="display:flex; align-items:center; gap:8px;">
-                                <span class="fb-copy-label">Hashtags</span>
-                                <span id="fbHashtagsSourceBadge" class="badge-pill" style="font-size:0.65rem; background:rgba(34,197,94,0.15); color:#22c55e; border:1px solid rgba(34,197,94,0.3);">
-                                    Originales de la publicación
+                    <div class="card bg-base-200/50 border border-base-300 rounded-xl p-3.5">
+                        <div class="flex justify-between items-center mb-1.5">
+                            <div class="flex items-center gap-2">
+                                <span class="text-[11px] font-bold uppercase tracking-wider text-base-content/60">Hashtags</span>
+                                <span id="fbHashtagsSourceBadge" class="badge badge-success text-white badge-xs font-mono">
+                                    Originales
                                 </span>
                             </div>
-                            <button type="button" class="fb-copy-btn-mini" onclick="copyFbElement('fbHashtagsText', this)">
-                                <i data-lucide="copy" style="width:11px; height:11px;"></i>
+                            <button type="button" class="btn btn-ghost btn-xs gap-1 border border-base-300 rounded-lg text-xs" onclick="copyFbElement('fbHashtagsText', this)">
+                                <i data-lucide="copy" class="w-3 h-3"></i>
                                 <span>Copiar</span>
                             </button>
                         </div>
-                        <p id="fbHashtagsText" class="fb-copy-content" style="color:#3b82f6; font-weight:600;"></p>
+                        <p id="fbHashtagsText" class="text-xs text-primary font-mono font-semibold m-0 leading-relaxed"></p>
                     </div>
 
                     <!-- Bloque Enlace Artículo WordPress -->
-                    <div id="fbWpCard" class="fb-copy-card">
-                        <div class="fb-copy-header" style="flex-wrap:wrap; gap:8px;">
-                            <div style="display:flex; align-items:center; gap:8px;">
-                                <i data-lucide="globe" style="width:14px; height:14px; color:#3b82f6;"></i>
-                                <span class="fb-copy-label">Enlace para el 1er Comentario (Artículo WordPress)</span>
-                                <span id="fbWpSiteBadge" class="badge-pill" style="font-size:0.65rem;"></span>
+                    <div id="fbWpCard" class="card bg-base-200/50 border border-base-300 rounded-xl p-3.5">
+                        <div class="flex justify-between items-center mb-1.5 flex-wrap gap-2">
+                            <div class="flex items-center gap-2">
+                                <i data-lucide="globe" class="w-3.5 h-3.5 text-primary"></i>
+                                <span class="text-[11px] font-bold uppercase tracking-wider text-base-content/60">Enlace para el 1er Comentario (Artículo WordPress)</span>
+                                <span id="fbWpSiteBadge" class="badge badge-primary badge-xs text-primary-content font-bold"></span>
                             </div>
-                            <div id="fbWpHeaderActions" style="display:flex; align-items:center; gap:6px;">
-                                <a id="fbWpVisitBtn" href="#" target="_blank" rel="noopener noreferrer" class="fb-copy-btn-mini" style="text-decoration:none;">
-                                    <i data-lucide="external-link" style="width:11px; height:11px;"></i>
+                            <div id="fbWpHeaderActions" class="flex items-center gap-1.5">
+                                <a id="fbWpVisitBtn" href="#" target="_blank" rel="noopener noreferrer" class="btn btn-ghost btn-xs gap-1 border border-base-300 rounded-lg text-xs">
+                                    <i data-lucide="external-link" class="w-3 h-3"></i>
                                     <span>Ver Artículo</span>
                                 </a>
-                                <button type="button" id="fbWpCopyBtn" class="fb-copy-btn-mini" onclick="copyFbElement('fbWpLinkText', this)">
-                                    <i data-lucide="copy" style="width:11px; height:11px;"></i>
+                                <button type="button" id="fbWpCopyBtn" class="btn btn-ghost btn-xs gap-1 border border-base-300 rounded-lg text-xs" onclick="copyFbElement('fbWpLinkText', this)">
+                                    <i data-lucide="copy" class="w-3 h-3"></i>
                                     <span>Copiar Link</span>
                                 </button>
                             </div>
                         </div>
                         <div id="fbWpContentBox">
-                            <p id="fbWpLinkText" class="fb-copy-content" style="font-family:ui-monospace, monospace; font-size:0.8rem; word-break:break-all; color:#3b82f6;"></p>
+                            <p id="fbWpLinkText" class="text-xs font-mono text-primary font-bold break-all m-0"></p>
                         </div>
-                        <div id="fbWpEmptyNotice" style="display:none; font-size:0.8rem; color:var(--text-muted); line-height:1.45;">
-                            <p style="margin:0;">No se publicó artículo en WordPress porque no hay dominios activos configurados. Podés vincular sitios en <strong>Administración &gt; Dominios WordPress</strong>.</p>
+                        <div id="fbWpEmptyNotice" class="hidden text-xs text-base-content/60 leading-relaxed">
+                            <p class="m-0">No se publicó artículo en WordPress porque no hay dominios activos configurados. Podés vincular sitios en <strong>Administración &gt; Dominios WordPress</strong>.</p>
                         </div>
                     </div>
 
                     <!-- Botones de Copiado Rápido -->
-                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:4px;">
-                        <button type="button" id="copySocialOnlyBtn" class="btn-ghost" style="justify-content:center; padding:10px 12px; font-size:0.82rem; border:1px solid var(--border-subtle); display:flex; align-items:center; gap:6px;" onclick="copySocialOnly(this)">
-                            <i data-lucide="copy" style="width:14px; height:14px;"></i>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
+                        <button type="button" id="copySocialOnlyBtn" class="btn btn-ghost btn-sm rounded-xl border border-base-300 text-xs gap-1.5 text-base-content/75" onclick="copySocialOnly(this)">
+                            <i data-lucide="copy" class="w-3.5 h-3.5"></i>
                             <span>Copiar Copy para Red Social</span>
                         </button>
-                        <button type="button" id="copyWpLinkOnlyBtn" class="btn-ghost" style="justify-content:center; padding:10px 12px; font-size:0.82rem; border:1px solid var(--border-subtle); display:flex; align-items:center; gap:6px;" onclick="copyWpLinkOnly(this)">
-                            <i data-lucide="link" style="width:14px; height:14px;"></i>
+                        <button type="button" id="copyWpLinkOnlyBtn" class="btn btn-ghost btn-sm rounded-xl border border-base-300 text-xs gap-1.5 text-base-content/75" onclick="copyWpLinkOnly(this)">
+                            <i data-lucide="link" class="w-3.5 h-3.5 text-primary"></i>
                             <span>Copiar Link para Comentario</span>
                         </button>
                     </div>
 
-                    <!-- Botón Destacado: Copiar Todo -->
-                    <button type="button" id="copyAllFbBtn" class="btn-brand" style="justify-content:center; padding:12px; font-size:0.9rem; background:linear-gradient(135deg, #1877f2, #0d5cb6); border:none; margin-top:4px;" onclick="copyAllFbContent(this)">
-                        <i data-lucide="clipboard-check" style="width:16px; height:16px;"></i>
+                    <!-- Botón Destacado: Copiar Todo el Pack -->
+                    <button type="button" id="copyAllFbBtn" class="btn btn-primary btn-sm rounded-xl gap-2 text-xs font-semibold text-primary-content shadow-xs h-10" onclick="copyAllFbContent(this)">
+                        <i data-lucide="clipboard-check" class="w-4 h-4"></i>
                         <span>Copiar Todo (Copy Social + Link Comentario)</span>
                     </button>
                 </div>
             </div>
 
         </div>
+
+        <!-- Footer -->
+        <div class="p-3.5 lg:px-6 border-t border-base-300 flex justify-end bg-base-200/30">
+            <button type="button" class="btn btn-ghost btn-sm text-xs rounded-xl border border-base-300 px-4" onclick="closeIgModal()">
+                Cerrar
+            </button>
+        </div>
     </div>
 </div>
 
-<!-- Modal Eliminar -->
-<div id="deleteModal" class="ig-modal-overlay" style="display:none; position:fixed; inset:0; z-index:100000; background:var(--modal-backdrop, rgba(0,0,0,0.7)); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); align-items:center; justify-content:center; padding:16px;">
-    <div class="shadcn-card" style="width:100%; max-width:400px; padding:24px; text-align:center; animation:modalIn 0.2s ease-out;">
-        <div style="width:44px; height:44px; border-radius:50%; background:rgba(239,68,68,0.12); color:#ef4444; display:flex; align-items:center; justify-content:center; margin:0 auto 16px;">
-            <i data-lucide="trash-2" style="width:22px; height:22px;"></i>
+<!-- ═════════ 4. MODAL: CONFIRMAR ELIMINACIÓN ═════════ -->
+<div id="deleteModal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-md hidden items-center justify-center p-4">
+    <div class="card bg-base-100 shadow-2xl border border-base-300 w-full max-w-sm p-6 rounded-2xl text-center">
+        <div class="w-12 h-12 rounded-2xl bg-error/10 text-error border border-error/20 flex items-center justify-center mx-auto mb-3.5">
+            <i data-lucide="trash-2" class="w-5 h-5"></i>
         </div>
-        <h3 style="font-size:1.1rem; font-weight:700; margin:0 0 8px; color:var(--text-primary);">¿Eliminar registro?</h3>
-        <p style="font-size:0.82rem; color:var(--text-muted); margin:0 0 20px;">Esta acción eliminará la miniatura y el historial de descargas.</p>
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-            <button type="button" class="btn-ghost" onclick="closeDeleteModal()">Cancelar</button>
-            <button type="button" id="confirmDeleteBtn" class="btn-brand" style="background:#ef4444; justify-content:center;" onclick="executeDelete()">Eliminar</button>
+
+        <h3 class="text-base font-bold text-base-content mb-1">¿Eliminar este registro?</h3>
+        <p class="text-xs text-base-content/60 leading-relaxed mb-6">
+            Esta acción no se puede deshacer. Se eliminará el registro del historial de descargas.
+        </p>
+
+        <div class="flex justify-end gap-2.5">
+            <button type="button" class="btn btn-ghost btn-sm flex-1 rounded-xl border border-base-300 text-xs font-semibold" onclick="closeDeleteModal()">
+                Cancelar
+            </button>
+            <button type="button" id="btnConfirmDeleteIg" class="btn btn-error btn-sm text-white flex-1 rounded-xl text-xs font-semibold gap-1.5 shadow-xs" onclick="executeDeleteIgItem()">
+                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                Eliminar
+            </button>
         </div>
     </div>
 </div>
+
+<!-- Toast Container Flotante -->
+<div id="toastContainer" class="toast toast-bottom toast-end z-50 pointer-events-none p-4"></div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-let currentModalUrl = '';
 let currentModalId = null;
-let activeStatusFetchId = null;
-let itemToDelete = null;
+let itemToDeleteId = null;
 
-function formatMetricNumber(num) {
-    if (num === null || num === undefined || isNaN(num)) return '--';
-    if (num >= 1000000) return (num / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
-    if (num >= 1000) return (num / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
-    return num.toLocaleString();
-}
-
-// Form Submit
+// Envío del formulario de descarga
 document.getElementById('igDownloadForm').addEventListener('submit', async function(e) {
     e.preventDefault();
-    const input = document.getElementById('igUrlInput');
-    const url = input.value.trim();
-    if (!url) return;
-
-    const btn = document.getElementById('submitBtn');
+    const urlInput = document.getElementById('igUrlInput');
+    const submitBtn = document.getElementById('submitBtn');
     const procCard = document.getElementById('processingCard');
     const progBar = document.getElementById('progressBar');
     const procTitle = document.getElementById('processingTitle');
     const procSub = document.getElementById('processingSub');
 
-    btn.disabled = true;
-    procCard.style.display = 'block';
-    progBar.style.width = '20%';
-    procTitle.innerText = 'Conectando con Instagram...';
-    procSub.innerText = 'Extrayendo stream original sin marca de agua y miniatura';
+    const url = urlInput.value.trim();
+    if (!url) return;
 
-    let progressInterval = setInterval(() => {
-        let currentW = parseInt(progBar.style.width) || 20;
-        if (currentW < 85) {
-            progBar.style.width = (currentW + 15) + '%';
-        }
-    }, 400);
+    submitBtn.disabled = true;
+    procCard.classList.remove('hidden');
+    procCard.classList.add('flex');
+    progBar.style.width = '25%';
 
     try {
         const formData = new FormData();
         formData.append('instagram_url', url);
         formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
 
-        const res = await fetch("{% url 'igdownloader:process_ajax' %}", {
+        const response = await fetch("{% url 'igdownloader:process_ajax' %}", {
             method: 'POST',
             body: formData,
             headers: {
@@ -863,601 +624,289 @@ document.getElementById('igDownloadForm').addEventListener('submit', async funct
             }
         });
 
-        clearInterval(progressInterval);
-        const data = await res.json();
+        const data = await response.json();
 
-        if (res.ok && data.success) {
+        if (response.ok && (data.success || data.id)) {
             progBar.style.width = '100%';
-            procTitle.innerText = '¡Descarga lista!';
-            procSub.innerText = 'Abriendo opciones del Reel...';
+            progBar.className = 'h-full bg-success transition-all duration-300';
+            procTitle.innerHTML = '<span class="text-success">¡Video Descargado con Éxito!</span>';
+            procSub.innerText = 'Actualizando galería de reels...';
 
             setTimeout(() => {
-                input.value = '';
-                btn.disabled = false;
-                procCard.style.display = 'none';
-                progBar.style.width = '0%';
-
-                // Insert into grid
-                insertCardIntoGrid(data);
-
-                // Open modal with the new item
-                openIgModal(data.id);
-
-                // Auto-trigger browser download
-                window.location.href = data.download_url;
-            }, 600);
+                resetForm();
+                insertNewHistoryItem(data);
+                showToast('Video descargado correctamente', 'success');
+                openIgModalData(data);
+            }, 800);
         } else {
-            throw new Error(data.error || 'No se pudo procesar el video de Instagram.');
+            resetForm();
+            showToast(data.error || data.message || 'Error al procesar la descarga de Instagram.', 'error');
         }
     } catch (err) {
-        clearInterval(progressInterval);
-        btn.disabled = false;
-        progBar.style.width = '100%';
-        progBar.style.background = '#ef4444';
-        procTitle.innerHTML = '<span style="color:#ef4444;">Error en la descarga</span>';
-        procSub.innerText = err.message || 'Error de conexión con el servidor.';
-        setTimeout(() => {
-            showCustomAlert({
-                title: 'Error en la Descarga',
-                message: err.message || 'No se pudo procesar el video de Instagram.',
-                type: 'error'
-            });
-            procCard.style.display = 'none';
-            progBar.style.width = '0%';
-            progBar.style.background = 'linear-gradient(90deg, #f09433, #e1306c, #bc1888)';
-        }, 1000);
+        resetForm();
+        showToast('Error de red al conectar con el servidor.', 'error');
     }
 });
 
-function insertCardIntoGrid(data) {
-    const grid = document.getElementById('myHistoryGrid');
-    const emptyMsg = document.getElementById('noHistoryMsg');
-    if (emptyMsg) emptyMsg.remove();
+function resetForm() {
+    const submitBtn = document.getElementById('submitBtn');
+    if (submitBtn) submitBtn.disabled = false;
+    const procCard = document.getElementById('processingCard');
+    if (procCard) {
+        procCard.classList.add('hidden');
+        procCard.classList.remove('flex');
+    }
+    const procTitle = document.getElementById('processingTitle');
+    if (procTitle) procTitle.innerText = 'Conectando con Instagram...';
+    const procSub = document.getElementById('processingSub');
+    if (procSub) procSub.innerText = 'Extrayendo stream original sin marca de agua y miniatura';
+    const progBar = document.getElementById('progressBar');
+    if (progBar) {
+        progBar.style.width = '0%';
+        progBar.className = 'h-full bg-primary transition-all duration-300';
+    }
+    const urlInput = document.getElementById('igUrlInput');
+    if (urlInput) urlInput.value = '';
+}
 
-    const likesDisplay = data.formatted_likes || formatMetricNumber(data.like_count);
-    const commentsDisplay = data.formatted_comments || formatMetricNumber(data.comment_count);
-    const durationDisplay = data.duration_seconds ? `${Math.round(data.duration_seconds)}s` : '--';
+function insertNewHistoryItem(item) {
+    const grid = document.getElementById('myHistoryGrid');
+    const noHist = document.getElementById('noHistoryMsg');
+    if (noHist) noHist.remove();
 
     const cardHtml = `
-    <div class="prompt-card-shadcn" id="history-item-${data.id}" onclick="openIgModal(${data.id})" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ') { event.preventDefault(); openIgModal(${data.id}); }">
+    <div class="card bg-base-100 shadow-sm border border-base-300 rounded-2xl p-4 hover:border-primary/50 transition cursor-pointer flex flex-col justify-between" id="history-item-${item.id}" onclick="openIgModal(${item.id})" role="button" tabindex="0">
         <div>
-            <!-- Fila Superior: Badge Uploader + Enlace Externo -->
-            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; gap:8px;">
-                <span class="ig-badge" style="font-size:0.75rem; font-weight:700; max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#e1306c" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"></line></svg>
-                    @${data.uploader || 'instagram'}
+            <div class="flex items-center justify-between mb-3 gap-2">
+                <span class="badge badge-neutral badge-md font-bold text-xs gap-1.5 px-2.5 truncate max-w-[170px]">
+                    <i data-lucide="instagram" class="w-3 h-3 text-warning"></i>
+                    @${item.uploader || 'instagram'}
                 </span>
-                <a href="${data.instagram_url}" target="_blank" rel="noopener noreferrer" style="font-size:0.72rem; color:#e1306c; text-decoration:none; display:inline-flex; align-items:center; gap:3px; font-weight:600;" onclick="event.stopPropagation();" title="Abrir en Instagram">
+                <a href="${item.instagram_url}" target="_blank" rel="noopener noreferrer" class="text-xs text-primary font-bold hover:underline inline-flex items-center gap-1" onclick="event.stopPropagation();" title="Abrir en Instagram">
                     <span>Ver Reel</span>
-                    <i data-lucide="external-link" style="width:11px; height:11px;"></i>
+                    <i data-lucide="external-link" class="w-3 h-3"></i>
                 </a>
             </div>
 
-            <!-- Título (Clamp a 2 líneas limpias) -->
-            <h3 style="font-size:0.9rem; font-weight:700; color:var(--text-primary); margin:0 0 14px; line-height:1.4; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; min-height:2.6em;" title="${data.title || 'Reel de Instagram'}">
-                ${data.title || 'Reel de Instagram'}
+            <h3 class="font-bold text-sm text-base-content line-clamp-2 min-h-[2.6em] mb-3 leading-snug" title="${item.title}">
+                ${item.title || 'Reel de Instagram'}
             </h3>
 
-            <!-- Widget Analítico de Métricas (Likes, Comentarios, Duración) -->
-            <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:6px; background:var(--bg-muted); border:1px solid var(--border-subtle); border-radius:10px; padding:10px 6px; margin-bottom:12px;">
-                <!-- Likes -->
-                <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;">
-                    <div style="display:flex; align-items:center; gap:4px; font-size:0.68rem; color:var(--text-muted); font-weight:600; margin-bottom:2px;">
-                        <i data-lucide="heart" style="width:11px; height:11px; color:#f43f5e;"></i>
+            <div class="grid grid-cols-3 gap-1.5 p-2.5 rounded-xl bg-base-200/50 border border-base-300 text-center mb-3">
+                <div class="flex flex-col items-center justify-center">
+                    <div class="flex items-center gap-1 text-[10px] text-base-content/60 font-semibold mb-0.5">
+                        <i data-lucide="heart" class="w-3 h-3 text-error"></i>
                         <span>Likes</span>
                     </div>
-                    <span style="font-size:0.85rem; font-weight:800; color:var(--text-primary);">
-                        ${likesDisplay}
+                    <span class="font-mono font-bold text-xs text-base-content">
+                        ${item.formatted_likes || '--'}
                     </span>
                 </div>
 
-                <!-- Coments -->
-                <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; border-left:1px solid var(--border-subtle); border-right:1px solid var(--border-subtle);">
-                    <div style="display:flex; align-items:center; gap:4px; font-size:0.68rem; color:var(--text-muted); font-weight:600; margin-bottom:2px;">
-                        <i data-lucide="message-circle" style="width:11px; height:11px; color:#3b82f6;"></i>
+                <div class="flex flex-col items-center justify-center border-x border-base-300">
+                    <div class="flex items-center gap-1 text-[10px] text-base-content/60 font-semibold mb-0.5">
+                        <i data-lucide="message-circle" class="w-3 h-3 text-info"></i>
                         <span>Coments</span>
                     </div>
-                    <span style="font-size:0.85rem; font-weight:800; color:var(--text-primary);">
-                        ${commentsDisplay}
+                    <span class="font-mono font-bold text-xs text-base-content">
+                        ${item.formatted_comments || '--'}
                     </span>
                 </div>
 
-                <!-- Duración -->
-                <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;">
-                    <div style="display:flex; align-items:center; gap:4px; font-size:0.68rem; color:var(--text-muted); font-weight:600; margin-bottom:2px;">
-                        <i data-lucide="clock" style="width:11px; height:11px; color:#eab308;"></i>
+                <div class="flex flex-col items-center justify-center">
+                    <div class="flex items-center gap-1 text-[10px] text-base-content/60 font-semibold mb-0.5">
+                        <i data-lucide="clock" class="w-3 h-3 text-warning"></i>
                         <span>Duración</span>
                     </div>
-                    <span style="font-size:0.85rem; font-weight:800; color:var(--text-primary);">
-                        ${durationDisplay}
+                    <span class="font-mono font-bold text-xs text-base-content">
+                        ${item.duration_seconds ? Math.round(item.duration_seconds) + 's' : '--'}
                     </span>
                 </div>
             </div>
 
-            <!-- Meta Info: Fecha y Ver Portada -->
-            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
-                <span style="font-size:0.72rem; color:var(--text-muted); display:inline-flex; align-items:center; gap:4px;">
-                    <i data-lucide="calendar" style="width:11px; height:11px; opacity:0.7;"></i>
-                    ${data.created_at}
+            <div class="flex items-center justify-between text-xs text-base-content/50 font-mono mb-2">
+                <span class="flex items-center gap-1">
+                    <i data-lucide="calendar" class="w-3 h-3 opacity-60"></i>
+                    ${item.created_at || 'Reciente'}
                 </span>
-                <span style="font-size:0.7rem; color:var(--primary-brand); font-weight:600; display:inline-flex; align-items:center; gap:3px;">
-                    <i data-lucide="eye" style="width:11px; height:11px;"></i>
-                    Ver portada en modal
+                <span class="text-primary font-semibold text-[11px] flex items-center gap-1 hover:underline">
+                    <i data-lucide="eye" class="w-3 h-3"></i>
+                    Ver detalles
                 </span>
             </div>
         </div>
 
-        <!-- Acciones Rápidas (Estructuradas en 2 filas limpias) -->
-        <div style="display:flex; flex-direction:column; gap:8px; border-top:1px solid var(--border-subtle); padding-top:12px; margin-top:8px;">
-            <!-- Fila 1: Botón Copy con IA destacado a lo ancho -->
-            <button type="button" id="card-fb-btn-${data.id}" class="btn-fb-card ${data.fb_status === 'completed' ? 'completed' : ''}" onclick="event.stopPropagation(); handleCardFbClick(${data.id});" title="${data.fb_status === 'completed' ? 'Ver Copy para Facebook' : 'Generar Copy para Facebook con IA'}">
-                <i data-lucide="${data.fb_status === 'completed' ? 'check-circle-2' : 'sparkles'}" style="width:13px; height:13px;"></i>
-                <span>${data.fb_status === 'completed' ? 'Ver Copy FB' : 'Generar Copy FB con IA'}</span>
+        <div class="flex flex-col gap-2 pt-3 border-t border-base-300/70 mt-2">
+            <button type="button" id="card-fb-btn-${item.id}" class="btn btn-sm w-full gap-2 rounded-xl text-xs font-semibold border border-base-300 bg-base-200/60 hover:border-primary hover:text-primary transition-all" onclick="event.stopPropagation(); handleCardFbClick(${item.id});" title="Generar Copy para Facebook con IA">
+                <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+                <span>Generar Copy FB con IA</span>
             </button>
 
-            <!-- Fila 2: Descargar + Eliminar -->
-            <div style="display:flex; align-items:center; gap:8px;">
-                <a href="${data.download_url}" class="btn-brand" style="flex:1; justify-content:center; padding:7px 12px; font-size:0.75rem; text-decoration:none;" onclick="event.stopPropagation();">
-                    <i data-lucide="download" style="width:13px; height:13px;"></i>
-                    Descargar Video
+            <div class="flex items-center gap-2">
+                <a href="/ig-downloader/download/${item.id}/" class="btn btn-primary btn-sm flex-1 text-xs text-primary-content gap-1.5 rounded-xl font-semibold shadow-xs" onclick="event.stopPropagation();">
+                    <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                    Descargar
                 </a>
-                <button type="button" class="action-btn action-btn-delete" title="Eliminar" style="flex-shrink:0;" onclick="event.stopPropagation(); openDeleteModal(${data.id})">
-                    <i data-lucide="trash-2" style="width:14px; height:14px;"></i>
+                <button type="button" class="btn btn-ghost btn-square btn-sm border border-base-300 hover:border-error hover:bg-error/10 hover:text-error rounded-xl h-8 w-8 text-base-content/60 transition-all shrink-0" title="Eliminar" onclick="event.stopPropagation(); openDeleteModal(${item.id})">
+                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
                 </button>
             </div>
         </div>
     </div>`;
 
-    grid.insertAdjacentHTML('afterbegin', cardHtml);
-    lucide.createIcons();
-}
-
-function setModalScrollLocked(isLocked) {
-    document.body.style.overflow = isLocked ? 'hidden' : '';
-}
-
-function getCardElement(id) {
-    return document.getElementById(`history-item-${id}`) || document.getElementById(`all-history-item-${id}`);
-}
-
-function resetModalState() {
-    currentModalUrl = '';
-
-    const modalTitle = document.getElementById('modalTitle');
-    const modalDate = document.getElementById('modalDate');
-    const modalUploader = document.getElementById('modalUploader');
-    const modalDescription = document.getElementById('modalDescription');
-    const modalStatus = document.getElementById('modalStatus');
-    const modalDurationBadge = document.getElementById('modalDurationBadge');
-    const modalDownloadBtn = document.getElementById('modalDownloadBtn');
-    const modalIgLink = document.getElementById('modalIgLink');
-    const modalThumbnailImg = document.getElementById('modalThumbnailImg');
-    const modalThumbnailPlaceholder = document.getElementById('modalThumbnailPlaceholder');
-
-    if (modalTitle) modalTitle.innerText = 'Cargando...';
-    if (modalDate) modalDate.innerText = '';
-    if (modalUploader) {
-        modalUploader.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"></line></svg> @...`;
-    }
-    if (modalDescription) modalDescription.innerText = 'Cargando información del reel...';
-    if (modalStatus) {
-        modalStatus.className = 'badge-pill badge-user';
-        modalStatus.innerText = 'Cargando';
-    }
-    if (modalDurationBadge) {
-        modalDurationBadge.innerText = '';
-        modalDurationBadge.style.display = 'none';
-    }
-    if (modalDownloadBtn) modalDownloadBtn.href = '#';
-    if (modalIgLink) modalIgLink.href = '#';
-    if (modalThumbnailImg) {
-        modalThumbnailImg.src = '';
-        modalThumbnailImg.style.display = 'none';
-    }
-    if (modalThumbnailPlaceholder) modalThumbnailPlaceholder.style.display = 'flex';
-
-    // Reset métricas del Reel en modal
-    const modalLikes = document.getElementById('modalLikesText');
-    const modalComments = document.getElementById('modalCommentsText');
-    const modalDuration = document.getElementById('modalDurationText');
-    if (modalLikes) modalLikes.innerText = '--';
-    if (modalComments) modalComments.innerText = '--';
-    if (modalDuration) modalDuration.innerText = '--';
-
-    // Reset sección Copy FB a estado inicial limpio
-    const badge = document.getElementById('fbSectionBadge');
-    const regenBtn = document.getElementById('fbRegenerateBtn');
-    const idleBox = document.getElementById('fbStateIdle');
-    const loadingBox = document.getElementById('fbStateLoading');
-    const completedBox = document.getElementById('fbStateCompleted');
-    const titleText = document.getElementById('fbTitleText');
-    const descText = document.getElementById('fbDescText');
-    const hashtagsText = document.getElementById('fbHashtagsText');
-
-    const wpLinkText = document.getElementById('fbWpLinkText');
-    const wpVisitBtn = document.getElementById('fbWpVisitBtn');
-    const wpCopyBtn = document.getElementById('fbWpCopyBtn');
-    const wpSiteBadge = document.getElementById('fbWpSiteBadge');
-    const wpContentBox = document.getElementById('fbWpContentBox');
-    const wpEmptyNotice = document.getElementById('fbWpEmptyNotice');
-    const wpLinkBtn = document.getElementById('copyWpLinkOnlyBtn');
-
-    if (titleText) titleText.innerText = '';
-    if (descText) descText.innerText = '';
-    if (hashtagsText) hashtagsText.innerText = '';
-
-    if (wpLinkText) wpLinkText.innerText = '';
-    if (wpVisitBtn) {
-        wpVisitBtn.href = '#';
-        wpVisitBtn.style.display = 'none';
-    }
-    if (wpCopyBtn) wpCopyBtn.style.display = 'none';
-    if (wpSiteBadge) {
-        wpSiteBadge.className = 'badge-pill';
-        wpSiteBadge.style.background = '';
-        wpSiteBadge.style.color = '';
-        wpSiteBadge.style.borderColor = '';
-        wpSiteBadge.innerText = '';
-    }
-    if (wpContentBox) wpContentBox.style.display = 'none';
-    if (wpEmptyNotice) wpEmptyNotice.style.display = 'none';
-    if (wpLinkBtn) {
-        wpLinkBtn.disabled = false;
-        wpLinkBtn.style.opacity = '1';
-        wpLinkBtn.style.cursor = 'pointer';
-    }
-
-    if (badge) {
-        badge.className = 'badge-pill badge-user';
-        badge.style.background = '';
-        badge.style.color = '';
-        badge.style.borderColor = '';
-        badge.innerText = 'Sin generar';
-    }
-    if (regenBtn) regenBtn.style.display = 'none';
-    if (loadingBox) loadingBox.style.display = 'none';
-    if (completedBox) completedBox.style.display = 'none';
-    if (idleBox) idleBox.style.display = 'block';
+    if (grid) grid.insertAdjacentHTML('afterbegin', cardHtml);
+    if (window.lucide) lucide.createIcons();
 }
 
 async function openIgModal(id) {
-    activeStatusFetchId = id;
     currentModalId = id;
-    const modal = document.getElementById('igModal');
-    if (!modal) return;
+    try {
+        const res = await fetch(`/ig-downloader/status-ajax/${id}/`);
+        const data = await res.json();
+        if (res.ok && (data.id || data.success)) {
+            openIgModalData(data);
+        } else {
+            showToast(data.error || 'No se pudieron cargar los detalles del video.', 'error');
+        }
+    } catch (e) {
+        showToast('Error de red al cargar el video.', 'error');
+    }
+}
 
-    // 1. Limpiar completamente el modal para evitar contaminar con tarjetas anteriores
-    resetModalState();
+function openIgModalData(item) {
+    currentModalId = item.id;
+    document.getElementById('modalTitle').innerText = item.title || 'Reel de Instagram';
+    document.getElementById('modalDate').innerText = item.created_at || '';
+    document.getElementById('modalLikesText').innerText = item.formatted_likes || '--';
+    document.getElementById('modalCommentsText').innerText = item.formatted_comments || '--';
+    document.getElementById('modalDurationText').innerText = item.duration_seconds ? `${Math.round(item.duration_seconds)}s` : '--';
+    document.getElementById('modalDescription').innerText = item.description || item.title || 'Sin descripción disponible.';
 
-    // 2. Pre-poblar datos de la tarjeta inmediatamente para feedback instantáneo (0ms)
-    const card = getCardElement(id);
-    if (card) {
-        try {
-            const cardTitle = card.querySelector('h3')?.getAttribute('title') || card.querySelector('h3')?.innerText?.trim();
-            const cardDownloadLink = card.querySelector('a[href*="download"]')?.href;
-            const cardReelLink = card.querySelector('a[href*="instagram.com"]')?.href;
-            const cardUploader = card.querySelector('.ig-badge, [style*="backdrop-filter"]')?.innerText?.trim();
+    const uploaderEl = document.getElementById('modalUploader');
+    if (uploaderEl) uploaderEl.innerHTML = `<i data-lucide="instagram" class="w-3.5 h-3.5 text-warning"></i> @${item.uploader || 'instagram'}`;
 
-            if (cardTitle) {
-                const titleEl = document.getElementById('modalTitle');
-                const descEl = document.getElementById('modalDescription');
-                if (titleEl) titleEl.innerText = cardTitle;
-                if (descEl) descEl.innerText = cardTitle;
-            }
-            if (cardDownloadLink) {
-                const dlBtn = document.getElementById('modalDownloadBtn');
-                if (dlBtn) dlBtn.href = cardDownloadLink;
-            }
-            if (cardReelLink) {
-                const igLink = document.getElementById('modalIgLink');
-                if (igLink) igLink.href = cardReelLink;
-                currentModalUrl = cardReelLink;
-            }
-            if (cardUploader) {
-                const uploaderEl = document.getElementById('modalUploader');
-                if (uploaderEl) {
-                    uploaderEl.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"></line></svg> ${cardUploader}`;
-                }
-            }
-        } catch (e) {
-            console.warn('Error pre-populating modal:', e);
+    const durBadge = document.getElementById('modalDurationBadge');
+    if (durBadge) {
+        if (item.duration_seconds) {
+            durBadge.innerText = `${Math.round(item.duration_seconds)}s`;
+            durBadge.classList.remove('hidden');
+        } else {
+            durBadge.classList.add('hidden');
         }
     }
 
-    modal.style.display = 'flex';
-    setModalScrollLocked(true);
-    lucide.createIcons();
+    const thumbImg = document.getElementById('modalThumbnailImg');
+    const thumbPh = document.getElementById('modalThumbnailPlaceholder');
+    if (item.thumbnail_url) {
+        thumbImg.src = item.thumbnail_url;
+        thumbImg.classList.remove('hidden');
+        if (thumbPh) thumbPh.classList.add('hidden');
+    } else {
+        thumbImg.classList.add('hidden');
+        if (thumbPh) thumbPh.classList.remove('hidden');
+    }
 
-    // 3. Consultar datos oficiales y estado FB vía AJAX
-    try {
-        const res = await fetch(`/ig-downloader/status-ajax/${id}/`);
-        if (!res.ok) throw new Error('Error al consultar estado en el servidor');
-        const data = await res.json();
+    document.getElementById('modalDownloadBtn').href = `/ig-downloader/download/${item.id}/`;
+    document.getElementById('modalIgLink').href = item.instagram_url;
 
-        // Descartar si el usuario abrió otra tarjeta mientras esta petición estaba en vuelo
-        if (activeStatusFetchId !== id) return;
+    updateFbSection(item);
 
-        currentModalUrl = data.instagram_url;
-        const titleEl = document.getElementById('modalTitle');
-        if (titleEl) titleEl.innerText = data.title || 'Reel de Instagram';
-
-        const dateEl = document.getElementById('modalDate');
-        if (dateEl) dateEl.innerText = data.created_at;
-
-        const uploaderEl = document.getElementById('modalUploader');
-        if (uploaderEl) {
-            uploaderEl.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"></line></svg> @${data.uploader || 'instagram'}`;
-        }
-
-        const descEl = document.getElementById('modalDescription');
-        if (descEl) descEl.innerText = data.title || 'Sin descripción adicional disponible.';
-
-        const dlBtn = document.getElementById('modalDownloadBtn');
-        if (dlBtn) dlBtn.href = data.download_url;
-
-        const igLink = document.getElementById('modalIgLink');
-        if (igLink) igLink.href = data.instagram_url;
-
-        // Métricas de interacciones y duración en modal
-        const modalLikes = document.getElementById('modalLikesText');
-        if (modalLikes) modalLikes.innerText = data.formatted_likes || formatMetricNumber(data.like_count);
-
-        const modalComments = document.getElementById('modalCommentsText');
-        if (modalComments) modalComments.innerText = data.formatted_comments || formatMetricNumber(data.comment_count);
-
-        const modalDuration = document.getElementById('modalDurationText');
-        if (modalDuration) modalDuration.innerText = data.duration_seconds ? Math.round(data.duration_seconds) + 's' : '--';
-
-        const img = document.getElementById('modalThumbnailImg');
-        const ph = document.getElementById('modalThumbnailPlaceholder');
-        if (data.thumbnail_url) {
-            const probe = new Image();
-            probe.onload = function() {
-                if (activeStatusFetchId === id) {
-                    if (img) {
-                        img.src = data.thumbnail_url;
-                        img.style.display = 'block';
-                    }
-                    if (ph) ph.style.display = 'none';
-                }
-            };
-            probe.onerror = function() {
-                if (activeStatusFetchId === id) {
-                    if (img) img.style.display = 'none';
-                    if (ph) ph.style.display = 'flex';
-                }
-            };
-            probe.src = data.thumbnail_url;
-        } else {
-            if (img) img.style.display = 'none';
-            if (ph) ph.style.display = 'flex';
-        }
-
-        const durBadge = document.getElementById('modalDurationBadge');
-        if (durBadge) {
-            if (data.duration_seconds) {
-                durBadge.innerText = Math.round(data.duration_seconds) + 's';
-                durBadge.style.display = 'block';
-            } else {
-                durBadge.style.display = 'none';
-            }
-        }
-
-        // 4. Actualizar sección de Copy para Facebook
-        updateFbSection(data);
-        lucide.createIcons();
-    } catch (e) {
-        if (activeStatusFetchId === id) {
-            showToast('No se pudo cargar la información completa del reel.', 'error');
-        }
+    const modal = document.getElementById('igModal');
+    if (modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        document.body.style.overflow = 'hidden';
+        if (window.lucide) lucide.createIcons();
     }
 }
 
 function closeIgModal() {
     const modal = document.getElementById('igModal');
-    if (modal) modal.style.display = 'none';
-    setModalScrollLocked(false);
-    activeStatusFetchId = null;
-    currentModalId = null;
-    resetModalState();
-}
-
-function copyModalUrl() {
-    if (currentModalUrl) {
-        navigator.clipboard.writeText(currentModalUrl);
-        const text = document.getElementById('copyBtnText');
-        text.innerText = '¡Copiado!';
-        setTimeout(() => text.innerText = 'Copiar Enlace', 2000);
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+        document.body.style.overflow = 'auto';
     }
 }
 
-function openDeleteModal(id) {
-    itemToDelete = id;
-    const modal = document.getElementById('deleteModal');
-    if (modal) modal.style.display = 'flex';
-    setModalScrollLocked(true);
-    lucide.createIcons();
-}
-
-function closeDeleteModal() {
-    itemToDelete = null;
-    const modal = document.getElementById('deleteModal');
-    if (modal) modal.style.display = 'none';
-    setModalScrollLocked(false);
-}
-
-async function executeDelete() {
-    if (!itemToDelete) return;
-    const btn = document.getElementById('confirmDeleteBtn');
-    btn.disabled = true;
-    btn.innerText = 'Eliminando...';
-
-    try {
-        const res = await fetch(`/ig-downloader/delete-ajax/${itemToDelete}/`, {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': '{{ csrf_token }}',
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        });
-        if (res.ok) {
-            const card = document.getElementById('history-item-' + itemToDelete);
-            if (card) card.remove();
-            closeDeleteModal();
-            showToast('Elemento eliminado correctamente', 'success');
-        } else {
-            showToast('No se pudo eliminar el elemento.', 'error');
-        }
-    } catch (e) {
-        showToast('Error de conexión con el servidor.', 'error');
-    } finally {
-        btn.disabled = false;
-        btn.innerText = 'Eliminar';
-    }
-}
-
-function switchHistoryTab(tab) {
-    const isMy = tab === 'my';
-    const mySection = document.getElementById('mySection');
-    const allSection = document.getElementById('allSection');
-    const tabMyBtn = document.getElementById('tabMyBtn');
-    const tabAllBtn = document.getElementById('tabAllBtn');
-
-    if (mySection) mySection.style.display = isMy ? 'block' : 'none';
-    if (allSection) allSection.style.display = isMy ? 'none' : 'block';
-
-    if (tabMyBtn) tabMyBtn.classList.toggle('active', isMy);
-    if (tabAllBtn) tabAllBtn.classList.toggle('active', !isMy);
-}
-
-// ═════════ FUNCIONES IA: ESTRATEGIA & COPY PARA FACEBOOK ═════════
-
-function updateFbSection(data) {
+function updateFbSection(item) {
     const badge = document.getElementById('fbSectionBadge');
-    const regenBtn = document.getElementById('fbRegenerateBtn');
     const idleBox = document.getElementById('fbStateIdle');
     const loadingBox = document.getElementById('fbStateLoading');
     const completedBox = document.getElementById('fbStateCompleted');
-    const titleText = document.getElementById('fbTitleText');
-    const descText = document.getElementById('fbDescText');
-    const hashtagsText = document.getElementById('fbHashtagsText');
+    const regenBtn = document.getElementById('fbRegenerateBtn');
 
-    const wpLinkText = document.getElementById('fbWpLinkText');
-    const wpVisitBtn = document.getElementById('fbWpVisitBtn');
-    const wpCopyBtn = document.getElementById('fbWpCopyBtn');
-    const wpSiteBadge = document.getElementById('fbWpSiteBadge');
-    const wpContentBox = document.getElementById('fbWpContentBox');
-    const wpEmptyNotice = document.getElementById('fbWpEmptyNotice');
-    const wpLinkBtn = document.getElementById('copyWpLinkOnlyBtn');
-
-    if (!badge || !idleBox || !loadingBox || !completedBox) return;
-
-    if (data.fb_status === 'completed' && data.fb_title) {
-        badge.className = 'badge-pill badge-admin';
-        badge.style.background = 'rgba(34, 197, 94, 0.15)';
-        badge.style.color = '#22c55e';
-        badge.style.borderColor = 'rgba(34, 197, 94, 0.3)';
-        badge.innerText = 'Listo';
-
-        titleText.innerText = data.fb_title || '';
-        descText.innerText = data.fb_description || '';
-        hashtagsText.innerText = data.fb_hashtags || '';
-
-        const tagsBadge = document.getElementById('fbHashtagsSourceBadge');
-        if (tagsBadge) {
-            const isOriginal = (data.fb_hashtags_source === 'original' || data.hashtags_source === 'original');
-            tagsBadge.style.background = isOriginal ? 'rgba(34, 197, 94, 0.15)' : 'rgba(59, 130, 246, 0.15)';
-            tagsBadge.style.color = isOriginal ? '#22c55e' : '#3b82f6';
-            tagsBadge.style.borderColor = isOriginal ? 'rgba(34, 197, 94, 0.3)' : 'rgba(59, 130, 246, 0.3)';
-            tagsBadge.innerText = isOriginal ? '✨ Originales de la publicación' : '⚡ Sugeridos por IA (el video no traía tags)';
+    if (item.fb_status === 'completed') {
+        if (badge) {
+            badge.className = 'badge badge-success text-white badge-md font-bold text-xs px-2.5';
+            badge.innerText = 'Copy Generado';
         }
+        if (idleBox) idleBox.classList.add('hidden');
+        if (loadingBox) loadingBox.classList.add('hidden');
+        if (completedBox) {
+            completedBox.classList.remove('hidden');
+            completedBox.classList.add('flex');
+        }
+        if (regenBtn) regenBtn.classList.remove('hidden');
 
-        // Población y toggle del bloque de artículo WordPress
-        const hasWp = Boolean(data.wp_post_url);
-        if (hasWp) {
-            if (wpLinkText) wpLinkText.innerText = data.wp_post_url;
-            if (wpVisitBtn) {
-                wpVisitBtn.href = data.wp_post_url;
-                wpVisitBtn.style.display = 'inline-flex';
+        document.getElementById('fbTitleText').innerText = item.fb_title || 'Sin título sugerido.';
+        document.getElementById('fbDescText').innerText = item.fb_description || 'Sin descripción generada.';
+        document.getElementById('fbHashtagsText').innerText = item.fb_hashtags || '#reels #viral';
+
+        const wpCard = document.getElementById('fbWpCard');
+        const wpLink = document.getElementById('fbWpLinkText');
+        const wpBadge = document.getElementById('fbWpSiteBadge');
+        const wpVisit = document.getElementById('fbWpVisitBtn');
+        const wpEmpty = document.getElementById('fbWpEmptyNotice');
+        const wpContent = document.getElementById('fbWpContentBox');
+        const wpActions = document.getElementById('fbWpHeaderActions');
+
+        if (item.wp_post_url) {
+            if (wpLink) wpLink.innerText = item.wp_post_url;
+            if (wpBadge) {
+                wpBadge.innerText = item.wp_site_name || 'WordPress';
+                wpBadge.classList.remove('hidden');
             }
-            if (wpCopyBtn) wpCopyBtn.style.display = 'inline-flex';
-            if (wpSiteBadge) {
-                wpSiteBadge.className = 'badge-pill';
-                wpSiteBadge.style.background = 'rgba(59, 130, 246, 0.15)';
-                wpSiteBadge.style.color = '#3b82f6';
-                wpSiteBadge.style.borderColor = 'rgba(59, 130, 246, 0.3)';
-                wpSiteBadge.innerText = data.wp_site_name ? `WordPress: ${data.wp_site_name}` : 'WordPress';
+            if (wpVisit) {
+                wpVisit.href = item.wp_post_url;
+                wpVisit.classList.remove('hidden');
             }
-            if (wpContentBox) wpContentBox.style.display = 'block';
-            if (wpEmptyNotice) wpEmptyNotice.style.display = 'none';
-            if (wpLinkBtn) {
-                wpLinkBtn.disabled = false;
-                wpLinkBtn.style.opacity = '1';
-                wpLinkBtn.style.cursor = 'pointer';
-            }
+            if (wpEmpty) wpEmpty.classList.add('hidden');
+            if (wpContent) wpContent.classList.remove('hidden');
+            if (wpActions) wpActions.classList.remove('hidden');
+            if (wpCard) wpCard.classList.remove('hidden');
         } else {
-            if (wpLinkText) wpLinkText.innerText = '';
-            if (wpVisitBtn) {
-                wpVisitBtn.href = '#';
-                wpVisitBtn.style.display = 'none';
+            if (wpBadge) {
+                wpBadge.innerText = 'Sin Dominio WP';
+                wpBadge.classList.remove('hidden');
             }
-            if (wpCopyBtn) wpCopyBtn.style.display = 'none';
-            if (wpSiteBadge) {
-                wpSiteBadge.className = 'badge-pill badge-user';
-                wpSiteBadge.style.background = 'var(--bg-muted)';
-                wpSiteBadge.style.color = 'var(--text-muted)';
-                wpSiteBadge.style.borderColor = 'var(--border-subtle)';
-                wpSiteBadge.innerText = 'Sin Dominio WP';
-            }
-            if (wpContentBox) wpContentBox.style.display = 'none';
-            if (wpEmptyNotice) wpEmptyNotice.style.display = 'block';
-            if (wpLinkBtn) {
-                wpLinkBtn.disabled = true;
-                wpLinkBtn.style.opacity = '0.5';
-                wpLinkBtn.style.cursor = 'not-allowed';
-            }
+            if (wpVisit) wpVisit.classList.add('hidden');
+            if (wpContent) wpContent.classList.add('hidden');
+            if (wpActions) wpActions.classList.add('hidden');
+            if (wpEmpty) wpEmpty.classList.remove('hidden');
         }
-
-        idleBox.style.display = 'none';
-        loadingBox.style.display = 'none';
-        completedBox.style.display = 'flex';
-        regenBtn.style.display = 'inline-flex';
-    } else if (data.fb_status === 'processing') {
-        badge.className = 'badge-pill badge-user';
-        badge.style.background = '';
-        badge.style.color = '';
-        badge.style.borderColor = '';
-        badge.innerText = 'Analizando...';
-
-        idleBox.style.display = 'none';
-        loadingBox.style.display = 'block';
-        completedBox.style.display = 'none';
-        regenBtn.style.display = 'none';
     } else {
-        badge.className = 'badge-pill badge-user';
-        badge.style.background = '';
-        badge.style.color = '';
-        badge.style.borderColor = '';
-        badge.innerText = 'Sin generar';
-
-        idleBox.style.display = 'block';
-        loadingBox.style.display = 'none';
-        completedBox.style.display = 'none';
-        regenBtn.style.display = 'none';
+        if (badge) {
+            badge.className = 'badge badge-neutral badge-md font-bold text-xs px-2.5';
+            badge.innerText = 'Sin generar';
+        }
+        if (idleBox) idleBox.classList.remove('hidden');
+        if (loadingBox) loadingBox.classList.add('hidden');
+        if (completedBox) {
+            completedBox.classList.add('hidden');
+            completedBox.classList.remove('flex');
+        }
+        if (regenBtn) regenBtn.classList.add('hidden');
     }
-    lucide.createIcons();
 }
 
 async function handleCardFbClick(id) {
-    // 1. Abrir el modal con los detalles del Reel
     await openIgModal(id);
-
-    // 2. Si todavía no se generó el copy (o dio error), iniciar generación directa
     const myBtn = document.getElementById(`card-fb-btn-${id}`);
     const allBtn = document.getElementById(`all-card-fb-btn-${id}`);
     const activeBtn = myBtn || allBtn;
 
-    if (!activeBtn || !activeBtn.classList.contains('completed')) {
+    if (!activeBtn || !activeBtn.classList.contains('bg-success/15')) {
         triggerFacebookCopy(id, false);
     }
 }
@@ -1470,13 +919,11 @@ async function triggerFacebookCopy(id, isRegenerate = false) {
     const allCardBtn = document.getElementById(`all-card-fb-btn-${targetId}`);
     const cardBtns = [myCardBtn, allCardBtn].filter(Boolean);
 
-    // Feedback visual en la tarjeta
     cardBtns.forEach(b => {
         b.disabled = true;
-        b.innerHTML = `<span style="width:12px; height:12px; border:2px solid currentColor; border-top-color:transparent; border-radius:50%; animation:spin 1s linear infinite; display:inline-block;"></span> <span>Analizando...</span>`;
+        b.innerHTML = `<span class="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin inline-block"></span> <span>Analizando...</span>`;
     });
 
-    // Feedback visual en el modal
     const badge = document.getElementById('fbSectionBadge');
     const idleBox = document.getElementById('fbStateIdle');
     const loadingBox = document.getElementById('fbStateLoading');
@@ -1484,13 +931,13 @@ async function triggerFacebookCopy(id, isRegenerate = false) {
     const regenBtn = document.getElementById('fbRegenerateBtn');
 
     if (badge) {
-        badge.className = 'badge-pill badge-user';
+        badge.className = 'badge badge-neutral badge-md font-bold text-xs px-2.5';
         badge.innerText = 'Analizando con Gemini...';
     }
-    if (idleBox) idleBox.style.display = 'none';
-    if (completedBox) completedBox.style.display = 'none';
-    if (loadingBox) loadingBox.style.display = 'block';
-    if (regenBtn) regenBtn.style.display = 'none';
+    if (idleBox) idleBox.classList.add('hidden');
+    if (completedBox) completedBox.classList.add('hidden');
+    if (loadingBox) loadingBox.classList.remove('hidden');
+    if (regenBtn) regenBtn.classList.add('hidden');
 
     try {
         const formData = new FormData();
@@ -1508,15 +955,13 @@ async function triggerFacebookCopy(id, isRegenerate = false) {
         const data = await res.json();
 
         if (res.ok && data.success) {
-            // Actualizar botones de card a "Ver Copy FB"
             cardBtns.forEach(b => {
                 b.disabled = false;
-                b.classList.add('completed');
+                b.className = 'btn btn-sm w-full gap-2 rounded-xl text-xs font-bold border border-success/30 bg-success/15 text-success transition-all';
                 b.setAttribute('title', 'Ver Copy para Facebook');
-                b.innerHTML = `<i data-lucide="check-circle-2" style="width:12px; height:12px;"></i> <span>Ver Copy FB</span>`;
+                b.innerHTML = `<i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i> <span>Ver Copy FB</span>`;
             });
 
-            // Actualizar datos en modal solo si el modal sigue mostrando este video
             if (currentModalId === targetId) {
                 updateFbSection({
                     fb_status: 'completed',
@@ -1541,81 +986,45 @@ async function triggerFacebookCopy(id, isRegenerate = false) {
         showToast(err.message || 'Error de conexión procesando el video.', 'error');
         if (currentModalId === targetId) {
             if (badge) {
-                badge.className = 'badge-pill';
-                badge.style.background = 'rgba(239, 68, 68, 0.15)';
-                badge.style.color = '#ef4444';
+                badge.className = 'badge badge-error text-white badge-md font-bold text-xs px-2.5';
                 badge.innerText = 'Error al generar';
             }
-            if (loadingBox) loadingBox.style.display = 'none';
-            if (idleBox) idleBox.style.display = 'block';
+            if (loadingBox) loadingBox.classList.add('hidden');
+            if (idleBox) idleBox.classList.remove('hidden');
         }
 
         cardBtns.forEach(b => {
             b.disabled = false;
-            b.innerHTML = `<i data-lucide="sparkles" style="width:12px; height:12px;"></i> <span>Reintentar Copy FB</span>`;
+            b.innerHTML = `<i data-lucide="sparkles" class="w-3.5 h-3.5"></i> <span>Reintentar Copy FB</span>`;
         });
     } finally {
-        lucide.createIcons();
+        if (window.lucide) lucide.createIcons();
     }
 }
 
 function copySocialOnly(btn) {
     const desc = document.getElementById('fbDescText')?.innerText?.trim() || '';
     const tags = document.getElementById('fbHashtagsText')?.innerText?.trim() || '';
-
     const socialCopy = [desc, tags].filter(Boolean).join('\n\n').trim();
     if (!socialCopy) return;
 
     navigator.clipboard.writeText(socialCopy).then(() => {
-        const originalContent = btn.innerHTML;
-        btn.innerHTML = `<i data-lucide="check" style="width:14px; height:14px;"></i> <span>¡Copy Copiado!</span>`;
-        lucide.createIcons();
-        setTimeout(() => {
-            btn.innerHTML = originalContent;
-            lucide.createIcons();
-        }, 2000);
-        showToast('Copy para red social copiado', 'success');
-    }).catch(() => {
-        showToast('No se pudo copiar el copy', 'error');
+        const orig = btn.innerHTML;
+        btn.innerHTML = `<i data-lucide="check" class="w-3.5 h-3.5 text-success"></i> <span>¡Copiado!</span>`;
+        if (window.lucide) lucide.createIcons();
+        setTimeout(() => { btn.innerHTML = orig; if (window.lucide) lucide.createIcons(); }, 2000);
     });
 }
 
 function copyWpLinkOnly(btn) {
     const link = document.getElementById('fbWpLinkText')?.innerText?.trim() || '';
-    if (!link) {
-        showToast('No hay enlace de WordPress disponible', 'warning');
-        return;
-    }
+    if (!link) return;
 
     navigator.clipboard.writeText(link).then(() => {
-        const originalContent = btn.innerHTML;
-        btn.innerHTML = `<i data-lucide="check" style="width:14px; height:14px;"></i> <span>¡Link Copiado!</span>`;
-        lucide.createIcons();
-        setTimeout(() => {
-            btn.innerHTML = originalContent;
-            lucide.createIcons();
-        }, 2000);
-        showToast('Enlace para comentario copiado', 'success');
-    }).catch(() => {
-        showToast('No se pudo copiar el enlace', 'error');
-    });
-}
-
-function copyFbElement(elementId, btn) {
-    const text = document.getElementById(elementId)?.innerText || '';
-    if (!text) return;
-
-    navigator.clipboard.writeText(text).then(() => {
-        const originalContent = btn.innerHTML;
-        btn.innerHTML = `<i data-lucide="check" style="width:11px; height:11px;"></i> <span>¡Copiado!</span>`;
-        lucide.createIcons();
-        setTimeout(() => {
-            btn.innerHTML = originalContent;
-            lucide.createIcons();
-        }, 2000);
-        showToast('Copiado al portapapeles', 'success');
-    }).catch(() => {
-        showToast('No se pudo copiar el texto', 'error');
+        const orig = btn.innerHTML;
+        btn.innerHTML = `<i data-lucide="check" class="w-3.5 h-3.5 text-success"></i> <span>¡Copiado!</span>`;
+        if (window.lucide) lucide.createIcons();
+        setTimeout(() => { btn.innerHTML = orig; if (window.lucide) lucide.createIcons(); }, 2000);
     });
 }
 
@@ -1623,30 +1032,154 @@ function copyAllFbContent(btn) {
     const title = document.getElementById('fbTitleText')?.innerText?.trim() || '';
     const desc = document.getElementById('fbDescText')?.innerText?.trim() || '';
     const tags = document.getElementById('fbHashtagsText')?.innerText?.trim() || '';
-    const wpUrl = document.getElementById('fbWpLinkText')?.innerText?.trim() || '';
+    const link = document.getElementById('fbWpLinkText')?.innerText?.trim() || '';
 
-    const parts = [title, desc, tags];
-    if (wpUrl) {
-        parts.push(wpUrl);
-    }
-    const fullPost = parts.filter(Boolean).join('\n\n').trim();
+    const parts = [];
+    if (title) parts.push(title);
+    if (desc) parts.push(desc);
+    if (tags) parts.push(tags);
+    if (link) parts.push(`\nEnlace del artículo completo:\n${link}`);
 
-    if (!fullPost) return;
+    const bundle = parts.join('\n\n').trim();
+    if (!bundle) return;
 
-    navigator.clipboard.writeText(fullPost).then(() => {
-        const originalContent = btn.innerHTML;
-        btn.innerHTML = `<i data-lucide="check-check" style="width:16px; height:16px;"></i> <span>¡Post Completo Copiado!</span>`;
-        btn.style.background = '#16a34a';
-        lucide.createIcons();
-        setTimeout(() => {
-            btn.innerHTML = originalContent;
-            btn.style.background = 'linear-gradient(135deg, #1877f2, #0d5cb6)';
-            lucide.createIcons();
-        }, 2200);
-        showToast('¡Post completo copiado para Facebook!', 'success');
-    }).catch(() => {
-        showToast('No se pudo copiar el post', 'error');
+    navigator.clipboard.writeText(bundle).then(() => {
+        const orig = btn.innerHTML;
+        btn.innerHTML = `<i data-lucide="check" class="w-4 h-4 text-white"></i> <span>¡Pack Completo Copiado!</span>`;
+        if (window.lucide) lucide.createIcons();
+        setTimeout(() => { btn.innerHTML = orig; if (window.lucide) lucide.createIcons(); }, 2000);
     });
+}
+const copyFullBundle = copyAllFbContent;
+
+function copyFbElement(elementId, btn) {
+    const el = document.getElementById(elementId);
+    if (!el) return;
+    const text = el.innerText.trim();
+    if (!text) return;
+
+    navigator.clipboard.writeText(text).then(() => {
+        const orig = btn.innerHTML;
+        btn.innerHTML = `<i data-lucide="check" class="w-3 h-3 text-success"></i> <span>Copiado</span>`;
+        if (window.lucide) lucide.createIcons();
+        setTimeout(() => { btn.innerHTML = orig; if (window.lucide) lucide.createIcons(); }, 2000);
+    });
+}
+
+function copyModalUrl() {
+    const igLink = document.getElementById('modalIgLink')?.href;
+    if (!igLink) return;
+    navigator.clipboard.writeText(igLink).then(() => {
+        const textSpan = document.getElementById('copyBtnText');
+        if (textSpan) {
+            textSpan.innerText = '¡Copiado!';
+            setTimeout(() => { textSpan.innerText = 'Copiar Enlace'; }, 2000);
+        }
+    });
+}
+
+function openDeleteModal(id) {
+    itemToDeleteId = id;
+    const modal = document.getElementById('deleteModal');
+    if (modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        document.body.style.overflow = 'hidden';
+        if (window.lucide) lucide.createIcons();
+    }
+}
+
+function closeDeleteModal() {
+    itemToDeleteId = null;
+    const modal = document.getElementById('deleteModal');
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+        document.body.style.overflow = 'auto';
+    }
+}
+
+async function executeDeleteIgItem() {
+    if (!itemToDeleteId) return;
+    const btn = document.getElementById('btnConfirmDeleteIg');
+    if (btn) btn.disabled = true;
+
+    try {
+        const res = await fetch(`/ig-downloader/delete-ajax/${itemToDeleteId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+
+        if (res.ok) {
+            const myCard = document.getElementById(`history-item-${itemToDeleteId}`);
+            const allCard = document.getElementById(`all-history-item-${itemToDeleteId}`);
+            if (myCard) myCard.remove();
+            if (allCard) allCard.remove();
+            closeDeleteModal();
+            showToast('Video eliminado del historial.', 'success');
+        } else {
+            showToast('No se pudo eliminar el video.', 'error');
+        }
+    } catch (e) {
+        showToast('Error de conexión al eliminar.', 'error');
+    } finally {
+        if (btn) btn.disabled = false;
+    }
+}
+
+function switchHistoryTab(tab) {
+    const isMy = tab === 'my';
+    const mySec = document.getElementById('mySection');
+    const allSec = document.getElementById('allSection');
+    const tabMy = document.getElementById('tabMyBtn');
+    const tabAll = document.getElementById('tabAllBtn');
+
+    if (mySec) mySec.classList.toggle('hidden', !isMy);
+    if (allSec) allSec.classList.toggle('hidden', isMy);
+
+    if (tabMy) {
+        tabMy.classList.toggle('tab-active', isMy);
+        tabMy.classList.toggle('bg-base-100', isMy);
+        tabMy.classList.toggle('shadow-sm', isMy);
+        tabMy.classList.toggle('text-primary', isMy);
+        tabMy.classList.toggle('font-bold', isMy);
+        tabMy.classList.toggle('text-base-content/70', !isMy);
+    }
+    if (tabAll) {
+        tabAll.classList.toggle('tab-active', !isMy);
+        tabAll.classList.toggle('bg-base-100', !isMy);
+        tabAll.classList.toggle('shadow-sm', !isMy);
+        tabAll.classList.toggle('text-primary', !isMy);
+        tabAll.classList.toggle('font-bold', !isMy);
+        tabAll.classList.toggle('text-base-content/70', isMy);
+    }
+    if (window.lucide) lucide.createIcons();
+}
+
+function showToast(message, type = 'info') {
+    const container = document.getElementById('toastContainer');
+    if (!container) return;
+
+    const alert = document.createElement('div');
+    const alertClass = type === 'success' ? 'alert-success text-white' :
+                       type === 'error' ? 'alert-error text-white' :
+                       type === 'warning' ? 'alert-warning text-zinc-900' :
+                       'alert-info text-white';
+
+    alert.className = `alert ${alertClass} text-xs shadow-xl rounded-xl p-3 flex items-center gap-2 pointer-events-auto border border-base-300`;
+    const iconName = type === 'success' ? 'check-circle-2' : type === 'error' ? 'alert-circle' : type === 'warning' ? 'alert-triangle' : 'info';
+    alert.innerHTML = `<i data-lucide="${iconName}" class="w-4 h-4 shrink-0"></i> <span>${message}</span>`;
+    container.appendChild(alert);
+    if (window.lucide) lucide.createIcons();
+
+    setTimeout(() => {
+        alert.style.opacity = '0';
+        alert.style.transition = 'opacity 0.25s ease';
+        setTimeout(() => alert.remove(), 260);
+    }, 3500);
 }
 
 window.addEventListener('keydown', (e) => {
