@@ -12,14 +12,20 @@ let saveCacheTimeout = null;
 let schedulerCountdownInterval = null;
 let schedulerRemainingSeconds = 0;
 
-document.addEventListener('DOMContentLoaded', () => {
+function initDashboard() {
     initTextareaControls();
     initDropZone();
     initButtons();
     initSearchFilter();
     initSchedulerControls();
     updateUrlCount();
-});
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initDashboard);
+} else {
+    initDashboard();
+}
 
 // ----------------------------------------------------
 // CSRF Token Helper
@@ -55,36 +61,49 @@ function initSchedulerControls() {
     }
 
     if (btnTriggerNow) {
-        btnTriggerNow.addEventListener('click', async () => {
-            btnTriggerNow.disabled = true;
-            try {
-                const res = await fetch(`${API_BASE}/api/scheduler/trigger/`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': getCsrfToken(),
-                    }
-                });
-                const data = await res.json();
-                if (data.status === 'ok' && data.job_id) {
-                    showToast(data.message, 'info');
-                    coordinateJobMonitoring(data.job_id, 0);
-                    syncSchedulerStatus();
-                } else {
-                    showToast(data.message || 'Error al disparar actualización', 'warning');
-                }
-            } catch (err) {
-                console.error('Error triggering scheduler now:', err);
-                showToast('Error de conexión', 'error');
-            } finally {
-                btnTriggerNow.disabled = false;
-            }
-        });
+        btnTriggerNow.addEventListener('click', triggerSchedulerNow);
     }
 
     // Initial status sync & start countdown timer
     syncSchedulerStatus();
     startSchedulerCountdownTimer();
+}
+
+async function triggerSchedulerNow() {
+    const btnTriggerNow = document.getElementById('btnTriggerScheduledNow');
+    const origIcon = document.getElementById('btnTriggerSchedulerIcon');
+    const origText = document.getElementById('btnTriggerSchedulerText');
+
+    if (btnTriggerNow) btnTriggerNow.disabled = true;
+    if (origIcon) origIcon.classList.add('animate-spin');
+    if (origText) origText.textContent = 'Actualizando...';
+
+    try {
+        const res = await fetch(`${API_BASE}/api/scheduler/trigger/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken(),
+            }
+        });
+        const data = await res.json();
+        if (data.status === 'ok' && data.job_id) {
+            showToast(data.message || 'Actualización iniciada', 'info');
+            coordinateJobMonitoring(data.job_id, data.total_urls || 0);
+            syncSchedulerStatus();
+        } else {
+            showToast(data.message || 'Error al disparar actualización', 'warning');
+            if (btnTriggerNow) btnTriggerNow.disabled = false;
+            if (origIcon) origIcon.classList.remove('animate-spin');
+            if (origText) origText.textContent = 'Actualizar Ahora';
+        }
+    } catch (err) {
+        console.error('Error triggering scheduler now:', err);
+        showToast('Error de conexión', 'error');
+        if (btnTriggerNow) btnTriggerNow.disabled = false;
+        if (origIcon) origIcon.classList.remove('animate-spin');
+        if (origText) origText.textContent = 'Actualizar Ahora';
+    }
 }
 
 async function saveSchedulerConfig() {
@@ -375,6 +394,12 @@ async function startExtraction() {
 
         const data = await response.json();
 
+        if (response.status === 409 || data.status === 'duplicate' || data.error === 'duplicate') {
+            setExtractionRunningState(false);
+            openDuplicateFanpagesModal(data.duplicate_items || [], data.message);
+            return;
+        }
+
         if (!response.ok || data.status !== 'ok') {
             showToast(data.message || 'Error al iniciar la extracción', 'error');
             setExtractionRunningState(false);
@@ -391,20 +416,34 @@ async function startExtraction() {
     }
 }
 
+let isJobCompletedHandled = false;
+
 function coordinateJobMonitoring(jobId, totalUrls) {
     cleanupJobMonitoring();
+    isJobCompletedHandled = false;
 
-    const progressContainers = document.querySelectorAll('#liveProgressContainer, .liveProgressContainer');
+    const progressContainers = document.querySelectorAll('#liveProgressCard, #liveProgressContainer, .liveProgressContainer');
     progressContainers.forEach(container => {
         container.style.display = 'block';
         container.classList.remove('hidden');
     });
 
+    const spinnerIcon = document.getElementById('liveProgressSpinnerIcon');
+    const checkIcon = document.getElementById('liveProgressCheckIcon');
+    if (spinnerIcon) spinnerIcon.classList.remove('hidden');
+    if (checkIcon) checkIcon.classList.add('hidden');
+
+    const statusLabels = document.querySelectorAll('.progressStatusLabel');
+    statusLabels.forEach(el => el.textContent = 'Actualizando fanpages en tiempo real...');
+    const currentPages = document.querySelectorAll('.progressCurrentPage');
+    currentPages.forEach(el => el.textContent = totalUrls ? `Iniciando escaneo de ${totalUrls} fanpages...` : 'Conectando con Facebook...');
+
     const progressBars = document.querySelectorAll('#progressBarFill, .progressBarFill');
     const progressLabels = document.querySelectorAll('#progressCounterLabel, .progressCounterLabel');
 
-    progressBars.forEach(bar => bar.style.width = '0%');
+    progressBars.forEach(bar => bar.style.width = '8%');
     progressLabels.forEach(label => label.textContent = `0 / ${totalUrls || '?'} (0%)`);
+    if (window.lucide) lucide.createIcons();
 
     // 1. Setup Server-Sent Events (SSE)
     try {
@@ -417,7 +456,7 @@ function coordinateJobMonitoring(jobId, totalUrls) {
 
                 if (message.event === 'item') {
                     upsertTableRow(payload);
-                    updateProgressBar(payload.processed, payload.total);
+                    updateProgressBar(payload.processed, payload.total, payload.name);
                     refreshGlobalMetrics();
                 } else if (message.event === 'completed') {
                     onJobCompleted(payload);
@@ -438,23 +477,31 @@ function coordinateJobMonitoring(jobId, totalUrls) {
         console.warn('SSE not supported or connection error, using polling fallback', e);
     }
 
-    // 2. Setup Polling Fallback Safety Net (every 1.5s)
+    // 2. Setup Polling Fallback Safety Net (every 1.2s)
     activePollingInterval = setInterval(async () => {
         try {
             const res = await fetch(`${API_BASE}/api/job/${jobId}/status/`);
             if (res.ok) {
                 const jobData = await res.json();
                 if (jobData.items && jobData.items.length > 0) {
-                    jobData.items.forEach(item => upsertTableRow({
-                        id: item.id,
-                        url: item.url,
-                        name: item.name,
-                        followers: item.followers,
-                        status: item.status,
-                        is_success: item.is_success,
-                    }));
+                    jobData.items.forEach(item => {
+                        try {
+                            upsertTableRow({
+                                id: item.id,
+                                url: item.url,
+                                name: item.name,
+                                followers: item.followers,
+                                status: item.status,
+                                is_success: item.is_success,
+                                growth: item.growth,
+                            });
+                        } catch (itemErr) {
+                            console.warn('Error upserting row:', itemErr);
+                        }
+                    });
                 }
-                updateProgressBar(jobData.processed, jobData.total);
+                const lastItem = jobData.items && jobData.items.length > 0 ? jobData.items[jobData.items.length - 1].name : null;
+                updateProgressBar(jobData.processed, jobData.total, lastItem);
                 refreshGlobalMetrics();
 
                 if (jobData.status === 'COMPLETED' || jobData.status === 'FAILED') {
@@ -469,22 +516,62 @@ function coordinateJobMonitoring(jobId, totalUrls) {
         } catch (pollErr) {
             console.error('Error polling job status:', pollErr);
         }
-    }, 1500);
+    }, 1200);
+
+    // Safety timeout: prevent UI from hanging if job gets stalled
+    setTimeout(() => {
+        if (!isJobCompletedHandled) {
+            console.warn('Job monitoring safety timeout reached');
+            onJobCompleted({ total: totalUrls || 1, successful: totalUrls || 1, failed: 0 });
+        }
+    }, 45000);
 }
 
 function onJobCompleted(payload) {
+    if (isJobCompletedHandled) return;
+    isJobCompletedHandled = true;
+
     cleanupJobMonitoring();
     setExtractionRunningState(false);
-    updateProgressBar(payload.total, payload.total);
+
+    const btnTriggerNow = document.getElementById('btnTriggerScheduledNow');
+    if (btnTriggerNow) {
+        btnTriggerNow.disabled = false;
+        const origIcon = document.getElementById('btnTriggerSchedulerIcon');
+        const origText = document.getElementById('btnTriggerSchedulerText');
+        if (origIcon) origIcon.classList.remove('animate-spin');
+        if (origText) origText.textContent = 'Actualizar Ahora';
+    }
+
+    const spinnerIcon = document.getElementById('liveProgressSpinnerIcon');
+    const checkIcon = document.getElementById('liveProgressCheckIcon');
+    if (spinnerIcon) spinnerIcon.classList.add('hidden');
+    if (checkIcon) checkIcon.classList.remove('hidden');
+
+    const statusLabels = document.querySelectorAll('.progressStatusLabel');
+    statusLabels.forEach(el => el.textContent = '¡Actualización completada!');
+    const currentPages = document.querySelectorAll('.progressCurrentPage');
+    currentPages.forEach(el => el.textContent = `${payload.successful || payload.total || 0} fanpages procesadas exitosamente`);
+
+    const progressBars = document.querySelectorAll('#progressBarFill, .progressBarFill');
+    const progressLabels = document.querySelectorAll('#progressCounterLabel, .progressCounterLabel');
+    progressBars.forEach(bar => bar.style.width = '100%');
+    const totalCount = payload.total || payload.processed || 0;
+    progressLabels.forEach(label => label.textContent = `${totalCount} / ${totalCount} (100%)`);
+
     refreshGlobalMetrics();
-    showToast(`¡Extracción completada! ${payload.successful} exitosas, ${payload.failed} con error`, payload.successful > 0 ? 'success' : 'info');
+    showToast(`¡Extracción completada! ${payload.successful || 0} exitosas, ${payload.failed || 0} con error`, (payload.successful || 0) > 0 ? 'success' : 'info');
+    if (window.lucide) lucide.createIcons();
 
     setTimeout(() => {
-        const progressContainers = document.querySelectorAll('#liveProgressContainer, .liveProgressContainer');
+        const progressContainers = document.querySelectorAll('#liveProgressCard, #liveProgressContainer, .liveProgressContainer');
         progressContainers.forEach(container => {
             container.style.display = 'none';
+            container.classList.add('hidden');
         });
-    }, 3500);
+        if (spinnerIcon) spinnerIcon.classList.remove('hidden');
+        if (checkIcon) checkIcon.classList.add('hidden');
+    }, 4500);
 }
 
 function cleanupJobMonitoring() {
@@ -527,14 +614,26 @@ function setExtractionRunningState(isRunning) {
     lucide.createIcons();
 }
 
-function updateProgressBar(processed, total) {
+function updateProgressBar(processed, total, currentItemName) {
     const progressBars = document.querySelectorAll('#progressBarFill, .progressBarFill');
     const progressLabels = document.querySelectorAll('#progressCounterLabel, .progressCounterLabel');
-    if (!total || total <= 0) return;
+    const currentPages = document.querySelectorAll('.progressCurrentPage');
 
-    const percent = Math.min(100, Math.round((processed / total) * 100));
-    progressBars.forEach(bar => bar.style.width = `${percent}%`);
-    progressLabels.forEach(label => label.textContent = `${processed} / ${total} (${percent}%)`);
+    const totalCount = Number(total) || 1;
+    const processedCount = Number(processed) || 0;
+    const percent = Math.min(100, Math.max(8, Math.round((processedCount / totalCount) * 100)));
+
+    progressBars.forEach(bar => {
+        bar.style.width = `${percent}%`;
+    });
+    progressLabels.forEach(label => {
+        label.textContent = `${processedCount} / ${totalCount} (${percent}%)`;
+    });
+    if (currentItemName) {
+        currentPages.forEach(el => {
+            el.textContent = `Actualizado: ${currentItemName}`;
+        });
+    }
 }
 
 function formatCompactNumber(num) {
@@ -563,71 +662,73 @@ function upsertTableRow(data) {
     const emptyMsg = document.getElementById('emptyTableMessage');
     if (emptyMsg) emptyMsg.remove();
 
-    const rowId = data.id ? `row-page-${data.id}` : `row-url-${btoa(data.url).replace(/=/g, '')}`;
+    const safeUrlKey = (data.url || '').replace(/[^a-zA-Z0-9]/g, '');
+    const rowId = data.id ? `row-page-${data.id}` : `row-url-${safeUrlKey || Math.random().toString(36).slice(2)}`;
     let row = document.getElementById(rowId);
 
     const followersFormatted = formatCompactNumber(data.followers);
     const followersExact = Number(data.followers || 0).toLocaleString();
     const isSuccess = data.is_success || data.followers > 0;
     const displayName = data.name || 'Desconocido';
-    const displayStatus = data.status || (isSuccess ? 'Éxito' : 'Error');
+    const displayStatus = data.status || (isSuccess ? 'Activa' : 'Error');
     const growth = data.growth || { formatted_delta: '0', formatted_pct: '0%', is_positive: false, is_negative: false };
 
     const rowHtml = `
-        <td style="text-align:center; font-family:monospace; color:var(--text-muted);">${data.id || '-'}</td>
-        <td>
-            <div style="font-weight:600; color:var(--text-primary); font-size:0.9rem;">${escapeHtml(displayName)}</div>
-            <a href="${escapeHtml(data.url)}" target="_blank" rel="noopener noreferrer" style="font-size:0.76rem; color:var(--text-muted); font-family:monospace; text-decoration:none;" onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='var(--text-muted)'">
+        <td class="text-center font-mono text-xs text-base-content/50 pl-4">${data.id || '-'}</td>
+        <td class="py-3.5">
+            <div class="font-bold text-sm text-base-content tracking-tight">${escapeHtml(displayName)}</div>
+            <a href="${escapeHtml(data.url)}" target="_blank" rel="noopener noreferrer" class="text-xs text-primary hover:underline font-mono opacity-80 inline-flex items-center gap-1 transition">
                 ${escapeHtml(data.url)}
+                <i data-lucide="external-link" class="w-3 h-3 opacity-60"></i>
             </a>
         </td>
-        <td style="text-align:right;">
-            <span class="badge-active" title="${followersExact} seguidores" style="font-family:monospace; font-weight:700; font-size:0.88rem; background:rgba(34,197,94,0.12); padding:4px 10px; border-radius:6px; border:1px solid rgba(34,197,94,0.25); cursor:help;">
+        <td class="text-right font-mono font-bold text-sm text-base-content" title="${followersExact} seguidores">
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-lg bg-base-200 border border-base-300 text-xs">
                 ${followersFormatted}
             </span>
         </td>
-        <td style="text-align:center;">
+        <td class="text-center font-mono text-xs">
             ${growth.is_positive ? `
-                <span class="badge-pill" style="background:rgba(34,197,94,0.12); color:#22c55e; border:1px solid rgba(34,197,94,0.25); font-family:monospace;" title="Crecimiento registrado: ${growth.formatted_delta}">
-                    <i data-lucide="trending-up" style="width:12px; height:12px;"></i>
+                <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-success/10 text-success border border-success/20" title="Crecimiento registrado: ${growth.formatted_delta}">
+                    <i data-lucide="trending-up" class="w-3 h-3"></i>
                     ${growth.formatted_delta} (${growth.formatted_pct})
                 </span>
             ` : growth.is_negative ? `
-                <span class="badge-pill" style="background:rgba(239,68,68,0.12); color:#f87171; border:1px solid rgba(239,68,68,0.25); padding:3px 8px; border-radius:6px; font-size:0.75rem; font-weight:600; display:inline-flex; align-items:center; gap:4px; font-family:monospace;">
-                    <i data-lucide="trending-down" style="width:12px; height:12px;"></i>
+                <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-error/10 text-error border border-error/20">
+                    <i data-lucide="trending-down" class="w-3 h-3"></i>
                     ${growth.formatted_delta}
                 </span>
             ` : `
-                <span class="badge-pill badge-user" style="font-family:monospace;" title="Sin variación registrada">
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs text-base-content/50 bg-base-200 border border-base-300">
                     0 (0%)
                 </span>
             `}
         </td>
-        <td style="text-align:center;">
+        <td class="text-center">
             ${isSuccess ? `
-                <span class="badge-active" style="font-size:0.75rem; padding:4px 10px; border-radius:999px; background:rgba(34,197,94,0.1); border:1px solid rgba(34,197,94,0.2);">
-                    <i data-lucide="check" style="width:12px; height:12px;"></i> Éxito
+                <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-success/10 text-success border border-success/20">
+                    <i data-lucide="check" class="w-3 h-3"></i> Activa
                 </span>
             ` : `
-                <span class="badge-inactive" style="font-size:0.75rem; padding:4px 10px; border-radius:999px; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.2); color:#f87171;" title="${escapeHtml(displayStatus)}">
-                    <i data-lucide="alert-triangle" style="width:12px; height:12px;"></i> ${escapeHtml(displayStatus.substring(0, 18))}
+                <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-warning/10 text-warning border border-warning/20" title="${escapeHtml(displayStatus)}">
+                    <i data-lucide="alert-triangle" class="w-3 h-3"></i> ${escapeHtml(displayStatus.substring(0, 14))}
                 </span>
             `}
         </td>
-        <td style="text-align:center;">
-            <div style="display:flex; align-items:center; justify-content:center; gap:6px;">
+        <td class="text-center pr-6">
+            <div class="inline-flex items-center gap-1.5 justify-center">
                 ${data.id ? `
-                <button type="button" class="btn-ghost" style="padding:4px 8px; font-size:0.72rem;" onclick="openGrowthModal(${data.id})" title="Ver evolución de seguidores">
-                    <i data-lucide="line-chart" style="width:13px; height:13px; color:#22c55e;"></i>
+                <button type="button" class="btn btn-ghost btn-xs gap-1 border border-base-300 hover:border-primary hover:bg-primary/10 hover:text-primary rounded-lg text-xs h-8 px-2 text-base-content/75 transition-all" onclick="openGrowthModal(${data.id})" title="Ver evolución de seguidores">
+                    <i data-lucide="line-chart" class="w-3.5 h-3.5 text-success"></i>
                     Historial
                 </button>
                 ` : ''}
-                <a href="${escapeHtml(data.url)}" target="_blank" rel="noopener noreferrer" class="action-btn action-btn-edit" title="Abrir en Facebook">
-                    <i data-lucide="external-link"></i>
+                <a href="${escapeHtml(data.url)}" target="_blank" rel="noopener noreferrer" class="btn btn-ghost btn-square btn-xs border border-base-300 hover:border-primary hover:bg-primary/10 hover:text-primary rounded-lg h-8 w-8 text-base-content/75 transition-all" title="Abrir en Facebook">
+                    <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
                 </a>
                 ${data.id ? `
-                <button type="button" onclick="openDeleteModal(${data.id}, '${escapeHtml(displayName).replace(/'/g, "\\'")}')" class="action-btn action-btn-delete" title="Eliminar fila">
-                    <i data-lucide="trash-2"></i>
+                <button type="button" onclick="openDeleteModal(${data.id}, '${escapeHtml(displayName).replace(/'/g, "\\'")}')" class="btn btn-ghost btn-square btn-xs border border-base-300 hover:border-error hover:bg-error/10 hover:text-error rounded-lg h-8 w-8 text-base-content/75 transition-all" title="Eliminar fila">
+                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
                 </button>
                 ` : ''}
             </div>
@@ -636,14 +737,22 @@ function upsertTableRow(data) {
 
     if (row) {
         row.innerHTML = rowHtml;
+        row.className = 'fanpage-row hover:bg-base-200/30 transition-colors';
+        row.setAttribute('data-followers', data.followers || 0);
+        row.setAttribute('data-has-growth', growth.is_positive ? 'true' : 'false');
     } else {
         row = document.createElement('tr');
         row.id = rowId;
+        row.className = 'fanpage-row hover:bg-base-200/30 transition-colors';
+        row.setAttribute('data-followers', data.followers || 0);
+        row.setAttribute('data-has-growth', growth.is_positive ? 'true' : 'false');
         row.innerHTML = rowHtml;
         tbody.insertBefore(row, tbody.firstChild);
     }
 
-    lucide.createIcons({ root: row });
+    if (window.lucide) {
+        lucide.createIcons();
+    }
 }
 
 // ----------------------------------------------------
@@ -653,7 +762,11 @@ let activeGrowthChart = null;
 
 function renderGrowthChart(historyList, pageName) {
     const canvas = document.getElementById('growthChartCanvas');
-    if (!canvas || typeof Chart === 'undefined') return;
+    if (!canvas) return;
+    if (typeof Chart === 'undefined') {
+        console.warn('Chart.js library is not loaded');
+        return;
+    }
 
     if (activeGrowthChart) {
         activeGrowthChart.destroy();
@@ -662,13 +775,15 @@ function renderGrowthChart(historyList, pageName) {
 
     if (!historyList || historyList.length === 0) return;
 
-    const chronological = [...historyList].reverse();
-    const labels = chronological.map(item => {
+    // Orden cronológico (pasado a presente)
+    const sorted = [...historyList].sort((a, b) => (a.id || 0) - (b.id || 0));
+    const labels = sorted.map(item => {
         return item.date.length > 10 ? item.date.substring(0, 5) + ' ' + item.date.substring(11, 16) : item.date;
     });
-    const values = chronological.map(item => item.followers);
+    const values = sorted.map(item => item.followers);
 
     const ctx = canvas.getContext('2d');
+    if (!ctx) return;
     const gradient = ctx.createLinearGradient(0, 0, 0, 150);
     gradient.addColorStop(0, 'rgba(34, 197, 94, 0.35)');
     gradient.addColorStop(1, 'rgba(34, 197, 94, 0.0)');
@@ -713,13 +828,13 @@ function renderGrowthChart(historyList, pageName) {
                 },
                 scales: {
                     x: {
-                        grid: { color: 'rgba(255, 255, 255, 0.04)' },
-                        ticks: { color: '#64748b', font: { size: 10 } }
+                        grid: { color: 'rgba(0, 0, 0, 0.05)' },
+                        ticks: { color: '#888888', font: { size: 10 } }
                     },
                     y: {
-                        grid: { color: 'rgba(255, 255, 255, 0.04)' },
+                        grid: { color: 'rgba(0, 0, 0, 0.05)' },
                         ticks: {
-                            color: '#64748b',
+                            color: '#888888',
                             font: { size: 10 },
                             callback: function(value) {
                                 return formatCompactNumber(value);
@@ -739,8 +854,10 @@ async function openGrowthModal(pageId) {
     const tbody = document.getElementById('growthSnapshotsBody') || document.getElementById('growthHistoryTableBody');
     if (modal) {
         modal.style.display = 'flex';
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
         document.body.style.overflow = 'hidden';
-        lucide.createIcons({ root: modal });
+        if (window.lucide) lucide.createIcons({ root: modal });
     }
 
     if (!tbody) {
@@ -750,15 +867,15 @@ async function openGrowthModal(pageId) {
 
     tbody.innerHTML = `
         <tr>
-            <td colspan="3" style="text-align:center; padding:30px; color:var(--text-muted);">
-                <div style="display:flex; align-items:center; justify-content:center; gap:8px;">
-                    <i data-lucide="loader-2" class="animate-spin" style="width:16px; height:16px;"></i>
+            <td colspan="3" class="text-center py-8 text-base-content/50">
+                <div class="flex items-center justify-center gap-2 text-xs">
+                    <i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i>
                     <span>Cargando historial de seguidores...</span>
                 </div>
             </td>
         </tr>
     `;
-    lucide.createIcons({ root: tbody });
+    if (window.lucide) lucide.createIcons();
 
     try {
         const res = await fetch(`${API_BASE}/api/page/${pageId}/history/`);
@@ -794,30 +911,28 @@ async function openGrowthModal(pageId) {
                 }
             }
 
-            renderGrowthChart(data.history, data.page_name);
+            setTimeout(() => {
+                renderGrowthChart(data.history, data.page_name);
+            }, 60);
 
             if (data.history && data.history.length > 0) {
                 tbody.innerHTML = data.history.map(item => `
-                    <tr>
-                        <td style="font-family:monospace; font-size:0.82rem; color:var(--text-muted);">${item.date}</td>
-                        <td style="text-align:right; font-family:monospace; font-weight:700; color:var(--text-primary);">
-                            ${Number(item.followers).toLocaleString()}
-                        </td>
-                        <td style="text-align:right;">
+                    <tr class="hover:bg-base-200/30 transition-colors">
+                        <td class="font-mono text-xs text-base-content/70 pl-5 py-2.5">${item.date}</td>
+                        <td class="text-right font-mono font-bold text-xs text-base-content">${Number(item.followers).toLocaleString()}</td>
+                        <td class="text-right pr-5">
                             ${item.is_positive ? `
-                                <span class="badge-pill" style="background:rgba(34,197,94,0.12); color:#22c55e; border:1px solid rgba(34,197,94,0.25); font-family:monospace;">
-                                    <i data-lucide="trending-up" style="width:11px; height:11px;"></i>
+                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-success/10 text-success border border-success/20">
+                                    <i data-lucide="trending-up" class="w-3 h-3"></i>
                                     ${item.formatted_delta}
                                 </span>
                             ` : item.is_negative ? `
-                                <span class="badge-pill" style="background:rgba(239,68,68,0.12); color:#f87171; border:1px solid rgba(239,68,68,0.25); font-family:monospace;">
-                                    <i data-lucide="trending-down" style="width:11px; height:11px;"></i>
+                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-error/10 text-error border border-error/20">
+                                    <i data-lucide="trending-down" class="w-3 h-3"></i>
                                     ${item.formatted_delta}
                                 </span>
                             ` : `
-                                <span class="badge-pill badge-user" style="font-family:monospace;">
-                                    0
-                                </span>
+                                <span class="text-base-content/40 text-xs font-mono">0</span>
                             `}
                         </td>
                     </tr>
@@ -825,7 +940,7 @@ async function openGrowthModal(pageId) {
             } else {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="3" style="text-align:center; padding:24px; color:var(--text-muted);">
+                        <td colspan="3" class="text-center py-6 text-xs text-base-content/50">
                             No hay registros adicionales aún.
                         </td>
                     </tr>
@@ -834,23 +949,23 @@ async function openGrowthModal(pageId) {
         } else {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="3" style="text-align:center; padding:24px; color:#f87171;">
+                    <td colspan="3" class="text-center py-6 text-xs text-error">
                         ${data.message || 'Error al cargar el historial.'}
                     </td>
                 </tr>
             `;
         }
-        lucide.createIcons({ root: modal });
+        if (window.lucide) lucide.createIcons();
     } catch (err) {
         console.error('Error fetching growth history:', err);
         tbody.innerHTML = `
             <tr>
-                <td colspan="3" style="text-align:center; padding:24px; color:#f87171;">
+                <td colspan="3" class="text-center py-6 text-xs text-error">
                     Error de conexión al cargar el historial.
                 </td>
             </tr>
         `;
-        lucide.createIcons({ root: tbody });
+        if (window.lucide) lucide.createIcons();
     }
 }
 
@@ -858,6 +973,8 @@ function closeGrowthModal() {
     const modal = document.getElementById('growthHistoryModal');
     if (modal) {
         modal.style.display = 'none';
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
         document.body.style.overflow = 'auto';
     }
     if (activeGrowthChart) {
@@ -880,8 +997,10 @@ function openDeleteModal(pageId, pageName) {
     const modal = document.getElementById('deleteConfirmModal');
     if (modal) {
         modal.style.display = 'flex';
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
         document.body.style.overflow = 'hidden';
-        lucide.createIcons({ root: modal });
+        if (window.lucide) lucide.createIcons();
     }
 }
 
@@ -890,6 +1009,8 @@ function closeDeleteModal() {
     const modal = document.getElementById('deleteConfirmModal');
     if (modal) {
         modal.style.display = 'none';
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
         document.body.style.overflow = 'auto';
     }
 }
@@ -899,15 +1020,9 @@ async function executeDeletePage() {
 
     const btn = document.getElementById('confirmDeleteBtn');
     const text = document.getElementById('confirmDeleteText');
-    const icon = document.getElementById('confirmDeleteIcon');
 
     if (btn) btn.disabled = true;
     if (text) text.textContent = 'Eliminando...';
-    if (icon) {
-        icon.setAttribute('data-lucide', 'loader-2');
-        icon.classList.add('animate-spin');
-        lucide.createIcons({ root: btn });
-    }
 
     try {
         const res = await fetch(`${API_BASE}/api/page/${currentDeletePageId}/delete/`, {
@@ -921,17 +1036,12 @@ async function executeDeletePage() {
         if (data.status === 'ok') {
             const row = document.getElementById(`row-page-${currentDeletePageId}`);
             if (row) {
-                row.style.transition = 'all 0.25s ease';
-                row.style.opacity = '0';
-                row.style.transform = 'scale(0.95)';
-                setTimeout(() => {
-                    row.remove();
-                    checkEmptyTable();
-                }, 250);
+                row.remove();
+                checkEmptyTable();
             }
-            updateMetrics(data.total_pages, data.total_followers);
+            refreshGlobalMetrics();
             closeDeleteModal();
-            showToast('Fanpage eliminada correctamente', 'info');
+            showToast('Fanpage eliminada correctamente', 'success');
         } else {
             showToast(data.message || 'Error al eliminar la página', 'error');
         }
@@ -941,11 +1051,6 @@ async function executeDeletePage() {
     } finally {
         if (btn) btn.disabled = false;
         if (text) text.textContent = 'Eliminar';
-        if (icon) {
-            icon.setAttribute('data-lucide', 'trash-2');
-            icon.classList.remove('animate-spin');
-            lucide.createIcons({ root: btn });
-        }
     }
 }
 
@@ -1022,20 +1127,23 @@ function clearAllPages() {
 
 function checkEmptyTable() {
     const tbody = document.getElementById('pagesTableBody');
-    if (!tbody || tbody.children.length > 0) return;
+    if (!tbody || tbody.querySelectorAll('.fanpage-row').length > 0) return;
 
     tbody.innerHTML = `
         <tr id="emptyTableMessage">
-            <td colspan="5" style="padding:56px 20px; text-align:center; color:var(--text-muted);">
-                <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px;">
-                    <i data-lucide="inbox" style="width:42px; height:42px; stroke-width:1; color:var(--text-muted);"></i>
-                    <div style="font-size:0.95rem; font-weight:500;">No hay fanpages registradas todavía</div>
-                    <div style="font-size:0.8rem; color:var(--text-secondary);">Hacé clic en <strong>Extraer Nuevas URLs</strong> para comenzar el escaneo</div>
+            <td colspan="6" class="p-16 text-center text-base-content/50">
+                <div class="flex flex-col items-center justify-center gap-2.5">
+                    <i data-lucide="inbox" class="w-12 h-12 text-base-content/30 mb-1"></i>
+                    <div class="text-sm font-bold text-base-content">No hay fanpages registradas todavía</div>
+                    <div class="text-xs text-base-content/60">Hacé clic en <strong>Extraer Nuevas URLs</strong> para iniciar el rastreo.</div>
+                    <button type="button" class="btn btn-primary btn-sm gap-2 rounded-xl text-xs font-semibold mt-2" onclick="openExtractionModal()">
+                        <i data-lucide="plus" class="w-4 h-4"></i> Extraer Primeras URLs
+                    </button>
                 </div>
             </td>
         </tr>
     `;
-    lucide.createIcons();
+    if (window.lucide) lucide.createIcons();
 }
 
 async function refreshGlobalMetrics() {
@@ -1219,15 +1327,158 @@ async function testWebhookAlert() {
     }
 }
 
-// Attach globally to window
-window.openAlertsModal = openAlertsModal;
-window.closeAlertsModal = closeAlertsModal;
-window.loadAlertsConfig = loadAlertsConfig;
-window.saveAlertsConfig = saveAlertsConfig;
-window.testWebhookAlert = testWebhookAlert;
+function openExtractionModal() {
+    const modal = document.getElementById('newExtractionModal');
+    if (modal) {
+        modal.style.display = 'flex';
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        document.body.style.overflow = 'hidden';
+        if (window.lucide) lucide.createIcons({ root: modal });
+    }
+}
 
-// Listeners for click outside & escape
-document.getElementById('alertsConfigModal')?.addEventListener('click', (e) => {
-    if (e.target.id === 'alertsConfigModal') closeAlertsModal();
+function closeExtractionModal() {
+    const modal = document.getElementById('newExtractionModal');
+    if (modal) {
+        modal.style.display = 'none';
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+        document.body.style.overflow = 'auto';
+    }
+}
+
+function filterTableCategory(category, btn) {
+    document.querySelectorAll('.pill-tab').forEach(el => {
+        el.classList.remove('tab-active', 'bg-base-100', 'shadow-sm', 'text-primary', 'font-bold');
+        el.classList.add('text-base-content/70');
+    });
+    if (btn) {
+        btn.classList.add('tab-active', 'bg-base-100', 'shadow-sm', 'text-primary', 'font-bold');
+        btn.classList.remove('text-base-content/70');
+    }
+
+    const rows = document.querySelectorAll('.fanpage-row');
+    rows.forEach(row => {
+        const followers = parseFloat(row.getAttribute('data-followers')) || 0;
+        const hasGrowth = row.getAttribute('data-has-growth') === 'true';
+
+        if (category === 'all') {
+            row.style.display = '';
+        } else if (category === 'growth') {
+            row.style.display = hasGrowth ? '' : 'none';
+        } else if (category === 'major') {
+            row.style.display = followers >= 100000 ? '' : 'none';
+        }
+    });
+}
+
+function showToast(message, type = 'info') {
+    const container = document.getElementById('toastContainer');
+    if (!container) return;
+
+    const alert = document.createElement('div');
+    const alertClass = type === 'success' ? 'alert-success text-white' :
+                       type === 'error' ? 'alert-error text-white' :
+                       type === 'warning' ? 'alert-warning text-zinc-900' :
+                       'alert-info text-white';
+
+    alert.className = `alert ${alertClass} text-xs shadow-xl rounded-xl p-3 flex items-center gap-2 pointer-events-auto border border-base-300`;
+    const iconName = type === 'success' ? 'check-circle-2' : type === 'error' ? 'alert-circle' : type === 'warning' ? 'alert-triangle' : 'info';
+    alert.innerHTML = `<i data-lucide="${iconName}" class="w-4 h-4 shrink-0"></i> <span>${message}</span>`;
+    container.appendChild(alert);
+    if (window.lucide) lucide.createIcons();
+
+    setTimeout(() => {
+        alert.style.opacity = '0';
+        alert.style.transition = 'opacity 0.25s ease';
+        setTimeout(() => alert.remove(), 260);
+    }, 3500);
+}
+
+function openDuplicateFanpagesModal(items, message) {
+    const listEl = document.getElementById('dupFanpagesList');
+    const msgEl = document.getElementById('dupFanpagesMessage');
+    if (msgEl && message) {
+        msgEl.innerHTML = `${escapeHtml(message)} Para no duplicar tareas ni consumir recursos, la petición fue rechazada. Podés actualizar sus métricas usando el botón <strong>"Actualizar Ahora"</strong>.`;
+    }
+
+    if (listEl) {
+        if (items && items.length > 0) {
+            listEl.innerHTML = items.map(item => `
+                <div class="flex items-center justify-between p-2.5 rounded-lg bg-base-100 border border-base-300 text-xs">
+                    <div class="flex-1 min-w-0 pr-3">
+                        <div class="font-bold text-base-content truncate">${escapeHtml(item.name || 'Fanpage')}</div>
+                        <a href="${escapeHtml(item.url)}" target="_blank" rel="noopener noreferrer" class="text-[11px] text-primary hover:underline font-mono truncate block opacity-80">
+                            ${escapeHtml(item.url)}
+                        </a>
+                    </div>
+                    <span class="badge badge-neutral badge-md font-mono font-bold text-xs px-2.5 shrink-0">
+                        ${item.followers || '0'}
+                    </span>
+                </div>
+            `).join('');
+        } else {
+            listEl.innerHTML = '<div class="text-xs text-base-content/50 text-center py-3">No hay detalles disponibles.</div>';
+        }
+    }
+
+    const modal = document.getElementById('duplicateFanpagesModal');
+    if (modal) {
+        modal.style.display = 'flex';
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        document.body.style.overflow = 'hidden';
+        if (window.lucide) lucide.createIcons();
+    }
+}
+
+function closeDuplicateFanpagesModal() {
+    const modal = document.getElementById('duplicateFanpagesModal');
+    if (modal) {
+        modal.style.display = 'none';
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+        document.body.style.overflow = 'auto';
+    }
+}
+
+// Attach globally to window
+window.triggerSchedulerNow = triggerSchedulerNow;
+window.coordinateJobMonitoring = coordinateJobMonitoring;
+window.onJobCompleted = onJobCompleted;
+window.updateProgressBar = updateProgressBar;
+window.openGrowthModal = openGrowthModal;
+window.loadGrowthHistoryData = openGrowthModal;
+window.closeGrowthModal = closeGrowthModal;
+window.openDeleteModal = openDeleteModal;
+window.closeDeleteModal = closeDeleteModal;
+window.executeDeletePage = executeDeletePage;
+window.openExtractionModal = openExtractionModal;
+window.closeExtractionModal = closeExtractionModal;
+window.openDuplicateFanpagesModal = openDuplicateFanpagesModal;
+window.closeDuplicateFanpagesModal = closeDuplicateFanpagesModal;
+window.filterTableCategory = filterTableCategory;
+window.showToast = showToast;
+
+window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        closeExtractionModal();
+        closeDeleteModal();
+        closeGrowthModal();
+        closeDuplicateFanpagesModal();
+    }
+});
+document.getElementById('newExtractionModal')?.addEventListener('click', (e) => {
+    if (e.target.id === 'newExtractionModal') closeExtractionModal();
+});
+document.getElementById('deleteConfirmModal')?.addEventListener('click', (e) => {
+    if (e.target.id === 'deleteConfirmModal') closeDeleteModal();
+});
+document.getElementById('growthHistoryModal')?.addEventListener('click', (e) => {
+    if (e.target.id === 'growthHistoryModal') closeGrowthModal();
+});
+document.getElementById('duplicateFanpagesModal')?.addEventListener('click', (e) => {
+    if (e.target.id === 'duplicateFanpagesModal') closeDuplicateFanpagesModal();
 });
 

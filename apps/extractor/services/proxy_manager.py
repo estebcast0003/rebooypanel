@@ -78,9 +78,24 @@ class ProxyManager:
     def set_proxies(self, raw_proxies):
         urls = []
         if isinstance(raw_proxies, str):
-            urls = [p.strip() for p in raw_proxies.split(',') if p.strip()]
+            candidates = [p.strip() for p in raw_proxies.split(',') if p.strip()]
         elif isinstance(raw_proxies, list):
-            urls = [str(p).strip() for p in raw_proxies if str(p).strip()]
+            candidates = [str(p).strip() for p in raw_proxies if str(p).strip()]
+        else:
+            candidates = []
+
+        for u in candidates:
+            try:
+                p = urlparse(u)
+                if not p.scheme or not p.hostname:
+                    continue
+                if 'proxy_host' in p.hostname or 'proxy_port' in u:
+                    continue
+                if p.port is not None:
+                    int(p.port)
+                urls.append(u)
+            except Exception:
+                continue
 
         self._nodes = [ProxyNode(url=u) for u in urls]
         self._current_index = 0

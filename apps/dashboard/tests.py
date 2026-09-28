@@ -87,3 +87,16 @@ class DashboardViewTests(TestCase):
         self.assertEqual(response.context["formatted_total_followers"], "9K")
         self.assertEqual(response.context["total_prompts"], 0)
         self.assertEqual(response.context["total_fanpages"], 0)
+
+    def test_start_extraction_duplicate_url_rejected(self):
+        self.client.login(username="user_a", password="password123")
+        # user_a already has https://facebook.com/page_a
+        response = self.client.post(
+            reverse("extractor:start_extraction"),
+            {"urls": "https://facebook.com/page_a"},
+        )
+        self.assertEqual(response.status_code, 409)
+        data = response.json()
+        self.assertEqual(data.get("status"), "duplicate")
+        self.assertEqual(data.get("duplicate_count"), 1)
+        self.assertIn("duplicate_items", data)

@@ -121,7 +121,11 @@ class AutoRefreshScheduler:
         from django.db import close_old_connections
         close_old_connections()
 
-        qs = FacebookPage.objects.filter(user=user) if user else FacebookPage.objects.all()
+        from django.db.models import Q
+        if not user or getattr(user, 'role', '') == 'superadmin':
+            qs = FacebookPage.objects.all()
+        else:
+            qs = FacebookPage.objects.filter(Q(user=user) | Q(user__isnull=True))
         urls = list(qs.values_list("url", flat=True).distinct())
         if not urls:
             return None

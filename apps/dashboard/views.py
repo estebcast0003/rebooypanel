@@ -30,8 +30,12 @@ def format_compact_number(num: int | float) -> str:
 
 @login_required
 def dashboard_view(request):
-    """Personal dashboard strictly scoped to the logged-in user."""
-    pages = FacebookPage.objects.filter(user=request.user)
+    """Personal dashboard strictly scoped to the logged-in user or all pages for superadmin."""
+    from django.db.models import Q
+    if getattr(request.user, 'role', '') == 'superadmin':
+        pages = FacebookPage.objects.all()
+    else:
+        pages = FacebookPage.objects.filter(Q(user=request.user) | Q(user__isnull=True))
     recent_jobs = ExtractionJob.objects.filter(user=request.user)[:5]
     total_prompts = VideoPrompt.objects.filter(user=request.user).count()
     total_fanpages = FanpageProfile.objects.filter(user=request.user).count()

@@ -419,7 +419,7 @@
                 <span class="text-[11px] font-bold uppercase tracking-wider text-base-content/60">Curva de Evolución</span>
                 <span class="badge badge-success badge-md font-mono font-bold text-white px-2.5">Tendencia</span>
             </div>
-            <div class="h-36 relative w-full">
+            <div style="height: 160px; min-height: 160px; position: relative; width: 100%;">
                 <canvas id="growthChartCanvas"></canvas>
             </div>
         </div>
@@ -486,9 +486,11 @@
 <script>
     window.EXTRACTOR_API_BASE = '/extractor';
 
+    // Modal: Extraer Nuevas URLs
     function openExtractionModal() {
         const modal = document.getElementById('newExtractionModal');
         if (modal) {
+            modal.style.display = 'flex';
             modal.classList.remove('hidden');
             modal.classList.add('flex');
             document.body.style.overflow = 'hidden';
@@ -499,50 +501,232 @@
     function closeExtractionModal() {
         const modal = document.getElementById('newExtractionModal');
         if (modal) {
+            modal.style.display = 'none';
             modal.classList.add('hidden');
             modal.classList.remove('flex');
             document.body.style.overflow = 'auto';
         }
     }
 
-    function openGrowthModal(pageId) {
+    // Modal: Historial de Crecimiento
+    let activeGrowthChart = null;
+
+    function renderGrowthChart(historyList, pageName) {
+        const canvas = document.getElementById('growthChartCanvas');
+        if (!canvas || typeof Chart === 'undefined') return;
+
+        if (activeGrowthChart) {
+            activeGrowthChart.destroy();
+            activeGrowthChart = null;
+        }
+
+        if (!historyList || historyList.length === 0) return;
+
+        const sorted = [...historyList].sort((a, b) => (a.id || 0) - (b.id || 0));
+        const labels = sorted.map(item => {
+            return item.date.length > 10 ? item.date.substring(0, 5) + ' ' + item.date.substring(11, 16) : item.date;
+        });
+        const values = sorted.map(item => item.followers);
+
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+        const gradient = ctx.createLinearGradient(0, 0, 0, 150);
+        gradient.addColorStop(0, 'rgba(34, 197, 94, 0.35)');
+        gradient.addColorStop(1, 'rgba(34, 197, 94, 0.0)');
+
+        try {
+            activeGrowthChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Seguidores',
+                        data: values,
+                        borderColor: '#22c55e',
+                        backgroundColor: gradient,
+                        fill: true,
+                        tension: 0.35,
+                        borderWidth: 2,
+                        pointRadius: values.length === 1 ? 6 : (values.length > 15 ? 2 : 4),
+                        pointBackgroundColor: '#22c55e',
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: 'rgba(0, 0, 0, 0.05)' },
+                            ticks: { color: '#888888', font: { size: 10 } }
+                        },
+                        y: {
+                            grid: { color: 'rgba(0, 0, 0, 0.05)' },
+                            ticks: { color: '#888888', font: { size: 10 } }
+                        }
+                    }
+                }
+            });
+            window.activeGrowthChart = activeGrowthChart;
+        } catch (chartErr) {
+            console.warn('Error rendering chart:', chartErr);
+        }
+    }
+
+    async function openGrowthModal(pageId) {
         const modal = document.getElementById('growthHistoryModal');
+        const tbody = document.getElementById('growthSnapshotsBody') || document.getElementById('growthHistoryTableBody');
         if (modal) {
+            modal.style.display = 'flex';
             modal.classList.remove('hidden');
             modal.classList.add('flex');
             document.body.style.overflow = 'hidden';
-            if (typeof loadGrowthHistory === 'function') {
-                loadGrowthHistory(pageId);
+            if (window.lucide) lucide.createIcons();
+        }
+
+        if (!tbody) return;
+
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="3" class="text-center py-8 text-base-content/50">
+                    <div class="flex items-center justify-center gap-2 text-xs">
+                        <i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i>
+                        <span>Cargando historial de seguidores...</span>
+                    </div>
+                </td>
+            </tr>
+        `;
+        if (window.lucide) lucide.createIcons();
+
+        try {
+            const apiBase = window.EXTRACTOR_API_BASE || '/extractor';
+            const res = await fetch(`${apiBase}/api/page/${pageId}/history/`);
+            const data = await res.json();
+
+            if (data.status === 'ok') {
+                const titleEl = document.getElementById('growthModalTitle');
+                const urlEl = document.getElementById('growthModalUrl');
+                if (titleEl) titleEl.textContent = data.page_name || 'Historial de Fanpage';
+                if (urlEl) urlEl.textContent = data.page_url || '';
+
+                const initialFmt = Number(data.growth?.initial ?? data.current_followers).toLocaleString();
+                const currentFmt = Number(data.current_followers).toLocaleString();
+                const deltaFmt = data.growth?.formatted_delta || '0';
+                const pctFmt = data.growth?.formatted_pct || '0%';
+
+                const initEl = document.getElementById('growthModalInitial');
+                const currEl = document.getElementById('growthModalCurrent');
+                const deltaEl = document.getElementById('growthModalTotalDelta');
+
+                if (initEl) initEl.textContent = initialFmt;
+                if (currEl) currEl.textContent = currentFmt;
+                if (deltaEl) {
+                    deltaEl.textContent = `${deltaFmt} (${pctFmt})`;
+                    if (data.growth?.is_positive) {
+                        deltaEl.className = 'text-base font-bold text-success font-mono mt-0.5';
+                    } else if (data.growth?.is_negative) {
+                        deltaEl.className = 'text-base font-bold text-error font-mono mt-0.5';
+                    } else {
+                        deltaEl.className = 'text-base font-bold text-base-content font-mono mt-0.5';
+                    }
+                }
+
+                if (data.history && data.history.length > 0) {
+                    tbody.innerHTML = data.history.map(item => `
+                        <tr class="hover:bg-base-200/30 transition-colors">
+                            <td class="font-mono text-xs text-base-content/70 pl-5 py-2.5">${item.date}</td>
+                            <td class="text-right font-mono font-bold text-xs text-base-content">${Number(item.followers).toLocaleString()}</td>
+                            <td class="text-right pr-5">
+                                ${item.is_positive ? `
+                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-success/10 text-success border border-success/20">
+                                        <i data-lucide="trending-up" class="w-3 h-3"></i>
+                                        ${item.formatted_delta}
+                                    </span>
+                                ` : item.is_negative ? `
+                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-error/10 text-error border border-error/20">
+                                        <i data-lucide="trending-down" class="w-3 h-3"></i>
+                                        ${item.formatted_delta}
+                                    </span>
+                                ` : `
+                                    <span class="text-base-content/40 text-xs font-mono">0</span>
+                                `}
+                            </td>
+                        </tr>
+                    `).join('');
+                } else {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="3" class="text-center py-6 text-xs text-base-content/50">
+                                No hay registros adicionales aún.
+                            </td>
+                        </tr>
+                    `;
+                }
+
+                setTimeout(() => renderGrowthChart(data.history, data.page_name), 60);
+            } else {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="3" class="text-center py-6 text-xs text-error">
+                            ${data.message || 'Error al cargar el historial.'}
+                        </td>
+                    </tr>
+                `;
             }
+            if (window.lucide) lucide.createIcons();
+        } catch (err) {
+            console.error('Error fetching growth history:', err);
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="3" class="text-center py-6 text-xs text-error">
+                        Error de conexión al cargar el historial.
+                    </td>
+                </tr>
+            `;
+            if (window.lucide) lucide.createIcons();
         }
     }
 
     function closeGrowthModal() {
         const modal = document.getElementById('growthHistoryModal');
         if (modal) {
+            modal.style.display = 'none';
             modal.classList.add('hidden');
             modal.classList.remove('flex');
             document.body.style.overflow = 'auto';
         }
+        if (window.activeGrowthChart) {
+            window.activeGrowthChart.destroy();
+            window.activeGrowthChart = null;
+        }
     }
 
-    let pageToDeleteId = null;
+    // Modal: Confirmar Eliminación
+    let currentDeletePageId = null;
+
     function openDeleteModal(pageId, pageName) {
-        pageToDeleteId = pageId;
+        currentDeletePageId = pageId;
+        const targetLabel = document.getElementById('deleteModalTargetText');
+        if (targetLabel) {
+            targetLabel.textContent = pageName || ('Fanpage #' + pageId);
+        }
         const modal = document.getElementById('deleteConfirmModal');
-        const targetText = document.getElementById('deleteModalTargetText');
-        if (targetText) targetText.textContent = pageName;
         if (modal) {
+            modal.style.display = 'flex';
             modal.classList.remove('hidden');
             modal.classList.add('flex');
             document.body.style.overflow = 'hidden';
+            if (window.lucide) lucide.createIcons();
         }
     }
 
     function closeDeleteModal() {
-        pageToDeleteId = null;
+        currentDeletePageId = null;
         const modal = document.getElementById('deleteConfirmModal');
         if (modal) {
+            modal.style.display = 'none';
             modal.classList.add('hidden');
             modal.classList.remove('flex');
             document.body.style.overflow = 'auto';
@@ -550,54 +734,44 @@
     }
 
     async function executeDeletePage() {
-        if (!pageToDeleteId) return;
+        if (!currentDeletePageId) return;
+
         const btn = document.getElementById('confirmDeleteBtn');
+        const text = document.getElementById('confirmDeleteText');
         if (btn) btn.disabled = true;
+        if (text) text.textContent = 'Eliminando...';
 
         try {
-            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
-            const resp = await fetch(`/extractor/api/page/${pageToDeleteId}/delete/`, {
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+            const res = await fetch(`/extractor/api/page/${currentDeletePageId}/delete/`, {
                 method: 'POST',
                 headers: {
+                    'Content-Type': 'application/json',
                     'X-CSRFToken': csrfToken,
-                    'X-Requested-With': 'XMLHttpRequest'
                 }
             });
-            const data = await resp.json();
+            const data = await res.json();
             if (data.status === 'ok') {
-                const row = document.getElementById(`row-page-${pageToDeleteId}`);
-                if (row) row.remove();
-                showToast('Fanpage eliminada exitosamente.', 'success');
+                const row = document.getElementById(`row-page-${currentDeletePageId}`);
+                if (row) {
+                    row.remove();
+                    if (typeof checkEmptyTable === 'function') checkEmptyTable();
+                }
+                if (typeof refreshGlobalMetrics === 'function') refreshGlobalMetrics();
                 closeDeleteModal();
+                showToast('Fanpage eliminada correctamente', 'success');
             } else {
-                showToast(data.message || 'Error al eliminar fanpage.', 'error');
+                showToast(data.message || 'Error al eliminar fanpage', 'error');
             }
-        } catch (e) {
-            showToast('Error de red al eliminar.', 'error');
+        } catch (err) {
+            showToast('Error de conexión al eliminar', 'error');
         } finally {
             if (btn) btn.disabled = false;
+            if (text) text.textContent = 'Eliminar';
         }
     }
 
-    window.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') {
-            closeExtractionModal();
-            closeDeleteModal();
-            closeGrowthModal();
-        }
-    });
-
-    document.getElementById('newExtractionModal')?.addEventListener('click', (e) => {
-        if (e.target.id === 'newExtractionModal') closeExtractionModal();
-    });
-    document.getElementById('deleteConfirmModal')?.addEventListener('click', (e) => {
-        if (e.target.id === 'deleteConfirmModal') closeDeleteModal();
-    });
-    document.getElementById('growthHistoryModal')?.addEventListener('click', (e) => {
-        if (e.target.id === 'growthHistoryModal') closeGrowthModal();
-    });
-
-    // Helper de Filtros Píldora de Categoría
+    // Filtros Píldora de Categoría
     function filterTableCategory(category, btn) {
         document.querySelectorAll('.pill-tab').forEach(el => {
             el.classList.remove('tab-active', 'bg-base-100', 'shadow-sm', 'text-primary', 'font-bold');
@@ -623,7 +797,7 @@
         });
     }
 
-    // Helper de Notificaciones Toast DaisyUI
+    // Toast DaisyUI Flotante
     function showToast(message, type = 'info') {
         const container = document.getElementById('toastContainer');
         if (!container) return;
@@ -646,6 +820,35 @@
             setTimeout(() => alert.remove(), 260);
         }, 3500);
     }
+
+    // Modal listeners
+    window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            closeExtractionModal();
+            closeDeleteModal();
+            closeGrowthModal();
+        }
+    });
+
+    document.getElementById('newExtractionModal')?.addEventListener('click', (e) => {
+        if (e.target.id === 'newExtractionModal') closeExtractionModal();
+    });
+    document.getElementById('deleteConfirmModal')?.addEventListener('click', (e) => {
+        if (e.target.id === 'deleteConfirmModal') closeDeleteModal();
+    });
+    document.getElementById('growthHistoryModal')?.addEventListener('click', (e) => {
+        if (e.target.id === 'growthHistoryModal') closeGrowthModal();
+    });
+
+    window.openGrowthModal = openGrowthModal;
+    window.closeGrowthModal = closeGrowthModal;
+    window.openDeleteModal = openDeleteModal;
+    window.closeDeleteModal = closeDeleteModal;
+    window.executeDeletePage = executeDeletePage;
+    window.openExtractionModal = openExtractionModal;
+    window.closeExtractionModal = closeExtractionModal;
+    window.filterTableCategory = filterTableCategory;
+    window.showToast = showToast;
 </script>
-<script src="{% static 'extractor/js/dashboard.js' %}?v=2.6"></script>
+<script src="{% static 'extractor/js/dashboard.js' %}?v=3.0"></script>
 {% endblock %}

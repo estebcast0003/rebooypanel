@@ -19,8 +19,11 @@ def _has_extractor_access(user):
 
 
 def _get_user_pages(user):
-    """Returns FacebookPages strictly scoped to the specific user."""
-    return FacebookPage.objects.filter(user=user)
+    """Returns FacebookPages strictly scoped to the specific user or all if superadmin."""
+    from django.db.models import Q
+    if getattr(user, 'role', '') == 'superadmin':
+        return FacebookPage.objects.all()
+    return FacebookPage.objects.filter(Q(user=user) | Q(user__isnull=True))
 
 
 def format_compact_number(num: int | float) -> str:
@@ -111,7 +114,14 @@ def delete_page_view(request, page_id):
     if not _has_extractor_access(request.user):
         return JsonResponse({"status": "error", "message": "Acceso denegado."}, status=403)
 
-    page = get_object_or_404(FacebookPage, id=page_id, user=request.user)
+    from django.db.models import Q
+    if request.user.role == 'superadmin':
+        page = get_object_or_404(FacebookPage, id=page_id)
+    else:
+        page = FacebookPage.objects.filter(id=page_id).filter(Q(user=request.user) | Q(user__isnull=True)).first()
+        if not page:
+            return JsonResponse({"status": "error", "message": "Fanpage no encontrada."}, status=404)
+
     page.delete()
 
     pages = _get_user_pages(request.user)
@@ -224,12 +234,66 @@ def start_extraction_view(request):
                 status=400,
             )
 
+        from .services.scraper import normalize_url
+        clean_urls = []
+        seen = set()
+        for raw in urls_list:
+            u = normalize_url(raw)
+            if u and u not in seen:
+                seen.add(u)
+                clean_urls.append(u)
+
+        if not clean_urls:
+            return JsonResponse(
+                {"status": "error", "message": "No se proporcionaron URLs válidas de Facebook."},
+                status=400,
+            )
+
+        # Detección de duplicados para evitar procesamiento y scraping redundante
+        from django.db.models import Q
+        if request.user.role == 'superadmin':
+            existing_pages = list(FacebookPage.objects.filter(url__in=clean_urls))
+        else:
+            existing_pages = list(FacebookPage.objects.filter(
+                Q(user=request.user) | Q(user__isnull=True),
+                url__in=clean_urls
+            ))
+
+        if existing_pages:
+            duplicate_items = [
+                {
+                    "id": p.id,
+                    "name": p.name or "Fanpage",
+                    "url": p.url,
+                    "formatted_followers": p.formatted_followers,
+                    "status": p.status,
+                }
+                for p in existing_pages
+            ]
+            count = len(duplicate_items)
+            msg = (
+                "Esta fanpage ya se encuentra registrada en tu panel."
+                if count == 1
+                else f"Se detectaron {count} fanpages que ya están registradas en tu panel."
+            )
+            return JsonResponse(
+                {
+                    "status": "duplicate",
+                    "error": "duplicate",
+                    "message": msg,
+                    "duplicate_count": count,
+                    "total_submitted": len(clean_urls),
+                    "duplicate_items": duplicate_items,
+                },
+                status=409,
+            )
+
         # Cache URLs in settings for session persistence
         cache_key = f"urls_cache_user_{request.user.id}"
         ExtractorSetting.objects.update_or_create(key=cache_key, defaults={"value": urls_text})
 
         # Launch background job scoped to user
-        job = start_extraction_job(urls=urls_list, raw_input=urls_text, user=request.user)
+        job = start_extraction_job(urls=clean_urls, raw_input=urls_text, user=request.user)
 
         return JsonResponse(
             {
@@ -270,18 +334,21 @@ def job_status_api_view(request, job_id):
     else:
         job = get_object_or_404(ExtractionJob, id=job_id, user=request.user)
 
-    items = [
-        {
+    items = []
+    for item in job.items.select_related("page").all():
+        growth_info = item.page.growth_data if item.page else {
+            "formatted_delta": "0", "formatted_pct": "0%", "is_positive": False, "is_negative": False
+        }
+        items.append({
             "id": item.page_id or 0,
             "item_id": item.id,
             "url": item.url,
             "name": item.name,
             "followers": item.followers,
+            "growth": growth_info,
             "status": item.status,
             "is_success": item.is_success,
-        }
-        for item in job.items.select_related("page").all()
-    ]
+        })
     return JsonResponse(
         {
             "job_id": str(job.id),
@@ -366,12 +433,14 @@ def trigger_scheduler_now_api_view(request):
                 }
             )
 
+        job = ExtractionJob.objects.get(id=job_id)
         updated_status = scheduler.load_settings()
         return JsonResponse(
             {
                 "status": "ok",
                 "job_id": job_id,
-                "message": "Actualización masiva de fanpages iniciada.",
+                "total_urls": job.total_urls,
+                "message": f"Actualización iniciada para {job.total_urls} fanpages.",
                 "scheduler": updated_status,
             }
         )
