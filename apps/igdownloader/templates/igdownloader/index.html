@@ -103,106 +103,132 @@
 
         <!-- SECCIÓN 1: MIS DESCARGAS -->
         <div id="mySection">
-            <div id="myHistoryGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            <div id="myHistoryGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
                 {% for item in my_history %}
-                <div class="card bg-base-100 shadow-sm border border-base-300 rounded-2xl p-4 hover:border-primary/50 transition cursor-pointer flex flex-col justify-between" id="history-item-{{ item.id }}" onclick="openIgModal({{ item.id }})" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ') { event.preventDefault(); openIgModal({{ item.id }}); }">
+                <div class="card bg-base-100 shadow-sm border border-base-300 rounded-2xl p-3 sm:p-4 hover:border-primary/50 transition cursor-pointer flex flex-col justify-between" id="history-item-{{ item.id }}" onclick="openIgModal({{ item.id }})" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ') { event.preventDefault(); openIgModal({{ item.id }}); }">
                     <div>
-                        <!-- Fila Superior: Badge Uploader + Enlace Externo -->
-                        <div class="flex items-center justify-between mb-3 gap-2">
-                            <span class="badge badge-neutral badge-md font-bold text-xs gap-1.5 px-2.5 truncate max-w-[170px]">
-                                <i data-lucide="instagram" class="w-3 h-3 text-warning"></i>
-                                @{{ item.uploader|default:'instagram' }}
-                            </span>
-                            <a href="{{ item.instagram_url }}" target="_blank" rel="noopener noreferrer" class="text-xs text-primary font-bold hover:underline inline-flex items-center gap-1" onclick="event.stopPropagation();" title="Abrir en Instagram">
-                                <span>Ver Reel</span>
-                                <i data-lucide="external-link" class="w-3 h-3"></i>
-                            </a>
-                        </div>
-
-                        <!-- Miniatura del Reel -->
-                        <div class="w-full h-40 rounded-xl bg-base-200 border border-base-300 overflow-hidden relative mb-3 flex items-center justify-center">
-                            {% if item.thumbnail %}
-                                <img src="{{ item.thumbnail.url }}" alt="{{ item.title }}" class="w-full h-full object-cover" onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.classList.remove('hidden');">
-                                <div class="hidden w-full h-full items-center justify-center">
-                                    <i data-lucide="film" class="w-9 h-9 text-base-content/30"></i>
-                                </div>
-                            {% else %}
-                                <i data-lucide="film" class="w-9 h-9 text-base-content/30"></i>
-                            {% endif %}
-                            {% if item.duration_seconds %}
-                            <div class="absolute bottom-2 right-2 bg-black/80 text-white font-mono text-[10px] font-bold px-1.5 py-0.5 rounded">
-                                {{ item.duration_seconds|floatformat:0 }}s
-                            </div>
-                            {% endif %}
-                        </div>
-
-                        <!-- Título (Clamp a 2 líneas limpias) -->
-                        <h3 class="font-bold text-sm text-base-content line-clamp-2 min-h-[2.6em] mb-3 leading-snug" title="{{ item.title }}">
-                            {{ item.title|default:'Reel de Instagram' }}
-                        </h3>
-
-                        <!-- Widget Analítico de Métricas (Likes, Comentarios, Duración) -->
-                        <div class="grid grid-cols-3 gap-1.5 p-2.5 rounded-xl bg-base-200/50 border border-base-300 text-center mb-3">
-                            <!-- Likes -->
-                            <div class="flex flex-col items-center justify-center">
-                                <div class="flex items-center gap-1 text-[10px] text-base-content/60 font-semibold mb-0.5">
-                                    <i data-lucide="heart" class="w-3 h-3 text-error"></i>
-                                    <span>Likes</span>
-                                </div>
-                                <span class="font-mono font-bold text-xs text-base-content">
-                                    {{ item.formatted_likes|default:'--' }}
+                        <!-- Contenedor responsivo: Lista Horizontal en Móvil (<sm) / Bloque Vertical en Desktop (sm+) -->
+                        <div class="grid grid-cols-[96px_1fr] sm:block gap-x-3 gap-y-1">
+                            <!-- Fila Superior: Badge Uploader + Enlace Externo (Desktop) / Fecha (Móvil) -->
+                            <div class="col-start-2 row-start-1 flex items-center justify-between gap-1 mb-1 sm:mb-3">
+                                <span class="badge badge-neutral badge-sm sm:badge-md font-bold text-[11px] sm:text-xs gap-1 sm:gap-1.5 px-2 truncate max-w-[130px] sm:max-w-[170px]">
+                                    <i data-lucide="instagram" class="w-3 h-3 text-warning"></i>
+                                    @{{ item.uploader|default:'instagram' }}
                                 </span>
-                            </div>
-
-                            <!-- Comments -->
-                            <div class="flex flex-col items-center justify-center border-x border-base-300">
-                                <div class="flex items-center gap-1 text-[10px] text-base-content/60 font-semibold mb-0.5">
-                                    <i data-lucide="message-circle" class="w-3 h-3 text-info"></i>
-                                    <span>Coments</span>
-                                </div>
-                                <span class="font-mono font-bold text-xs text-base-content">
-                                    {{ item.formatted_comments|default:'--' }}
+                                <span class="text-[10px] text-base-content/50 font-mono sm:hidden truncate">
+                                    {{ item.created_at|date:"d M, H:i" }}
                                 </span>
+                                <a href="{{ item.instagram_url }}" target="_blank" rel="noopener noreferrer" class="hidden sm:inline-flex text-xs text-primary font-bold hover:underline items-center gap-1 shrink-0" onclick="event.stopPropagation();" title="Abrir en Instagram">
+                                    <span>Ver Reel</span>
+                                    <i data-lucide="external-link" class="w-3 h-3"></i>
+                                </a>
                             </div>
 
-                            <!-- Duración -->
-                            <div class="flex flex-col items-center justify-center">
-                                <div class="flex items-center gap-1 text-[10px] text-base-content/60 font-semibold mb-0.5">
-                                    <i data-lucide="clock" class="w-3 h-3 text-warning"></i>
-                                    <span>Duración</span>
+                            <!-- Miniatura del Reel: A la izquierda en móvil (96x96), completa en desktop -->
+                            <div class="col-start-1 row-start-1 row-span-3 w-24 h-24 sm:w-full sm:h-40 rounded-xl bg-base-200 border border-base-300 overflow-hidden relative shrink-0 flex items-center justify-center sm:mb-3">
+                                {% if item.thumbnail %}
+                                    <img src="{{ item.thumbnail.url }}" alt="{{ item.title }}" class="w-full h-full object-cover" onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.classList.remove('hidden');">
+                                    <div class="hidden w-full h-full items-center justify-center">
+                                        <i data-lucide="film" class="w-8 h-8 sm:w-9 sm:h-9 text-base-content/30"></i>
+                                    </div>
+                                {% else %}
+                                    <i data-lucide="film" class="w-8 h-8 sm:w-9 sm:h-9 text-base-content/30"></i>
+                                {% endif %}
+                                {% if item.duration_seconds %}
+                                <div class="absolute bottom-1.5 right-1.5 bg-black/80 text-white font-mono text-[9px] sm:text-[10px] font-bold px-1.5 py-0.5 rounded shadow-xs">
+                                    {{ item.duration_seconds|floatformat:0 }}s
                                 </div>
-                                <span class="font-mono font-bold text-xs text-base-content">
-                                    {% if item.duration_seconds %}{{ item.duration_seconds|floatformat:0 }}s{% else %}--{% endif %}
-                                </span>
+                                {% endif %}
                             </div>
-                        </div>
 
-                        <!-- Meta Info: Fecha y Ver Portada -->
-                        <div class="flex items-center justify-between text-xs text-base-content/50 font-mono mb-2">
-                            <span class="flex items-center gap-1">
-                                <i data-lucide="calendar" class="w-3 h-3 opacity-60"></i>
-                                {{ item.created_at|date:"d M, H:i" }}
-                            </span>
-                            <span class="text-primary font-semibold text-[11px] flex items-center gap-1 hover:underline">
-                                <i data-lucide="eye" class="w-3 h-3"></i>
-                                Ver detalles
-                            </span>
+                            <!-- Título (Clamp a 2 líneas) -->
+                            <div class="col-start-2 row-start-2">
+                                <h3 class="font-bold text-xs sm:text-sm text-base-content line-clamp-2 leading-tight sm:leading-snug mb-1.5 sm:mb-3 sm:min-h-[2.6em]" title="{{ item.title }}">
+                                    {{ item.title|default:'Reel de Instagram' }}
+                                </h3>
+                            </div>
+
+                            <!-- Métricas y Meta Info -->
+                            <div class="col-start-2 row-start-3">
+                                <!-- Métricas Móvil: Inline compactas (❤️ Likes  💬 Comments) -->
+                                <div class="flex sm:hidden items-center gap-3 text-[11px] text-base-content/70 font-mono">
+                                    <span class="flex items-center gap-1">
+                                        <i data-lucide="heart" class="w-3 h-3 text-error"></i>
+                                        <span class="font-bold">{{ item.formatted_likes|default:'--' }}</span>
+                                    </span>
+                                    <span class="flex items-center gap-1">
+                                        <i data-lucide="message-circle" class="w-3 h-3 text-info"></i>
+                                        <span class="font-bold">{{ item.formatted_comments|default:'--' }}</span>
+                                    </span>
+                                </div>
+
+                                <!-- Widget Analítico de Métricas (Solo Desktop) -->
+                                <div class="hidden sm:grid grid-cols-3 gap-1.5 p-2.5 rounded-xl bg-base-200/50 border border-base-300 text-center mb-3">
+                                    <!-- Likes -->
+                                    <div class="flex flex-col items-center justify-center">
+                                        <div class="flex items-center gap-1 text-[10px] text-base-content/60 font-semibold mb-0.5">
+                                            <i data-lucide="heart" class="w-3 h-3 text-error"></i>
+                                            <span>Likes</span>
+                                        </div>
+                                        <span class="font-mono font-bold text-xs text-base-content">
+                                            {{ item.formatted_likes|default:'--' }}
+                                        </span>
+                                    </div>
+
+                                    <!-- Comments -->
+                                    <div class="flex flex-col items-center justify-center border-x border-base-300">
+                                        <div class="flex items-center gap-1 text-[10px] text-base-content/60 font-semibold mb-0.5">
+                                            <i data-lucide="message-circle" class="w-3 h-3 text-info"></i>
+                                            <span>Coments</span>
+                                        </div>
+                                        <span class="font-mono font-bold text-xs text-base-content">
+                                            {{ item.formatted_comments|default:'--' }}
+                                        </span>
+                                    </div>
+
+                                    <!-- Duración -->
+                                    <div class="flex flex-col items-center justify-center">
+                                        <div class="flex items-center gap-1 text-[10px] text-base-content/60 font-semibold mb-0.5">
+                                            <i data-lucide="clock" class="w-3 h-3 text-warning"></i>
+                                            <span>Duración</span>
+                                        </div>
+                                        <span class="font-mono font-bold text-xs text-base-content">
+                                            {% if item.duration_seconds %}{{ item.duration_seconds|floatformat:0 }}s{% else %}--{% endif %}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <!-- Meta Info: Fecha y Ver Portada (Solo Desktop) -->
+                                <div class="hidden sm:flex items-center justify-between text-xs text-base-content/50 font-mono mb-2">
+                                    <span class="flex items-center gap-1">
+                                        <i data-lucide="calendar" class="w-3 h-3 opacity-60"></i>
+                                        {{ item.created_at|date:"d M, H:i" }}
+                                    </span>
+                                    <span class="text-primary font-semibold text-[11px] flex items-center gap-1 hover:underline">
+                                        <i data-lucide="eye" class="w-3 h-3"></i>
+                                        Ver detalles
+                                    </span>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- Acciones Rápidas -->
-                    <div class="flex flex-col gap-2 pt-3 border-t border-base-300/70 mt-2">
-                        <!-- Fila 1: Botón Copy con IA -->
-                        <button type="button" id="card-fb-btn-{{ item.id }}" class="btn btn-sm w-full gap-2 rounded-xl text-xs font-semibold border border-base-300 {% if item.fb_status == 'completed' %}bg-success/15 text-success border-success/30 font-bold{% else %}bg-base-200/60 hover:border-primary hover:text-primary{% endif %} transition-all" onclick="event.stopPropagation(); handleCardFbClick({{ item.id }});" title="{% if item.fb_status == 'completed' %}Ver Copy para Facebook{% else %}Generar Copy para Facebook con IA{% endif %}">
-                            <i data-lucide="{% if item.fb_status == 'completed' %}check-circle-2{% else %}sparkles{% endif %}" class="w-3.5 h-3.5"></i>
-                            <span>{% if item.fb_status == 'completed' %}Ver Copy FB{% else %}Generar Copy FB con IA{% endif %}</span>
+                    <!-- Acciones Rápidas: 1 fila en móvil / 2 filas en desktop -->
+                    <div class="flex flex-row sm:flex-col gap-2 pt-2.5 sm:pt-3 border-t border-base-300/70 mt-2 sm:mt-2">
+                        <!-- Fila 1 en desktop / Botón 1 en móvil: Botón Copy con IA -->
+                        <button type="button" id="card-fb-btn-{{ item.id }}" class="btn btn-sm flex-1 sm:w-full sm:order-1 gap-1.5 sm:gap-2 rounded-xl text-xs font-semibold border border-base-300 {% if item.fb_status == 'completed' %}bg-success/15 text-success border-success/30 font-bold{% else %}bg-base-200/60 hover:border-primary hover:text-primary{% endif %} transition-all truncate" onclick="event.stopPropagation(); handleCardFbClick({{ item.id }});" title="{% if item.fb_status == 'completed' %}Ver Copy para Facebook{% else %}Generar Copy para Facebook con IA{% endif %}">
+                            <i data-lucide="{% if item.fb_status == 'completed' %}check-circle-2{% else %}sparkles{% endif %}" class="w-3.5 h-3.5 shrink-0"></i>
+                            <span class="truncate">
+                                <span class="sm:hidden">{% if item.fb_status == 'completed' %}Copy FB{% else %}Copy IA{% endif %}</span>
+                                <span class="hidden sm:inline">{% if item.fb_status == 'completed' %}Ver Copy FB{% else %}Generar Copy FB con IA{% endif %}</span>
+                            </span>
                         </button>
 
-                        <!-- Fila 2: Descargar + Eliminar -->
-                        <div class="flex items-center gap-2">
-                            <a href="{% url 'igdownloader:download_video_stream' item.id %}" class="btn btn-primary btn-sm flex-1 text-xs text-primary-content gap-1.5 rounded-xl font-semibold shadow-xs" onclick="event.stopPropagation();">
-                                <i data-lucide="download" class="w-3.5 h-3.5"></i>
-                                Descargar
+                        <!-- Fila 2 en desktop / Botones 2 y 3 en móvil: Descargar + Eliminar -->
+                        <div class="flex items-center gap-1.5 sm:gap-2 flex-1 sm:w-full sm:order-2">
+                            <a href="{% url 'igdownloader:download_video_stream' item.id %}" class="btn btn-primary btn-sm flex-1 text-xs text-primary-content gap-1.5 rounded-xl font-semibold shadow-xs truncate" onclick="event.stopPropagation();">
+                                <i data-lucide="download" class="w-3.5 h-3.5 shrink-0"></i>
+                                <span class="truncate">Descargar</span>
                             </a>
                             <button type="button" class="btn btn-ghost btn-square btn-sm border border-base-300 hover:border-error hover:bg-error/10 hover:text-error rounded-xl h-8 w-8 text-base-content/60 transition-all shrink-0" title="Eliminar" onclick="event.stopPropagation(); openDeleteModal({{ item.id }})">
                                 <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
@@ -222,109 +248,135 @@
         {% if user.role == 'superadmin' %}
         <!-- SECCIÓN 2: TODOS LOS USUARIOS (SUPERADMIN) -->
         <div id="allSection" class="hidden">
-            <div id="allHistoryGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            <div id="allHistoryGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
                 {% for item in all_history %}
-                <div class="card bg-base-100 shadow-sm border border-base-300 rounded-2xl p-4 hover:border-primary/50 transition cursor-pointer flex flex-col justify-between" id="all-history-item-{{ item.id }}" onclick="openIgModal({{ item.id }})" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ') { event.preventDefault(); openIgModal({{ item.id }}); }">
+                <div class="card bg-base-100 shadow-sm border border-base-300 rounded-2xl p-3 sm:p-4 hover:border-primary/50 transition cursor-pointer flex flex-col justify-between" id="all-history-item-{{ item.id }}" onclick="openIgModal({{ item.id }})" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ') { event.preventDefault(); openIgModal({{ item.id }}); }">
                     <div>
-                        <!-- Fila Superior: Badge Uploader + Badge Usuario + Enlace Externo -->
-                        <div class="flex items-center justify-between mb-3 gap-2">
-                            <div class="flex items-center gap-1.5 truncate">
-                                <span class="badge badge-neutral badge-md font-bold text-xs gap-1.5 px-2.5 truncate max-w-[130px]">
-                                    <i data-lucide="instagram" class="w-3 h-3 text-warning"></i>
-                                    @{{ item.uploader|default:'instagram' }}
-                                </span>
-                                <span class="badge badge-primary badge-md font-mono font-bold text-xs gap-1 px-2 text-primary-content">
-                                    <i data-lucide="user" class="w-2.5 h-2.5"></i>
-                                    {{ item.user.username }}
-                                </span>
-                            </div>
-                            <a href="{{ item.instagram_url }}" target="_blank" rel="noopener noreferrer" class="text-xs text-primary font-bold hover:underline inline-flex items-center gap-1 shrink-0" onclick="event.stopPropagation();" title="Abrir en Instagram">
-                                <span>Ver Reel</span>
-                                <i data-lucide="external-link" class="w-3 h-3"></i>
-                            </a>
-                        </div>
-
-                        <!-- Miniatura del Reel -->
-                        <div class="w-full h-40 rounded-xl bg-base-200 border border-base-300 overflow-hidden relative mb-3 flex items-center justify-center">
-                            {% if item.thumbnail %}
-                                <img src="{{ item.thumbnail.url }}" alt="{{ item.title }}" class="w-full h-full object-cover" onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.classList.remove('hidden');">
-                                <div class="hidden w-full h-full items-center justify-center">
-                                    <i data-lucide="film" class="w-9 h-9 text-base-content/30"></i>
+                        <!-- Contenedor responsivo: Lista Horizontal en Móvil (<sm) / Bloque Vertical en Desktop (sm+) -->
+                        <div class="grid grid-cols-[96px_1fr] sm:block gap-x-3 gap-y-1">
+                            <!-- Fila Superior: Badge Uploader + Badge Usuario + Enlace Externo (Desktop) / Fecha (Móvil) -->
+                            <div class="col-start-2 row-start-1 flex items-center justify-between gap-1 mb-1 sm:mb-3">
+                                <div class="flex items-center gap-1 sm:gap-1.5 truncate">
+                                    <span class="badge badge-neutral badge-sm sm:badge-md font-bold text-[10px] sm:text-xs gap-1 sm:gap-1.5 px-1.5 sm:px-2.5 truncate max-w-[90px] sm:max-w-[130px]">
+                                        <i data-lucide="instagram" class="w-2.5 h-2.5 sm:w-3 sm:h-3 text-warning"></i>
+                                        @{{ item.uploader|default:'instagram' }}
+                                    </span>
+                                    <span class="badge badge-primary badge-sm sm:badge-md font-mono font-bold text-[10px] sm:text-xs gap-0.5 sm:gap-1 px-1.5 sm:px-2 text-primary-content truncate max-w-[70px] sm:max-w-none">
+                                        <i data-lucide="user" class="w-2.5 h-2.5"></i>
+                                        {{ item.user.username }}
+                                    </span>
                                 </div>
-                            {% else %}
-                                <i data-lucide="film" class="w-9 h-9 text-base-content/30"></i>
-                            {% endif %}
-                            {% if item.duration_seconds %}
-                            <div class="absolute bottom-2 right-2 bg-black/80 text-white font-mono text-[10px] font-bold px-1.5 py-0.5 rounded">
-                                {{ item.duration_seconds|floatformat:0 }}s
-                            </div>
-                            {% endif %}
-                        </div>
-
-                        <!-- Título (Clamp a 2 líneas) -->
-                        <h3 class="font-bold text-sm text-base-content line-clamp-2 min-h-[2.6em] mb-3 leading-snug" title="{{ item.title }}">
-                            {{ item.title|default:'Reel de Instagram' }}
-                        </h3>
-
-                        <!-- Widget Analítico de Métricas -->
-                        <div class="grid grid-cols-3 gap-1.5 p-2.5 rounded-xl bg-base-200/50 border border-base-300 text-center mb-3">
-                            <div class="flex flex-col items-center justify-center">
-                                <div class="flex items-center gap-1 text-[10px] text-base-content/60 font-semibold mb-0.5">
-                                    <i data-lucide="heart" class="w-3 h-3 text-error"></i>
-                                    <span>Likes</span>
-                                </div>
-                                <span class="font-mono font-bold text-xs text-base-content">
-                                    {{ item.formatted_likes|default:'--' }}
+                                <span class="text-[10px] text-base-content/50 font-mono sm:hidden truncate">
+                                    {{ item.created_at|date:"d M, H:i" }}
                                 </span>
+                                <a href="{{ item.instagram_url }}" target="_blank" rel="noopener noreferrer" class="hidden sm:inline-flex text-xs text-primary font-bold hover:underline items-center gap-1 shrink-0" onclick="event.stopPropagation();" title="Abrir en Instagram">
+                                    <span>Ver Reel</span>
+                                    <i data-lucide="external-link" class="w-3 h-3"></i>
+                                </a>
                             </div>
 
-                            <div class="flex flex-col items-center justify-center border-x border-base-300">
-                                <div class="flex items-center gap-1 text-[10px] text-base-content/60 font-semibold mb-0.5">
-                                    <i data-lucide="message-circle" class="w-3 h-3 text-info"></i>
-                                    <span>Coments</span>
+                            <!-- Miniatura del Reel: A la izquierda en móvil (96x96), completa en desktop -->
+                            <div class="col-start-1 row-start-1 row-span-3 w-24 h-24 sm:w-full sm:h-40 rounded-xl bg-base-200 border border-base-300 overflow-hidden relative shrink-0 flex items-center justify-center sm:mb-3">
+                                {% if item.thumbnail %}
+                                    <img src="{{ item.thumbnail.url }}" alt="{{ item.title }}" class="w-full h-full object-cover" onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.classList.remove('hidden');">
+                                    <div class="hidden w-full h-full items-center justify-center">
+                                        <i data-lucide="film" class="w-8 h-8 sm:w-9 sm:h-9 text-base-content/30"></i>
+                                    </div>
+                                {% else %}
+                                    <i data-lucide="film" class="w-8 h-8 sm:w-9 sm:h-9 text-base-content/30"></i>
+                                {% endif %}
+                                {% if item.duration_seconds %}
+                                <div class="absolute bottom-1.5 right-1.5 bg-black/80 text-white font-mono text-[9px] sm:text-[10px] font-bold px-1.5 py-0.5 rounded shadow-xs">
+                                    {{ item.duration_seconds|floatformat:0 }}s
                                 </div>
-                                <span class="font-mono font-bold text-xs text-base-content">
-                                    {{ item.formatted_comments|default:'--' }}
-                                </span>
+                                {% endif %}
                             </div>
 
-                            <div class="flex flex-col items-center justify-center">
-                                <div class="flex items-center gap-1 text-[10px] text-base-content/60 font-semibold mb-0.5">
-                                    <i data-lucide="clock" class="w-3 h-3 text-warning"></i>
-                                    <span>Duración</span>
+                            <!-- Título (Clamp a 2 líneas) -->
+                            <div class="col-start-2 row-start-2">
+                                <h3 class="font-bold text-xs sm:text-sm text-base-content line-clamp-2 leading-tight sm:leading-snug mb-1.5 sm:mb-3 sm:min-h-[2.6em]" title="{{ item.title }}">
+                                    {{ item.title|default:'Reel de Instagram' }}
+                                </h3>
+                            </div>
+
+                            <!-- Métricas y Meta Info -->
+                            <div class="col-start-2 row-start-3">
+                                <!-- Métricas Móvil: Inline compactas (❤️ Likes  💬 Comments) -->
+                                <div class="flex sm:hidden items-center gap-3 text-[11px] text-base-content/70 font-mono">
+                                    <span class="flex items-center gap-1">
+                                        <i data-lucide="heart" class="w-3 h-3 text-error"></i>
+                                        <span class="font-bold">{{ item.formatted_likes|default:'--' }}</span>
+                                    </span>
+                                    <span class="flex items-center gap-1">
+                                        <i data-lucide="message-circle" class="w-3 h-3 text-info"></i>
+                                        <span class="font-bold">{{ item.formatted_comments|default:'--' }}</span>
+                                    </span>
                                 </div>
-                                <span class="font-mono font-bold text-xs text-base-content">
-                                    {% if item.duration_seconds %}{{ item.duration_seconds|floatformat:0 }}s{% else %}--{% endif %}
-                                </span>
-                            </div>
-                        </div>
 
-                        <!-- Meta Info: Fecha y Ver Portada -->
-                        <div class="flex items-center justify-between text-xs text-base-content/50 font-mono mb-2">
-                            <span class="flex items-center gap-1">
-                                <i data-lucide="calendar" class="w-3 h-3 opacity-60"></i>
-                                {{ item.created_at|date:"d M, H:i" }}
-                            </span>
-                            <span class="text-primary font-semibold text-[11px] flex items-center gap-1 hover:underline">
-                                <i data-lucide="eye" class="w-3 h-3"></i>
-                                Ver detalles
-                            </span>
+                                <!-- Widget Analítico de Métricas (Solo Desktop) -->
+                                <div class="hidden sm:grid grid-cols-3 gap-1.5 p-2.5 rounded-xl bg-base-200/50 border border-base-300 text-center mb-3">
+                                    <div class="flex flex-col items-center justify-center">
+                                        <div class="flex items-center gap-1 text-[10px] text-base-content/60 font-semibold mb-0.5">
+                                            <i data-lucide="heart" class="w-3 h-3 text-error"></i>
+                                            <span>Likes</span>
+                                        </div>
+                                        <span class="font-mono font-bold text-xs text-base-content">
+                                            {{ item.formatted_likes|default:'--' }}
+                                        </span>
+                                    </div>
+
+                                    <div class="flex flex-col items-center justify-center border-x border-base-300">
+                                        <div class="flex items-center gap-1 text-[10px] text-base-content/60 font-semibold mb-0.5">
+                                            <i data-lucide="message-circle" class="w-3 h-3 text-info"></i>
+                                            <span>Coments</span>
+                                        </div>
+                                        <span class="font-mono font-bold text-xs text-base-content">
+                                            {{ item.formatted_comments|default:'--' }}
+                                        </span>
+                                    </div>
+
+                                    <div class="flex flex-col items-center justify-center">
+                                        <div class="flex items-center gap-1 text-[10px] text-base-content/60 font-semibold mb-0.5">
+                                            <i data-lucide="clock" class="w-3 h-3 text-warning"></i>
+                                            <span>Duración</span>
+                                        </div>
+                                        <span class="font-mono font-bold text-xs text-base-content">
+                                            {% if item.duration_seconds %}{{ item.duration_seconds|floatformat:0 }}s{% else %}--{% endif %}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <!-- Meta Info: Fecha y Ver Portada (Solo Desktop) -->
+                                <div class="hidden sm:flex items-center justify-between text-xs text-base-content/50 font-mono mb-2">
+                                    <span class="flex items-center gap-1">
+                                        <i data-lucide="calendar" class="w-3 h-3 opacity-60"></i>
+                                        {{ item.created_at|date:"d M, H:i" }}
+                                    </span>
+                                    <span class="text-primary font-semibold text-[11px] flex items-center gap-1 hover:underline">
+                                        <i data-lucide="eye" class="w-3 h-3"></i>
+                                        Ver detalles
+                                    </span>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- Acciones Rápidas -->
-                    <div class="flex flex-col gap-2 pt-3 border-t border-base-300/70 mt-2">
-                        <!-- Fila 1: Botón Copy con IA -->
-                        <button type="button" id="all-card-fb-btn-{{ item.id }}" class="btn btn-sm w-full gap-2 rounded-xl text-xs font-semibold border border-base-300 {% if item.fb_status == 'completed' %}bg-success/15 text-success border-success/30 font-bold{% else %}bg-base-200/60 hover:border-primary hover:text-primary{% endif %} transition-all" onclick="event.stopPropagation(); handleCardFbClick({{ item.id }});" title="{% if item.fb_status == 'completed' %}Ver Copy para Facebook{% else %}Generar Copy para Facebook con IA{% endif %}">
-                            <i data-lucide="{% if item.fb_status == 'completed' %}check-circle-2{% else %}sparkles{% endif %}" class="w-3.5 h-3.5"></i>
-                            <span>{% if item.fb_status == 'completed' %}Ver Copy FB{% else %}Generar Copy FB con IA{% endif %}</span>
+                    <!-- Acciones Rápidas: 1 fila en móvil / 2 filas en desktop -->
+                    <div class="flex flex-row sm:flex-col gap-2 pt-2.5 sm:pt-3 border-t border-base-300/70 mt-2 sm:mt-2">
+                        <!-- Fila 1 en desktop / Botón 1 en móvil: Botón Copy con IA -->
+                        <button type="button" id="all-card-fb-btn-{{ item.id }}" class="btn btn-sm flex-1 sm:w-full sm:order-1 gap-1.5 sm:gap-2 rounded-xl text-xs font-semibold border border-base-300 {% if item.fb_status == 'completed' %}bg-success/15 text-success border-success/30 font-bold{% else %}bg-base-200/60 hover:border-primary hover:text-primary{% endif %} transition-all truncate" onclick="event.stopPropagation(); handleCardFbClick({{ item.id }});" title="{% if item.fb_status == 'completed' %}Ver Copy para Facebook{% else %}Generar Copy para Facebook con IA{% endif %}">
+                            <i data-lucide="{% if item.fb_status == 'completed' %}check-circle-2{% else %}sparkles{% endif %}" class="w-3.5 h-3.5 shrink-0"></i>
+                            <span class="truncate">
+                                <span class="sm:hidden">{% if item.fb_status == 'completed' %}Copy FB{% else %}Copy IA{% endif %}</span>
+                                <span class="hidden sm:inline">{% if item.fb_status == 'completed' %}Ver Copy FB{% else %}Generar Copy FB con IA{% endif %}</span>
+                            </span>
                         </button>
 
-                        <!-- Fila 2: Descargar + Eliminar -->
-                        <div class="flex items-center gap-2">
-                            <a href="{% url 'igdownloader:download_video_stream' item.id %}" class="btn btn-primary btn-sm flex-1 text-xs text-primary-content gap-1.5 rounded-xl font-semibold shadow-xs" onclick="event.stopPropagation();">
-                                <i data-lucide="download" class="w-3.5 h-3.5"></i>
-                                Descargar
+                        <!-- Fila 2 en desktop / Botones 2 y 3 en móvil: Descargar + Eliminar -->
+                        <div class="flex items-center gap-1.5 sm:gap-2 flex-1 sm:w-full sm:order-2">
+                            <a href="{% url 'igdownloader:download_video_stream' item.id %}" class="btn btn-primary btn-sm flex-1 text-xs text-primary-content gap-1.5 rounded-xl font-semibold shadow-xs truncate" onclick="event.stopPropagation();">
+                                <i data-lucide="download" class="w-3.5 h-3.5 shrink-0"></i>
+                                <span class="truncate">Descargar</span>
                             </a>
                             <button type="button" class="btn btn-ghost btn-square btn-sm border border-base-300 hover:border-error hover:bg-error/10 hover:text-error rounded-xl h-8 w-8 text-base-content/60 transition-all shrink-0" title="Eliminar" onclick="event.stopPropagation(); openDeleteModal({{ item.id }})">
                                 <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
@@ -346,122 +398,121 @@
 </div>
 
 <!-- ═════════ 3. MODAL INTERACTIVO: VISOR DE REEL ═════════ -->
-<div id="igModal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-md hidden items-center justify-center p-4">
-    <div class="card bg-base-100 shadow-2xl border border-base-300 w-full max-w-2xl max-h-[90vh] flex flex-col rounded-2xl overflow-hidden p-0">
+<div id="igModal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-md hidden items-center justify-center p-2.5 sm:p-4 pb-8 sm:pb-4">
+    <div class="card bg-base-100 shadow-2xl border border-base-300 w-full max-w-2xl max-h-[78vh] sm:max-h-[88vh] flex flex-col rounded-2xl overflow-hidden p-0">
         
-        <!-- Header -->
-        <div class="p-5 lg:px-6 border-b border-base-300 flex justify-between items-center shrink-0">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl bg-warning/10 text-warning border border-warning/20 flex items-center justify-center shrink-0">
+        <!-- Header Fijo -->
+        <div class="p-3.5 sm:p-5 lg:px-6 border-b border-base-300 flex justify-between items-center shrink-0 bg-base-100">
+            <div class="flex items-center gap-2.5 sm:gap-3 min-w-0">
+                <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-warning/10 text-warning border border-warning/20 flex items-center justify-center shrink-0">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
                         <rect width="20" height="20" x="2" y="2" rx="5" ry="5"></rect>
                         <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
                         <line x1="17.5" x2="17.51" y1="6.5" y2="6.5"></line>
                     </svg>
                 </div>
-                <div>
-                    <h3 id="modalTitle" class="text-base font-bold text-base-content m-0">Reel de Instagram</h3>
+                <div class="min-w-0">
+                    <h3 id="modalTitle" class="text-sm sm:text-base font-bold text-base-content m-0 truncate">Reel de Instagram</h3>
                     <div class="flex items-center gap-2 mt-0.5">
-                        <span id="modalStatus" class="badge badge-success text-white badge-md font-bold text-xs">Completado</span>
-                        <span id="modalDate" class="text-xs text-base-content/60 font-mono"></span>
+                        <span id="modalStatus" class="badge badge-success text-white badge-xs sm:badge-md font-bold text-[10px] sm:text-xs">Completado</span>
+                        <span id="modalDate" class="text-[10px] sm:text-xs text-base-content/60 font-mono truncate"></span>
                     </div>
                 </div>
             </div>
-            <button type="button" class="btn btn-ghost btn-square btn-xs rounded-lg text-base-content/60 hover:text-base-content" onclick="closeIgModal()" aria-label="Cerrar modal">
+            <button type="button" class="btn btn-ghost btn-circle btn-sm text-base-content/60 hover:text-base-content shrink-0 ml-2" onclick="closeIgModal()" aria-label="Cerrar modal">
                 <i data-lucide="x" class="w-4 h-4"></i>
             </button>
         </div>
 
-        <!-- Body -->
-        <div class="p-6 overflow-y-auto flex-1 flex flex-col gap-5">
+        <!-- Body Scrolleable -->
+        <div class="p-3.5 sm:p-6 overflow-y-auto flex-1 flex flex-col gap-3.5 sm:gap-5">
             
-            <!-- Miniatura Grande con Overlay -->
-            <div class="w-full h-64 rounded-xl bg-base-200 border border-base-300 overflow-hidden relative flex items-center justify-center">
+            <!-- Miniatura Optimizada: h-28 en móvil (112px), h-52 en desktop -->
+            <div class="w-full h-28 sm:h-52 rounded-xl bg-base-200 border border-base-300 overflow-hidden relative flex items-center justify-center shrink-0">
                 <img id="modalThumbnailImg" src="" alt="Miniatura Reel" class="w-full h-full object-cover" style="display:none;" onerror="this.style.display='none'; const ph = document.getElementById('modalThumbnailPlaceholder'); if(ph) ph.style.display='flex';">
                 <div id="modalThumbnailPlaceholder" class="flex items-center justify-center">
-                    <i data-lucide="film" class="w-12 h-12 text-base-content/30"></i>
+                    <i data-lucide="film" class="w-10 h-10 sm:w-12 sm:h-12 text-base-content/30"></i>
                 </div>
-                <div class="absolute bottom-3 left-3">
-                    <span id="modalUploader" class="badge badge-neutral badge-md font-bold text-xs gap-1 px-3 py-1">
+                <div class="absolute bottom-2.5 left-2.5">
+                    <span id="modalUploader" class="badge badge-neutral badge-sm sm:badge-md font-bold text-xs gap-1 px-2.5 py-0.5 sm:px-3 sm:py-1">
                         <i data-lucide="instagram" class="w-3 h-3 text-warning"></i>
                         @uploader
                     </span>
                 </div>
-                <div id="modalDurationBadge" class="hidden absolute bottom-3 right-3 bg-black/80 text-white font-mono text-xs font-bold px-2 py-1 rounded-lg">
+                <div id="modalDurationBadge" class="hidden absolute bottom-2.5 right-2.5 bg-black/80 text-white font-mono text-[10px] sm:text-xs font-bold px-2 py-0.5 sm:py-1 rounded-lg">
                 </div>
             </div>
 
-            <!-- Métricas del Reel en Modal -->
-            <div class="grid grid-cols-3 gap-2 p-3 bg-base-200/50 border border-base-300 rounded-xl">
-                <div class="flex items-center gap-2.5">
-                    <div class="w-8 h-8 rounded-lg bg-error/10 text-error flex items-center justify-center shrink-0">
-                        <i data-lucide="heart" class="w-4 h-4"></i>
+            <!-- Métricas del Reel: Compactas en móvil -->
+            <div class="grid grid-cols-3 gap-1.5 sm:gap-2 p-2 sm:p-3 bg-base-200/50 border border-base-300 rounded-xl text-center sm:text-left">
+                <div class="flex items-center justify-center sm:justify-start gap-1.5 sm:gap-2.5">
+                    <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-error/10 text-error flex items-center justify-center shrink-0">
+                        <i data-lucide="heart" class="w-3.5 h-3.5 sm:w-4 sm:h-4"></i>
                     </div>
                     <div>
-                        <div class="text-[10px] text-base-content/60 font-semibold uppercase">Likes</div>
-                        <div id="modalLikesText" class="font-bold font-mono text-sm text-base-content">--</div>
+                        <div class="text-[9px] sm:text-[10px] text-base-content/60 font-semibold uppercase">Likes</div>
+                        <div id="modalLikesText" class="font-bold font-mono text-xs sm:text-sm text-base-content">--</div>
                     </div>
                 </div>
-                <div class="flex items-center gap-2.5 border-l border-base-300 pl-3">
-                    <div class="w-8 h-8 rounded-lg bg-info/10 text-info flex items-center justify-center shrink-0">
-                        <i data-lucide="message-circle" class="w-4 h-4"></i>
+                <div class="flex items-center justify-center sm:justify-start gap-1.5 sm:gap-2.5 border-l border-base-300 pl-1.5 sm:pl-3">
+                    <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-info/10 text-info flex items-center justify-center shrink-0">
+                        <i data-lucide="message-circle" class="w-3.5 h-3.5 sm:w-4 sm:h-4"></i>
                     </div>
                     <div>
-                        <div class="text-[10px] text-base-content/60 font-semibold uppercase">Coments</div>
-                        <div id="modalCommentsText" class="font-bold font-mono text-sm text-base-content">--</div>
+                        <div class="text-[9px] sm:text-[10px] text-base-content/60 font-semibold uppercase">Coments</div>
+                        <div id="modalCommentsText" class="font-bold font-mono text-xs sm:text-sm text-base-content">--</div>
                     </div>
                 </div>
-                <div class="flex items-center gap-2.5 border-l border-base-300 pl-3">
-                    <div class="w-8 h-8 rounded-lg bg-warning/10 text-warning flex items-center justify-center shrink-0">
-                        <i data-lucide="clock" class="w-4 h-4"></i>
+                <div class="flex items-center justify-center sm:justify-start gap-1.5 sm:gap-2.5 border-l border-base-300 pl-1.5 sm:pl-3">
+                    <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-warning/10 text-warning flex items-center justify-center shrink-0">
+                        <i data-lucide="clock" class="w-3.5 h-3.5 sm:w-4 sm:h-4"></i>
                     </div>
                     <div>
-                        <div class="text-[10px] text-base-content/60 font-semibold uppercase">Duración</div>
-                        <div id="modalDurationText" class="font-bold font-mono text-sm text-base-content">--</div>
+                        <div class="text-[9px] sm:text-[10px] text-base-content/60 font-semibold uppercase">Duración</div>
+                        <div id="modalDurationText" class="font-bold font-mono text-xs sm:text-sm text-base-content">--</div>
                     </div>
                 </div>
             </div>
 
-            <!-- Descripción / Pie de foto -->
-            <div class="bg-base-200/50 border border-base-300 rounded-xl p-4">
-                <div class="text-[11px] font-bold uppercase tracking-wider text-base-content/60 mb-1.5">
-                    Descripción / Pie de foto
+            <!-- Acordeón 1: Descripción / Pie de foto original (Colapsado por defecto) -->
+            <details class="group bg-base-200/40 border border-base-300 rounded-xl overflow-hidden transition-all">
+                <summary class="flex justify-between items-center p-3 cursor-pointer list-none select-none text-[11px] font-bold uppercase tracking-wider text-base-content/70 hover:text-base-content hover:bg-base-200/60 transition-colors">
+                    <span class="flex items-center gap-1.5">
+                        <i data-lucide="align-left" class="w-3.5 h-3.5 text-warning shrink-0"></i>
+                        <span>Descripción / Pie de foto</span>
+                    </span>
+                    <i data-lucide="chevron-down" class="w-4 h-4 text-base-content/50 transition-transform duration-200 group-open:rotate-180 shrink-0"></i>
+                </summary>
+                <div class="p-3.5 pt-0 border-t border-base-300/40 mt-1.5">
+                    <p id="modalDescription" class="text-xs text-base-content leading-relaxed m-0 whitespace-pre-wrap break-words max-h-40 overflow-y-auto"></p>
                 </div>
-                <p id="modalDescription" class="text-xs text-base-content leading-relaxed m-0 whitespace-pre-wrap break-words"></p>
-            </div>
+            </details>
 
-            <!-- Botones de Acción -->
-            <div class="flex flex-col gap-2.5">
-                <a id="modalDownloadBtn" href="#" class="btn btn-primary w-full rounded-xl gap-2 h-11 text-xs font-semibold shadow-xs text-primary-content">
-                    <i data-lucide="download" class="w-4 h-4"></i>
-                    Descargar Video Sin Marca de Agua
+            <!-- Botones Secundarios del Video (Instagram Link / Copiar Enlace) -->
+            <div class="grid grid-cols-2 gap-2">
+                <a id="modalIgLink" href="#" target="_blank" rel="noopener noreferrer" class="btn btn-ghost btn-sm rounded-xl border border-base-300 text-xs gap-1.5 h-9 text-base-content/75 truncate" onclick="event.stopPropagation();">
+                    <i data-lucide="external-link" class="w-3.5 h-3.5 shrink-0"></i>
+                    <span class="truncate">Ver en Instagram</span>
                 </a>
-
-                <div class="grid grid-cols-2 gap-2.5">
-                    <a id="modalIgLink" href="#" target="_blank" rel="noopener noreferrer" class="btn btn-ghost btn-sm rounded-xl border border-base-300 text-xs gap-1.5 h-10 text-base-content/75">
-                        <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
-                        Abrir en Instagram
-                    </a>
-                    <button type="button" class="btn btn-ghost btn-sm rounded-xl border border-base-300 text-xs gap-1.5 h-10 text-base-content/75" onclick="copyModalUrl()">
-                        <i data-lucide="copy" class="w-3.5 h-3.5"></i>
-                        <span id="copyBtnText">Copiar Enlace</span>
-                    </button>
-                </div>
+                <button type="button" class="btn btn-ghost btn-sm rounded-xl border border-base-300 text-xs gap-1.5 h-9 text-base-content/75 truncate" onclick="copyModalUrl()">
+                    <i data-lucide="copy" class="w-3.5 h-3.5 shrink-0"></i>
+                    <span id="copyBtnText" class="truncate">Copiar Enlace</span>
+                </button>
             </div>
 
             <!-- ═════════ SECCIÓN IA: ESTRATEGIA & COPY PARA FACEBOOK ═════════ -->
-            <div class="border-t border-base-300/70 pt-5 mt-1 flex flex-col gap-4">
+            <div class="border-t border-base-300/70 pt-4 mt-0.5 flex flex-col gap-3">
                 <div class="flex justify-between items-center flex-wrap gap-2">
                     <div class="flex items-center gap-2">
                         <div class="w-7 h-7 rounded-lg bg-warning/10 text-warning flex items-center justify-center shrink-0">
                             <i data-lucide="sparkles" class="w-4 h-4"></i>
                         </div>
-                        <h4 class="text-sm font-bold text-base-content m-0">
+                        <h4 class="text-xs sm:text-sm font-bold text-base-content m-0">
                             Estrategia & Copy para Facebook
                         </h4>
                     </div>
                     <div class="flex items-center gap-2">
-                        <span id="fbSectionBadge" class="badge badge-neutral badge-md font-bold text-xs px-2.5">Sin generar</span>
+                        <span id="fbSectionBadge" class="badge badge-neutral badge-sm sm:badge-md font-bold text-xs px-2.5">Sin generar</span>
                         <button type="button" id="fbRegenerateBtn" class="btn btn-ghost btn-xs gap-1 border border-base-300 rounded-lg text-xs hidden" onclick="triggerFacebookCopy(currentModalId, true)" title="Volver a generar copy con IA">
                             <i data-lucide="refresh-cw" class="w-3 h-3"></i>
                             <span>Regenerar</span>
@@ -470,8 +521,8 @@
                 </div>
 
                 <!-- Estado 1: Sin generar -->
-                <div id="fbStateIdle" class="bg-base-200/50 border border-dashed border-base-300 rounded-xl p-5 text-center">
-                    <p class="text-xs text-base-content/70 m-0 mb-3.5 max-w-lg mx-auto leading-relaxed">
+                <div id="fbStateIdle" class="bg-base-200/50 border border-dashed border-base-300 rounded-xl p-4 sm:p-5 text-center">
+                    <p class="text-xs text-base-content/70 m-0 mb-3 max-w-lg mx-auto leading-relaxed">
                         Extraé el contexto audiovisual del video con <strong>Gemini</strong>: redacta un artículo para WordPress con el embed de Instagram y genera el copy social optimizado junto al enlace directo para el primer comentario.
                     </p>
                     <button type="button" id="fbGenerateBtnMain" class="btn btn-primary btn-sm rounded-xl gap-2 text-xs font-semibold shadow-xs text-primary-content" onclick="triggerFacebookCopy(currentModalId, false)">
@@ -481,114 +532,152 @@
                 </div>
 
                 <!-- Estado 2: Procesando con Gemini -->
-                <div id="fbStateLoading" class="hidden bg-primary/10 border border-primary/20 rounded-xl p-6 text-center">
-                    <div class="flex justify-center mb-3">
+                <div id="fbStateLoading" class="hidden bg-primary/10 border border-primary/20 rounded-xl p-5 sm:p-6 text-center">
+                    <div class="flex justify-center mb-2.5">
                         <div class="w-6 h-6 rounded-full border-2 border-primary border-t-transparent animate-spin"></div>
                     </div>
                     <div class="text-sm font-bold text-base-content mb-1">
                         Analizando video y audio con IA...
                     </div>
                     <div class="text-xs text-base-content/60 max-w-md mx-auto leading-relaxed">
-                        Descargando stream efímero, extrayendo contexto audiovisual, redactando artículo para WordPress con embed de Instagram y generando copy social con enlace para el primer comentario.
+                        Extrayendo contexto audiovisual, redactando artículo para WordPress y generando copy social.
                     </div>
                 </div>
 
-                <!-- Estado 3: Completado (Resultados) -->
-                <div id="fbStateCompleted" class="hidden flex-col gap-3">
-                    <!-- Bloque Título -->
-                    <div class="card bg-base-200/50 border border-base-300 rounded-xl p-3.5">
-                        <div class="flex justify-between items-center mb-1.5">
-                            <span class="text-[11px] font-bold uppercase tracking-wider text-base-content/60">Título sugerido</span>
-                            <button type="button" class="btn btn-ghost btn-xs gap-1 border border-base-300 rounded-lg text-xs" onclick="copyFbElement('fbTitleText', this)">
-                                <i data-lucide="copy" class="w-3 h-3"></i>
-                                <span>Copiar</span>
-                            </button>
-                        </div>
-                        <p id="fbTitleText" class="text-xs font-bold text-base-content m-0 leading-relaxed"></p>
+                <!-- Estado 3: Completado (Resultados con Acordeones) -->
+                <div id="fbStateCompleted" class="hidden flex-col gap-2.5">
+                    
+                    <!-- Barra de Copiado Rápido Superior -->
+                    <div class="grid grid-cols-2 gap-2 p-2 rounded-xl bg-base-200/40 border border-base-300">
+                        <button type="button" id="copySocialOnlyBtn" class="btn btn-ghost btn-xs sm:btn-sm rounded-lg border border-base-300 text-xs gap-1.5 text-base-content/80 font-semibold" onclick="copySocialOnly(this)">
+                            <i data-lucide="copy" class="w-3.5 h-3.5 text-warning shrink-0"></i>
+                            <span class="truncate">Copiar Copy para Red Social</span>
+                        </button>
+                        <button type="button" id="copyWpLinkOnlyBtn" class="btn btn-ghost btn-xs sm:btn-sm rounded-lg border border-base-300 text-xs gap-1.5 text-base-content/80 font-semibold" onclick="copyWpLinkOnly(this)">
+                            <i data-lucide="link" class="w-3.5 h-3.5 text-primary shrink-0"></i>
+                            <span class="truncate">Copiar Link para Comentario</span>
+                        </button>
                     </div>
 
-                    <!-- Bloque Descripción -->
-                    <div class="card bg-base-200/50 border border-base-300 rounded-xl p-3.5">
-                        <div class="flex justify-between items-center mb-1.5">
-                            <span class="text-[11px] font-bold uppercase tracking-wider text-base-content/60">Descripción (Hook + Desarrollo + CTA)</span>
-                            <button type="button" class="btn btn-ghost btn-xs gap-1 border border-base-300 rounded-lg text-xs" onclick="copyFbElement('fbDescText', this)">
-                                <i data-lucide="copy" class="w-3 h-3"></i>
-                                <span>Copiar</span>
-                            </button>
-                        </div>
-                        <p id="fbDescText" class="text-xs text-base-content leading-relaxed m-0 whitespace-pre-wrap break-words"></p>
-                    </div>
-
-                    <!-- Bloque Hashtags -->
-                    <div class="card bg-base-200/50 border border-base-300 rounded-xl p-3.5">
-                        <div class="flex justify-between items-center mb-1.5">
+                    <!-- Acordeón A: Título sugerido -->
+                    <details open class="group bg-base-200/40 border border-base-300 rounded-xl overflow-hidden transition-all">
+                        <summary class="flex justify-between items-center p-3 cursor-pointer list-none select-none text-[11px] font-bold uppercase tracking-wider text-base-content/70 hover:text-base-content hover:bg-base-200/60 transition-colors">
+                            <span class="flex items-center gap-1.5">
+                                <i data-lucide="type" class="w-3.5 h-3.5 text-warning shrink-0"></i>
+                                <span>Título sugerido</span>
+                            </span>
                             <div class="flex items-center gap-2">
-                                <span class="text-[11px] font-bold uppercase tracking-wider text-base-content/60">Hashtags</span>
-                                <span id="fbHashtagsSourceBadge" class="badge badge-success text-white badge-xs font-mono">
-                                    Originales
-                                </span>
-                            </div>
-                            <button type="button" class="btn btn-ghost btn-xs gap-1 border border-base-300 rounded-lg text-xs" onclick="copyFbElement('fbHashtagsText', this)">
-                                <i data-lucide="copy" class="w-3 h-3"></i>
-                                <span>Copiar</span>
-                            </button>
-                        </div>
-                        <p id="fbHashtagsText" class="text-xs text-primary font-mono font-semibold m-0 leading-relaxed"></p>
-                    </div>
-
-                    <!-- Bloque Enlace Artículo WordPress -->
-                    <div id="fbWpCard" class="card bg-base-200/50 border border-base-300 rounded-xl p-3.5">
-                        <div class="flex justify-between items-center mb-1.5 flex-wrap gap-2">
-                            <div class="flex items-center gap-2">
-                                <i data-lucide="globe" class="w-3.5 h-3.5 text-primary"></i>
-                                <span class="text-[11px] font-bold uppercase tracking-wider text-base-content/60">Enlace para el 1er Comentario (Artículo WordPress)</span>
-                                <span id="fbWpSiteBadge" class="badge badge-primary badge-xs text-primary-content font-bold"></span>
-                                <span id="fbWpCategoryBadge" class="badge badge-warning badge-xs font-bold hidden"></span>
-                            </div>
-                            <div id="fbWpHeaderActions" class="flex items-center gap-1.5">
-                                <a id="fbWpVisitBtn" href="#" target="_blank" rel="noopener noreferrer" class="btn btn-ghost btn-xs gap-1 border border-base-300 rounded-lg text-xs">
-                                    <i data-lucide="external-link" class="w-3 h-3"></i>
-                                    <span>Ver Artículo</span>
-                                </a>
-                                <button type="button" id="fbWpCopyBtn" class="btn btn-ghost btn-xs gap-1 border border-base-300 rounded-lg text-xs" onclick="copyFbElement('fbWpLinkText', this)">
+                                <button type="button" class="btn btn-ghost btn-xs gap-1 border border-base-300 rounded-lg text-xs h-6 px-2" onclick="event.stopPropagation(); copyFbElement('fbTitleText', this);">
                                     <i data-lucide="copy" class="w-3 h-3"></i>
-                                    <span>Copiar Link</span>
+                                    <span>Copiar</span>
                                 </button>
+                                <i data-lucide="chevron-down" class="w-4 h-4 text-base-content/50 transition-transform duration-200 group-open:rotate-180 shrink-0"></i>
+                            </div>
+                        </summary>
+                        <div class="p-3 pt-0 border-t border-base-300/40 mt-1">
+                            <p id="fbTitleText" class="text-xs font-bold text-base-content m-0 leading-relaxed"></p>
+                        </div>
+                    </details>
+
+                    <!-- Acordeón B: Descripción (Hook + Desarrollo + CTA) -->
+                    <details open class="group bg-base-200/40 border border-base-300 rounded-xl overflow-hidden transition-all">
+                        <summary class="flex justify-between items-center p-3 cursor-pointer list-none select-none text-[11px] font-bold uppercase tracking-wider text-base-content/70 hover:text-base-content hover:bg-base-200/60 transition-colors">
+                            <span class="flex items-center gap-1.5">
+                                <i data-lucide="file-text" class="w-3.5 h-3.5 text-warning shrink-0"></i>
+                                <span>Descripción (Hook + CTA)</span>
+                            </span>
+                            <div class="flex items-center gap-2">
+                                <button type="button" class="btn btn-ghost btn-xs gap-1 border border-base-300 rounded-lg text-xs h-6 px-2" onclick="event.stopPropagation(); copyFbElement('fbDescText', this);">
+                                    <i data-lucide="copy" class="w-3 h-3"></i>
+                                    <span>Copiar</span>
+                                </button>
+                                <i data-lucide="chevron-down" class="w-4 h-4 text-base-content/50 transition-transform duration-200 group-open:rotate-180 shrink-0"></i>
+                            </div>
+                        </summary>
+                        <div class="p-3 pt-0 border-t border-base-300/40 mt-1">
+                            <p id="fbDescText" class="text-xs text-base-content leading-relaxed m-0 whitespace-pre-wrap break-words max-h-36 sm:max-h-48 overflow-y-auto"></p>
+                        </div>
+                    </details>
+
+                    <!-- Acordeón C: Hashtags -->
+                    <details class="group bg-base-200/40 border border-base-300 rounded-xl overflow-hidden transition-all">
+                        <summary class="flex justify-between items-center p-3 cursor-pointer list-none select-none text-[11px] font-bold uppercase tracking-wider text-base-content/70 hover:text-base-content hover:bg-base-200/60 transition-colors">
+                            <div class="flex items-center gap-2">
+                                <span class="flex items-center gap-1.5">
+                                    <i data-lucide="hash" class="w-3.5 h-3.5 text-warning shrink-0"></i>
+                                    <span>Hashtags</span>
+                                </span>
+                                <span id="fbHashtagsSourceBadge" class="badge badge-success text-white badge-xs font-mono">Originales</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button type="button" class="btn btn-ghost btn-xs gap-1 border border-base-300 rounded-lg text-xs h-6 px-2" onclick="event.stopPropagation(); copyFbElement('fbHashtagsText', this);">
+                                    <i data-lucide="copy" class="w-3 h-3"></i>
+                                    <span>Copiar</span>
+                                </button>
+                                <i data-lucide="chevron-down" class="w-4 h-4 text-base-content/50 transition-transform duration-200 group-open:rotate-180 shrink-0"></i>
+                            </div>
+                        </summary>
+                        <div class="p-3 pt-0 border-t border-base-300/40 mt-1">
+                            <p id="fbHashtagsText" class="text-xs text-primary font-mono font-semibold m-0 leading-relaxed"></p>
+                        </div>
+                    </details>
+
+                    <!-- Acordeón D: Enlace Artículo WordPress -->
+                    <details open id="fbWpCard" class="group bg-base-200/40 border border-base-300 rounded-xl overflow-hidden transition-all">
+                        <summary class="flex justify-between items-center p-3 cursor-pointer list-none select-none text-[11px] font-bold uppercase tracking-wider text-base-content/70 hover:text-base-content hover:bg-base-200/60 transition-colors">
+                            <div class="flex items-center gap-2 truncate pr-2">
+                                <i data-lucide="globe" class="w-3.5 h-3.5 text-primary shrink-0"></i>
+                                <span class="truncate">Enlace para el 1er Comentario (Artículo WordPress)</span>
+                                <span id="fbWpSiteBadge" class="badge badge-primary badge-xs text-primary-content font-bold shrink-0"></span>
+                                <span id="fbWpCategoryBadge" class="badge badge-warning badge-xs font-bold hidden shrink-0"></span>
+                            </div>
+                            <div class="flex items-center gap-1.5 shrink-0">
+                                <div id="fbWpHeaderActions" class="flex items-center gap-1">
+                                    <a id="fbWpVisitBtn" href="#" target="_blank" rel="noopener noreferrer" class="btn btn-ghost btn-xs gap-1 border border-base-300 rounded-lg text-xs h-6 px-2" onclick="event.stopPropagation();">
+                                        <i data-lucide="external-link" class="w-3 h-3"></i>
+                                        <span class="hidden sm:inline">Ver</span>
+                                    </a>
+                                    <button type="button" id="fbWpCopyBtn" class="btn btn-ghost btn-xs gap-1 border border-base-300 rounded-lg text-xs h-6 px-2" onclick="event.stopPropagation(); copyFbElement('fbWpLinkText', this);">
+                                        <i data-lucide="copy" class="w-3 h-3"></i>
+                                        <span>Copiar</span>
+                                    </button>
+                                </div>
+                                <i data-lucide="chevron-down" class="w-4 h-4 text-base-content/50 transition-transform duration-200 group-open:rotate-180 shrink-0"></i>
+                            </div>
+                        </summary>
+                        <div class="p-3 pt-0 border-t border-base-300/40 mt-1">
+                            <div id="fbWpContentBox">
+                                <p id="fbWpLinkText" class="text-xs font-mono text-primary font-bold break-all m-0"></p>
+                            </div>
+                            <div id="fbWpEmptyNotice" class="hidden text-xs text-base-content/60 leading-relaxed">
+                                <p class="m-0">No se publicó artículo en WordPress porque no hay dominios activos configurados. Podés vincular sitios en <strong>Administración &gt; Dominios WordPress</strong>.</p>
                             </div>
                         </div>
-                        <div id="fbWpContentBox">
-                            <p id="fbWpLinkText" class="text-xs font-mono text-primary font-bold break-all m-0"></p>
-                        </div>
-                        <div id="fbWpEmptyNotice" class="hidden text-xs text-base-content/60 leading-relaxed">
-                            <p class="m-0">No se publicó artículo en WordPress porque no hay dominios activos configurados. Podés vincular sitios en <strong>Administración &gt; Dominios WordPress</strong>.</p>
-                        </div>
-                    </div>
-
-                    <!-- Botones de Copiado Rápido -->
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
-                        <button type="button" id="copySocialOnlyBtn" class="btn btn-ghost btn-sm rounded-xl border border-base-300 text-xs gap-1.5 text-base-content/75" onclick="copySocialOnly(this)">
-                            <i data-lucide="copy" class="w-3.5 h-3.5"></i>
-                            <span>Copiar Copy para Red Social</span>
-                        </button>
-                        <button type="button" id="copyWpLinkOnlyBtn" class="btn btn-ghost btn-sm rounded-xl border border-base-300 text-xs gap-1.5 text-base-content/75" onclick="copyWpLinkOnly(this)">
-                            <i data-lucide="link" class="w-3.5 h-3.5 text-primary"></i>
-                            <span>Copiar Link para Comentario</span>
-                        </button>
-                    </div>
-
-                    <!-- Botón Destacado: Copiar Todo el Pack -->
-                    <button type="button" id="copyAllFbBtn" class="btn btn-primary btn-sm rounded-xl gap-2 text-xs font-semibold text-primary-content shadow-xs h-10" onclick="copyAllFbContent(this)">
-                        <i data-lucide="clipboard-check" class="w-4 h-4"></i>
-                        <span>Copiar Todo (Copy Social + Link Comentario)</span>
-                    </button>
+                    </details>
                 </div>
             </div>
 
         </div>
 
-        <!-- Footer -->
-        <div class="p-3.5 lg:px-6 border-t border-base-300 flex justify-end bg-base-200/30">
-            <button type="button" class="btn btn-ghost btn-sm text-xs rounded-xl border border-base-300 px-4" onclick="closeIgModal()">
+        <!-- Footer Fijo / Sticky Action Bar (Siempre visible sin necesidad de scroll) -->
+        <div class="p-2.5 sm:p-4 lg:px-6 border-t border-base-300 flex items-center justify-between gap-2 bg-base-200/60 backdrop-blur-sm shrink-0">
+            <!-- Acción 1: Descargar Video -->
+            <a id="modalDownloadBtn" href="#" class="btn btn-primary btn-sm flex-1 rounded-xl gap-2 text-xs font-semibold shadow-xs text-primary-content truncate">
+                <i data-lucide="download" class="w-4 h-4 shrink-0"></i>
+                <span class="truncate">Descargar Video</span>
+            </a>
+
+            <!-- Acción 2: Copiar Todo el Pack (Visible cuando el copy está listo) -->
+            <button type="button" id="copyAllFbBtn" class="btn btn-warning btn-sm flex-1 rounded-xl gap-2 text-xs font-bold shadow-xs text-warning-content truncate hidden" onclick="copyAllFbContent(this)" title="Copiar título, descripción, hashtags y enlace para el primer comentario">
+                <i data-lucide="clipboard-check" class="w-4 h-4 shrink-0"></i>
+                <span class="truncate">
+                    <span class="sm:hidden">Copiar Todo</span>
+                    <span class="hidden sm:inline">Copiar Todo (Copy Social + Link Comentario)</span>
+                </span>
+            </button>
+
+            <!-- Acción 3: Cerrar modal -->
+            <button type="button" class="btn btn-ghost btn-sm text-xs rounded-xl border border-base-300 px-3.5 shrink-0" onclick="closeIgModal()">
                 Cerrar
             </button>
         </div>
@@ -757,90 +846,125 @@ function insertNewHistoryItem(item) {
     const noHist = document.getElementById('noHistoryMsg');
     if (noHist) noHist.remove();
 
+    const durationBadge = item.duration_seconds
+        ? `<div class="absolute bottom-1.5 right-1.5 bg-black/80 text-white font-mono text-[9px] sm:text-[10px] font-bold px-1.5 py-0.5 rounded shadow-xs">${Math.round(item.duration_seconds)}s</div>`
+        : '';
+
     const thumbHtml = item.thumbnail_url
-        ? `<div class="w-full h-40 rounded-xl bg-base-200 border border-base-300 overflow-hidden relative mb-3 flex items-center justify-center">
+        ? `<div class="col-start-1 row-start-1 row-span-3 w-24 h-24 sm:w-full sm:h-40 rounded-xl bg-base-200 border border-base-300 overflow-hidden relative shrink-0 flex items-center justify-center sm:mb-3">
                <img src="${item.thumbnail_url}" alt="${item.title || 'Reel'}" class="w-full h-full object-cover">
-               ${item.duration_seconds ? `<div class="absolute bottom-2 right-2 bg-black/80 text-white font-mono text-[10px] font-bold px-1.5 py-0.5 rounded">${Math.round(item.duration_seconds)}s</div>` : ''}
+               ${durationBadge}
            </div>`
-        : `<div class="w-full h-40 rounded-xl bg-base-200 border border-base-300 overflow-hidden relative mb-3 flex items-center justify-center">
-               <i data-lucide="film" class="w-9 h-9 text-base-content/30"></i>
-               ${item.duration_seconds ? `<div class="absolute bottom-2 right-2 bg-black/80 text-white font-mono text-[10px] font-bold px-1.5 py-0.5 rounded">${Math.round(item.duration_seconds)}s</div>` : ''}
+        : `<div class="col-start-1 row-start-1 row-span-3 w-24 h-24 sm:w-full sm:h-40 rounded-xl bg-base-200 border border-base-300 overflow-hidden relative shrink-0 flex items-center justify-center sm:mb-3">
+               <i data-lucide="film" class="w-8 h-8 sm:w-9 sm:h-9 text-base-content/30"></i>
+               ${durationBadge}
            </div>`;
 
     const cardHtml = `
-    <div class="card bg-base-100 shadow-sm border border-base-300 rounded-2xl p-4 hover:border-primary/50 transition cursor-pointer flex flex-col justify-between" id="history-item-${item.id}" onclick="openIgModal(${item.id})" role="button" tabindex="0">
+    <div class="card bg-base-100 shadow-sm border border-base-300 rounded-2xl p-3 sm:p-4 hover:border-primary/50 transition cursor-pointer flex flex-col justify-between" id="history-item-${item.id}" onclick="openIgModal(${item.id})" role="button" tabindex="0">
         <div>
-            <div class="flex items-center justify-between mb-3 gap-2">
-                <span class="badge badge-neutral badge-md font-bold text-xs gap-1.5 px-2.5 truncate max-w-[170px]">
-                    <i data-lucide="instagram" class="w-3 h-3 text-warning"></i>
-                    @${item.uploader || 'instagram'}
-                </span>
-                <a href="${item.instagram_url}" target="_blank" rel="noopener noreferrer" class="text-xs text-primary font-bold hover:underline inline-flex items-center gap-1" onclick="event.stopPropagation();" title="Abrir en Instagram">
-                    <span>Ver Reel</span>
-                    <i data-lucide="external-link" class="w-3 h-3"></i>
-                </a>
-            </div>
-
-            ${thumbHtml}
-
-            <h3 class="font-bold text-sm text-base-content line-clamp-2 min-h-[2.6em] mb-3 leading-snug" title="${item.title}">
-                ${item.title || 'Reel de Instagram'}
-            </h3>
-
-            <div class="grid grid-cols-3 gap-1.5 p-2.5 rounded-xl bg-base-200/50 border border-base-300 text-center mb-3">
-                <div class="flex flex-col items-center justify-center">
-                    <div class="flex items-center gap-1 text-[10px] text-base-content/60 font-semibold mb-0.5">
-                        <i data-lucide="heart" class="w-3 h-3 text-error"></i>
-                        <span>Likes</span>
-                    </div>
-                    <span class="font-mono font-bold text-xs text-base-content">
-                        ${item.formatted_likes || '--'}
+            <!-- Contenedor responsivo: Lista Horizontal en Móvil (<sm) / Bloque Vertical en Desktop (sm+) -->
+            <div class="grid grid-cols-[96px_1fr] sm:block gap-x-3 gap-y-1">
+                <!-- Fila Superior -->
+                <div class="col-start-2 row-start-1 flex items-center justify-between gap-1 mb-1 sm:mb-3">
+                    <span class="badge badge-neutral badge-sm sm:badge-md font-bold text-[11px] sm:text-xs gap-1 sm:gap-1.5 px-2 truncate max-w-[130px] sm:max-w-[170px]">
+                        <i data-lucide="instagram" class="w-3 h-3 text-warning"></i>
+                        @${item.uploader || 'instagram'}
                     </span>
+                    <span class="text-[10px] text-base-content/50 font-mono sm:hidden truncate">
+                        ${item.created_at || 'Reciente'}
+                    </span>
+                    <a href="${item.instagram_url}" target="_blank" rel="noopener noreferrer" class="hidden sm:inline-flex text-xs text-primary font-bold hover:underline items-center gap-1 shrink-0" onclick="event.stopPropagation();" title="Abrir en Instagram">
+                        <span>Ver Reel</span>
+                        <i data-lucide="external-link" class="w-3 h-3"></i>
+                    </a>
                 </div>
 
-                <div class="flex flex-col items-center justify-center border-x border-base-300">
-                    <div class="flex items-center gap-1 text-[10px] text-base-content/60 font-semibold mb-0.5">
-                        <i data-lucide="message-circle" class="w-3 h-3 text-info"></i>
-                        <span>Coments</span>
-                    </div>
-                    <span class="font-mono font-bold text-xs text-base-content">
-                        ${item.formatted_comments || '--'}
-                    </span>
+                ${thumbHtml}
+
+                <!-- Título -->
+                <div class="col-start-2 row-start-2">
+                    <h3 class="font-bold text-xs sm:text-sm text-base-content line-clamp-2 leading-tight sm:leading-snug mb-1.5 sm:mb-3 sm:min-h-[2.6em]" title="${item.title}">
+                        ${item.title || 'Reel de Instagram'}
+                    </h3>
                 </div>
 
-                <div class="flex flex-col items-center justify-center">
-                    <div class="flex items-center gap-1 text-[10px] text-base-content/60 font-semibold mb-0.5">
-                        <i data-lucide="clock" class="w-3 h-3 text-warning"></i>
-                        <span>Duración</span>
+                <!-- Métricas -->
+                <div class="col-start-2 row-start-3">
+                    <!-- Métricas Móvil: Inline compactas -->
+                    <div class="flex sm:hidden items-center gap-3 text-[11px] text-base-content/70 font-mono">
+                        <span class="flex items-center gap-1">
+                            <i data-lucide="heart" class="w-3 h-3 text-error"></i>
+                            <span class="font-bold">${item.formatted_likes || '--'}</span>
+                        </span>
+                        <span class="flex items-center gap-1">
+                            <i data-lucide="message-circle" class="w-3 h-3 text-info"></i>
+                            <span class="font-bold">${item.formatted_comments || '--'}</span>
+                        </span>
                     </div>
-                    <span class="font-mono font-bold text-xs text-base-content">
-                        ${item.duration_seconds ? Math.round(item.duration_seconds) + 's' : '--'}
-                    </span>
-                </div>
-            </div>
 
-            <div class="flex items-center justify-between text-xs text-base-content/50 font-mono mb-2">
-                <span class="flex items-center gap-1">
-                    <i data-lucide="calendar" class="w-3 h-3 opacity-60"></i>
-                    ${item.created_at || 'Reciente'}
-                </span>
-                <span class="text-primary font-semibold text-[11px] flex items-center gap-1 hover:underline">
-                    <i data-lucide="eye" class="w-3 h-3"></i>
-                    Ver detalles
-                </span>
+                    <!-- Widget Analítico de Métricas (Solo Desktop) -->
+                    <div class="hidden sm:grid grid-cols-3 gap-1.5 p-2.5 rounded-xl bg-base-200/50 border border-base-300 text-center mb-3">
+                        <div class="flex flex-col items-center justify-center">
+                            <div class="flex items-center gap-1 text-[10px] text-base-content/60 font-semibold mb-0.5">
+                                <i data-lucide="heart" class="w-3 h-3 text-error"></i>
+                                <span>Likes</span>
+                            </div>
+                            <span class="font-mono font-bold text-xs text-base-content">
+                                ${item.formatted_likes || '--'}
+                            </span>
+                        </div>
+
+                        <div class="flex flex-col items-center justify-center border-x border-base-300">
+                            <div class="flex items-center gap-1 text-[10px] text-base-content/60 font-semibold mb-0.5">
+                                <i data-lucide="message-circle" class="w-3 h-3 text-info"></i>
+                                <span>Coments</span>
+                            </div>
+                            <span class="font-mono font-bold text-xs text-base-content">
+                                ${item.formatted_comments || '--'}
+                            </span>
+                        </div>
+
+                        <div class="flex flex-col items-center justify-center">
+                            <div class="flex items-center gap-1 text-[10px] text-base-content/60 font-semibold mb-0.5">
+                                <i data-lucide="clock" class="w-3 h-3 text-warning"></i>
+                                <span>Duración</span>
+                            </div>
+                            <span class="font-mono font-bold text-xs text-base-content">
+                                ${item.duration_seconds ? Math.round(item.duration_seconds) + 's' : '--'}
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Meta Info: Fecha y Ver Portada (Solo Desktop) -->
+                    <div class="hidden sm:flex items-center justify-between text-xs text-base-content/50 font-mono mb-2">
+                        <span class="flex items-center gap-1">
+                            <i data-lucide="calendar" class="w-3 h-3 opacity-60"></i>
+                            ${item.created_at || 'Reciente'}
+                        </span>
+                        <span class="text-primary font-semibold text-[11px] flex items-center gap-1 hover:underline">
+                            <i data-lucide="eye" class="w-3 h-3"></i>
+                            Ver detalles
+                        </span>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <div class="flex flex-col gap-2 pt-3 border-t border-base-300/70 mt-2">
-            <button type="button" id="card-fb-btn-${item.id}" class="btn btn-sm w-full gap-2 rounded-xl text-xs font-semibold border border-base-300 bg-base-200/60 hover:border-primary hover:text-primary transition-all" onclick="event.stopPropagation(); handleCardFbClick(${item.id});" title="Generar Copy para Facebook con IA">
-                <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
-                <span>Generar Copy FB con IA</span>
+        <!-- Acciones Rápidas: 1 fila en móvil / 2 filas en desktop -->
+        <div class="flex flex-row sm:flex-col gap-2 pt-2.5 sm:pt-3 border-t border-base-300/70 mt-2 sm:mt-2">
+            <button type="button" id="card-fb-btn-${item.id}" class="btn btn-sm flex-1 sm:w-full sm:order-1 gap-1.5 sm:gap-2 rounded-xl text-xs font-semibold border border-base-300 bg-base-200/60 hover:border-primary hover:text-primary transition-all truncate" onclick="event.stopPropagation(); handleCardFbClick(${item.id});" title="Generar Copy para Facebook con IA">
+                <i data-lucide="sparkles" class="w-3.5 h-3.5 shrink-0"></i>
+                <span class="truncate">
+                    <span class="sm:hidden">Copy IA</span>
+                    <span class="hidden sm:inline">Generar Copy FB con IA</span>
+                </span>
             </button>
 
-            <div class="flex items-center gap-2">
-                <a href="/ig-downloader/download/${item.id}/" class="btn btn-primary btn-sm flex-1 text-xs text-primary-content gap-1.5 rounded-xl font-semibold shadow-xs" onclick="event.stopPropagation();">
-                    <i data-lucide="download" class="w-3.5 h-3.5"></i>
-                    Descargar
+            <div class="flex items-center gap-1.5 sm:gap-2 flex-1 sm:w-full sm:order-2">
+                <a href="/ig-downloader/download/${item.id}/" class="btn btn-primary btn-sm flex-1 text-xs text-primary-content gap-1.5 rounded-xl font-semibold shadow-xs truncate" onclick="event.stopPropagation();">
+                    <i data-lucide="download" class="w-3.5 h-3.5 shrink-0"></i>
+                    <span class="truncate">Descargar</span>
                 </a>
                 <button type="button" class="btn btn-ghost btn-square btn-sm border border-base-300 hover:border-error hover:bg-error/10 hover:text-error rounded-xl h-8 w-8 text-base-content/60 transition-all shrink-0" title="Eliminar" onclick="event.stopPropagation(); openDeleteModal(${item.id})">
                     <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
@@ -945,6 +1069,12 @@ function updateFbSection(item) {
         }
         if (regenBtn) regenBtn.classList.remove('hidden');
 
+        const copyAllBtn = document.getElementById('copyAllFbBtn');
+        if (copyAllBtn) {
+            copyAllBtn.classList.remove('hidden');
+            copyAllBtn.classList.add('inline-flex');
+        }
+
         document.getElementById('fbTitleText').innerText = item.fb_title || 'Sin título sugerido.';
         document.getElementById('fbDescText').innerText = item.fb_description || 'Sin descripción generada.';
         document.getElementById('fbHashtagsText').innerText = item.fb_hashtags || '#reels #viral';
@@ -1007,6 +1137,12 @@ function updateFbSection(item) {
             completedBox.classList.remove('flex');
         }
         if (regenBtn) regenBtn.classList.add('hidden');
+
+        const copyAllBtn = document.getElementById('copyAllFbBtn');
+        if (copyAllBtn) {
+            copyAllBtn.classList.add('hidden');
+            copyAllBtn.classList.remove('inline-flex');
+        }
     }
 }
 
@@ -1031,7 +1167,7 @@ async function triggerFacebookCopy(id, isRegenerate = false) {
 
     cardBtns.forEach(b => {
         b.disabled = true;
-        b.innerHTML = `<span class="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin inline-block"></span> <span>Analizando...</span>`;
+        b.innerHTML = `<span class="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin inline-block shrink-0"></span> <span class="truncate">Analizando...</span>`;
     });
 
     const badge = document.getElementById('fbSectionBadge');
@@ -1048,6 +1184,12 @@ async function triggerFacebookCopy(id, isRegenerate = false) {
     if (completedBox) completedBox.classList.add('hidden');
     if (loadingBox) loadingBox.classList.remove('hidden');
     if (regenBtn) regenBtn.classList.add('hidden');
+
+    const copyAllBtn = document.getElementById('copyAllFbBtn');
+    if (copyAllBtn) {
+        copyAllBtn.classList.add('hidden');
+        copyAllBtn.classList.remove('inline-flex');
+    }
 
     try {
         const formData = new FormData();
@@ -1067,9 +1209,9 @@ async function triggerFacebookCopy(id, isRegenerate = false) {
         if (res.ok && data.success) {
             cardBtns.forEach(b => {
                 b.disabled = false;
-                b.className = 'btn btn-sm w-full gap-2 rounded-xl text-xs font-bold border border-success/30 bg-success/15 text-success transition-all';
+                b.className = 'btn btn-sm flex-1 sm:w-full sm:order-1 gap-1.5 sm:gap-2 rounded-xl text-xs font-bold border border-success/30 bg-success/15 text-success transition-all truncate';
                 b.setAttribute('title', 'Ver Copy para Facebook');
-                b.innerHTML = `<i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i> <span>Ver Copy FB</span>`;
+                b.innerHTML = `<i data-lucide="check-circle-2" class="w-3.5 h-3.5 shrink-0"></i> <span class="truncate"><span class="sm:hidden">Copy FB</span><span class="hidden sm:inline">Ver Copy FB</span></span>`;
             });
 
             if (currentModalId === targetId) {
@@ -1106,7 +1248,8 @@ async function triggerFacebookCopy(id, isRegenerate = false) {
 
         cardBtns.forEach(b => {
             b.disabled = false;
-            b.innerHTML = `<i data-lucide="sparkles" class="w-3.5 h-3.5"></i> <span>Reintentar Copy FB</span>`;
+            b.className = 'btn btn-sm flex-1 sm:w-full sm:order-1 gap-1.5 sm:gap-2 rounded-xl text-xs font-semibold border border-base-300 bg-base-200/60 hover:border-primary hover:text-primary transition-all truncate';
+            b.innerHTML = `<i data-lucide="sparkles" class="w-3.5 h-3.5 shrink-0"></i> <span class="truncate"><span class="sm:hidden">Reintentar</span><span class="hidden sm:inline">Reintentar Copy FB</span></span>`;
         });
     } finally {
         if (window.lucide) lucide.createIcons();
