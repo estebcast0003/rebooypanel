@@ -1,147 +1,160 @@
-{% extends 'panel_base.html' %}
+{% extends 'panel_base_daisy.html' %}
 
 {% block title %}Gestión de Cookies — Rebooy Panel{% endblock %}
-{% block breadcrumb %}Administración / Cookies de Sesión{% endblock %}
+{% block breadcrumb %}
+<li><span class="opacity-60">Administración</span></li>
+<li class="font-semibold text-primary">Cookies de Sesión</li>
+{% endblock %}
 
 {% block content %}
-<div style="display:flex; flex-direction:column; gap:24px;">
+<div class="flex flex-col gap-6 pb-12">
 
     <!-- ═════════ HEADER ═════════ -->
-    <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px;">
-        <div>
-            <h1 style="font-size:1.85rem; font-weight:800; letter-spacing:-0.03em; color:var(--text-primary); margin:0 0 6px; display:flex; align-items:center; gap:10px;">
-                <i data-lucide="cookie" style="width:28px; height:28px; color:#f59e0b;"></i>
-                Gestión de Cookies de Sesión
-            </h1>
-            <p style="font-size:0.875rem; color:var(--text-muted); margin:0;">
-                Supervisa y actualiza las sesiones de Instagram y Facebook utilizadas por el extractor y el descargador de Reels.
-            </p>
+    <div class="flex flex-wrap items-center justify-between gap-4">
+        <div class="flex items-center gap-3.5">
+            <div class="w-12 h-12 rounded-2xl bg-warning/10 text-warning border border-warning/20 flex items-center justify-center shrink-0 shadow-sm">
+                <i data-lucide="cookie" class="w-6 h-6"></i>
+            </div>
+            <div>
+                <h1 class="text-2xl lg:text-3xl font-extrabold tracking-tight text-base-content leading-tight m-0">
+                    Gestión de Cookies de Sesión
+                </h1>
+                <p class="text-xs lg:text-sm text-base-content/65 mt-0.5 leading-relaxed m-0">
+                    Supervisa y actualiza las sesiones de Instagram y Facebook utilizadas por el extractor y el descargador de Reels.
+                </p>
+            </div>
         </div>
-        <div style="display:flex; align-items:center; gap:10px;">
-            <span class="{% if info.exists %}badge-active{% else %}badge-inactive{% endif %}" style="padding:6px 12px; font-size:0.8rem;">
-                <span class="status-dot {% if info.exists %}dot-active{% else %}dot-inactive{% endif %}"></span>
-                {% if info.exists %}Archivo Activo ({{ info.size_human }}){% else %}Sin Archivo de Cookies{% endif %}
+        <div>
+            {% if info.exists %}
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-success/10 text-success border border-success/20 shadow-xs">
+                <span class="w-2 h-2 rounded-full bg-success animate-pulse"></span>
+                Archivo Activo ({{ info.size_human }})
             </span>
+            {% else %}
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-error/10 text-error border border-error/20 shadow-xs">
+                <span class="w-2 h-2 rounded-full bg-error"></span>
+                Sin Archivo de Cookies
+            </span>
+            {% endif %}
         </div>
     </div>
 
     <!-- ═════════ FLASH MESSAGES ═════════ -->
     {% if messages %}
-    <div style="display:flex; flex-direction:column; gap:8px;">
+    <div class="flex flex-col gap-2">
         {% for message in messages %}
-        <div class="{% if message.tags == 'error' %}alert-error{% else %}alert-success{% endif %}">
-            <i data-lucide="{% if message.tags == 'error' %}alert-circle{% else %}check-circle{% endif %}" style="width:16px; height:16px; flex-shrink:0;"></i>
-            {{ message }}
+        <div class="alert {% if message.tags == 'error' %}alert-error text-white{% else %}alert-success text-white{% endif %} shadow-sm text-xs rounded-xl flex items-center gap-2">
+            <i data-lucide="{% if message.tags == 'error' %}alert-circle{% else %}check-circle{% endif %}" class="w-4 h-4 shrink-0"></i>
+            <span>{{ message }}</span>
         </div>
         {% endfor %}
     </div>
     {% endif %}
 
     <!-- ═════════ TARJETAS DE DIAGNÓSTICO DE SESIONES ═════════ -->
-    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:16px;">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
         
         <!-- Tarjeta Instagram -->
-        <div class="shadcn-card" style="padding:20px; display:flex; flex-direction:column; gap:14px; position:relative; overflow:hidden;">
-            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-                <div style="display:flex; align-items:center; gap:10px;">
-                    <div style="width:38px; height:38px; border-radius:10px; background:rgba(236,72,153,0.12); display:flex; align-items:center; justify-content:center; color:#ec4899;">
-                        <i data-lucide="instagram" style="width:20px; height:20px;"></i>
+        <div class="card bg-base-100 shadow-sm border border-base-300 rounded-2xl p-5 flex flex-col gap-4">
+            <div class="flex justify-between items-start">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-secondary/10 border border-secondary/20 flex items-center justify-center text-secondary shrink-0 shadow-xs">
+                        <i data-lucide="instagram" class="w-5 h-5"></i>
                     </div>
                     <div>
-                        <div style="font-weight:700; color:var(--text-primary); font-size:1rem;">Instagram</div>
-                        <div style="font-size:0.75rem; color:var(--text-muted);">Extracción & Descargas</div>
+                        <div class="text-sm font-bold text-base-content tracking-tight">Instagram</div>
+                        <div class="text-[11px] text-base-content/60">Extracción & Descargas</div>
                     </div>
                 </div>
-                <span class="{% if info.instagram.active %}badge-active{% else %}badge-inactive{% endif %}">
-                    <span class="status-dot {% if info.instagram.active %}dot-active{% else %}dot-inactive{% endif %}"></span>
-                    {% if info.instagram.active %}Sesión Válida{% else %}Incompleta{% endif %}
-                </span>
+                {% if info.instagram.active %}
+                <span class="badge badge-success badge-sm font-bold text-[10px] text-white px-2 py-0.5">Sesión Válida</span>
+                {% else %}
+                <span class="badge badge-error badge-sm font-bold text-[10px] text-white px-2 py-0.5">Incompleta</span>
+                {% endif %}
             </div>
             
-            <div style="background:rgba(0,0,0,0.15); border-radius:8px; padding:12px; font-size:0.8rem; display:flex; flex-direction:column; gap:6px;">
-                <div style="display:flex; justify-content:space-between;">
-                    <span style="color:var(--text-muted);">Usuario ID:</span>
-                    <span style="font-family:monospace; font-weight:600; color:var(--text-primary);">
-                        {{ info.instagram.user_id|default:"No detectado" }}
-                    </span>
+            <div class="bg-base-200/50 border border-base-300/70 rounded-xl p-3 text-xs flex flex-col gap-2">
+                <div class="flex justify-between items-center">
+                    <span class="text-base-content/60">Usuario ID:</span>
+                    <span class="font-mono font-bold text-base-content">{{ info.instagram.user_id|default:"No detectado" }}</span>
                 </div>
-                <div style="display:flex; justify-content:space-between;">
-                    <span style="color:var(--text-muted);">Cookie sessionid:</span>
-                    <span style="color:{% if info.instagram.has_session %}#22c55e{% else %}#ef4444{% endif %}; font-weight:600;">
+                <div class="flex justify-between items-center">
+                    <span class="text-base-content/60">Cookie sessionid:</span>
+                    <span class="font-semibold {% if info.instagram.has_session %}text-success{% else %}text-error{% endif %}">
                         {% if info.instagram.has_session %}Presente{% else %}Ausente{% endif %}
                     </span>
                 </div>
-                <div style="display:flex; justify-content:space-between;">
-                    <span style="color:var(--text-muted);">Total cookies:</span>
-                    <span style="color:var(--text-primary); font-weight:600;">{{ info.instagram.cookies_count }}</span>
+                <div class="flex justify-between items-center">
+                    <span class="text-base-content/60">Total cookies:</span>
+                    <span class="font-mono font-bold text-base-content">{{ info.instagram.cookies_count }}</span>
                 </div>
             </div>
         </div>
 
         <!-- Tarjeta Facebook -->
-        <div class="shadcn-card" style="padding:20px; display:flex; flex-direction:column; gap:14px; position:relative; overflow:hidden;">
-            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-                <div style="display:flex; align-items:center; gap:10px;">
-                    <div style="width:38px; height:38px; border-radius:10px; background:rgba(59,130,246,0.12); display:flex; align-items:center; justify-content:center; color:#3b82f6;">
-                        <i data-lucide="facebook" style="width:20px; height:20px;"></i>
+        <div class="card bg-base-100 shadow-sm border border-base-300 rounded-2xl p-5 flex flex-col gap-4">
+            <div class="flex justify-between items-start">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0 shadow-xs">
+                        <i data-lucide="facebook" class="w-5 h-5"></i>
                     </div>
                     <div>
-                        <div style="font-weight:700; color:var(--text-primary); font-size:1rem;">Facebook</div>
-                        <div style="font-size:0.75rem; color:var(--text-muted);">Copia & Metadatos</div>
+                        <div class="text-sm font-bold text-base-content tracking-tight">Facebook</div>
+                        <div class="text-[11px] text-base-content/60">Copia & Metadatos</div>
                     </div>
                 </div>
-                <span class="{% if info.facebook.active %}badge-active{% else %}badge-inactive{% endif %}">
-                    <span class="status-dot {% if info.facebook.active %}dot-active{% else %}dot-inactive{% endif %}"></span>
-                    {% if info.facebook.active %}Sesión Válida{% else %}Incompleta{% endif %}
-                </span>
+                {% if info.facebook.active %}
+                <span class="badge badge-success badge-sm font-bold text-[10px] text-white px-2 py-0.5">Sesión Válida</span>
+                {% else %}
+                <span class="badge badge-error badge-sm font-bold text-[10px] text-white px-2 py-0.5">Incompleta</span>
+                {% endif %}
             </div>
             
-            <div style="background:rgba(0,0,0,0.15); border-radius:8px; padding:12px; font-size:0.8rem; display:flex; flex-direction:column; gap:6px;">
-                <div style="display:flex; justify-content:space-between;">
-                    <span style="color:var(--text-muted);">Usuario ID (c_user):</span>
-                    <span style="font-family:monospace; font-weight:600; color:var(--text-primary);">
-                        {{ info.facebook.user_id|default:"No detectado" }}
-                    </span>
+            <div class="bg-base-200/50 border border-base-300/70 rounded-xl p-3 text-xs flex flex-col gap-2">
+                <div class="flex justify-between items-center">
+                    <span class="text-base-content/60">Usuario ID (c_user):</span>
+                    <span class="font-mono font-bold text-base-content">{{ info.facebook.user_id|default:"No detectado" }}</span>
                 </div>
-                <div style="display:flex; justify-content:space-between;">
-                    <span style="color:var(--text-muted);">Sesión (xs / c_user):</span>
-                    <span style="color:{% if info.facebook.has_session %}#22c55e{% else %}#ef4444{% endif %}; font-weight:600;">
+                <div class="flex justify-between items-center">
+                    <span class="text-base-content/60">Sesión (xs / c_user):</span>
+                    <span class="font-semibold {% if info.facebook.has_session %}text-success{% else %}text-error{% endif %}">
                         {% if info.facebook.has_session %}Presente{% else %}Ausente{% endif %}
                     </span>
                 </div>
-                <div style="display:flex; justify-content:space-between;">
-                    <span style="color:var(--text-muted);">Total cookies:</span>
-                    <span style="color:var(--text-primary); font-weight:600;">{{ info.facebook.cookies_count }}</span>
+                <div class="flex justify-between items-center">
+                    <span class="text-base-content/60">Total cookies:</span>
+                    <span class="font-mono font-bold text-base-content">{{ info.facebook.cookies_count }}</span>
                 </div>
             </div>
         </div>
 
         <!-- Tarjeta Archivo Local -->
-        <div class="shadcn-card" style="padding:20px; display:flex; flex-direction:column; gap:14px; position:relative; overflow:hidden;">
-            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-                <div style="display:flex; align-items:center; gap:10px;">
-                    <div style="width:38px; height:38px; border-radius:10px; background:rgba(168,85,247,0.12); display:flex; align-items:center; justify-content:center; color:#a855f7;">
-                        <i data-lucide="file-text" style="width:20px; height:20px;"></i>
+        <div class="card bg-base-100 shadow-sm border border-base-300 rounded-2xl p-5 flex flex-col gap-4">
+            <div class="flex justify-between items-start">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-warning/10 border border-warning/20 flex items-center justify-center text-warning shrink-0 shadow-xs">
+                        <i data-lucide="file-text" class="w-5 h-5"></i>
                     </div>
                     <div>
-                        <div style="font-weight:700; color:var(--text-primary); font-size:1rem;">Archivo en Disco</div>
-                        <div style="font-size:0.75rem; color:var(--text-muted);">Netscape Format</div>
+                        <div class="text-sm font-bold text-base-content tracking-tight">Archivo en Disco</div>
+                        <div class="text-[11px] text-base-content/60">Netscape Format</div>
                     </div>
                 </div>
+                <span class="badge badge-neutral badge-sm font-mono font-bold text-[10px] px-2 py-0.5">.txt</span>
             </div>
             
-            <div style="background:rgba(0,0,0,0.15); border-radius:8px; padding:12px; font-size:0.8rem; display:flex; flex-direction:column; gap:6px;">
-                <div style="display:flex; justify-content:space-between;">
-                    <span style="color:var(--text-muted);">Última modificación:</span>
-                    <span style="color:var(--text-primary); font-weight:600;">{{ info.modified_at|default:"Sin registrar" }}</span>
+            <div class="bg-base-200/50 border border-base-300/70 rounded-xl p-3 text-xs flex flex-col gap-2">
+                <div class="flex justify-between items-center">
+                    <span class="text-base-content/60">Última modificación:</span>
+                    <span class="font-mono font-bold text-base-content">{{ info.modified_at|default:"Sin registrar" }}</span>
                 </div>
-                <div style="display:flex; justify-content:space-between;">
-                    <span style="color:var(--text-muted);">Total líneas parseadas:</span>
-                    <span style="color:var(--text-primary); font-weight:600;">{{ info.total_cookies }} cookies</span>
+                <div class="flex justify-between items-center">
+                    <span class="text-base-content/60">Líneas parseadas:</span>
+                    <span class="font-mono font-bold text-base-content">{{ info.total_cookies }} cookies</span>
                 </div>
-                <div style="display:flex; justify-content:space-between;">
-                    <span style="color:var(--text-muted);">Ruta configurada:</span>
-                    <span style="font-family:monospace; font-size:0.72rem; color:var(--text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:160px;" title="{{ info.path }}">
+                <div class="flex justify-between items-center">
+                    <span class="text-base-content/60">Ruta configurada:</span>
+                    <span class="font-mono text-[11px] text-primary truncate max-w-[150px]" title="{{ info.path }}">
                         cookies.txt
                     </span>
                 </div>
@@ -151,105 +164,107 @@
     </div>
 
     <!-- ═════════ TEST EN VIVO DE EXTRACCIÓN ═════════ -->
-    <div class="shadcn-card" style="padding:24px;">
-        <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;">
-            <i data-lucide="zap" style="width:20px; height:20px; color:#3b82f6;"></i>
-            <h2 style="font-size:1.15rem; font-weight:700; color:var(--text-primary); margin:0;">
-                Test en Vivo de Extracción con Cookies
-            </h2>
+    <div class="card bg-base-100 shadow-sm border border-base-300 rounded-2xl p-6">
+        <div class="flex items-center gap-3 mb-2">
+            <div class="w-9 h-9 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
+                <i data-lucide="zap" class="w-4 h-4"></i>
+            </div>
+            <div>
+                <h2 class="text-base font-bold text-base-content m-0">Test en Vivo de Extracción con Cookies</h2>
+                <p class="text-xs text-base-content/60 m-0">
+                    Verificá inmediatamente si Instagram acepta las cookies actuales sin pedir login ni challenge.
+                </p>
+            </div>
         </div>
-        <p style="font-size:0.85rem; color:var(--text-muted); margin:0 0 16px;">
-            Verificá inmediatamente si Instagram acepta las cookies actuales sin pedir login ni challenge.
-        </p>
 
-        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <div class="flex gap-2.5 flex-wrap mt-4">
             <input type="url" id="testReelUrl" 
                    value="https://www.instagram.com/reel/C8qL_yGsq6n/" 
                    placeholder="https://www.instagram.com/reel/..." 
-                   class="shadcn-input" style="flex:1; min-width:280px;">
-            <button type="button" id="btnTestCookies" class="btn-brand" style="display:flex; align-items:center; gap:8px;">
-                <i data-lucide="play" style="width:14px; height:14px;"></i>
+                   class="input input-bordered input-sm flex-1 min-w-[280px] rounded-xl bg-base-200/40 border-base-300 text-xs font-mono focus:border-primary focus:outline-none h-10" />
+            <button type="button" id="btnTestCookies" class="btn btn-primary btn-sm rounded-xl text-xs font-semibold gap-2 text-primary-content shadow-xs h-10 px-4">
+                <i data-lucide="play" class="w-3.5 h-3.5"></i>
                 <span id="btnTestText">Probar Extracción en Vivo</span>
             </button>
         </div>
 
-        <div id="testResultBox" style="display:none; margin-top:16px; padding:16px; border-radius:10px; font-size:0.85rem;">
+        <div id="testResultBox" class="hidden mt-4 p-4 rounded-xl text-xs">
             <!-- Dinámico vía JS -->
         </div>
     </div>
 
     <!-- ═════════ GESTIÓN Y SUBIDA DE COOKIES ═════════ -->
-    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:20px;">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
         <!-- Opción A: Subir Archivo -->
-        <div class="shadcn-card" style="padding:24px; display:flex; flex-direction:column; gap:16px;">
-            <div style="display:flex; align-items:center; gap:10px;">
-                <i data-lucide="upload-cloud" style="width:20px; height:20px; color:#22c55e;"></i>
-                <h3 style="font-size:1.1rem; font-weight:700; color:var(--text-primary); margin:0;">
-                    Subir Archivo cookies.txt
-                </h3>
+        <div class="card bg-base-100 shadow-sm border border-base-300 rounded-2xl p-6 flex flex-col gap-4">
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-xl bg-success/10 border border-success/20 flex items-center justify-center text-success shrink-0">
+                    <i data-lucide="upload-cloud" class="w-4 h-4"></i>
+                </div>
+                <div>
+                    <h3 class="text-sm font-bold text-base-content m-0">Subir Archivo cookies.txt</h3>
+                    <p class="text-xs text-base-content/60 m-0">Formato Netscape exportado desde el navegador</p>
+                </div>
             </div>
-            <p style="font-size:0.82rem; color:var(--text-muted); margin:0;">
-                Exportá tus cookies en formato Netscape (usando extensiones como <em>Get cookies.txt LOCALLY</em> en Chrome) y subilas aquí.
-            </p>
 
-            <form method="post" enctype="multipart/form-data" style="display:flex; flex-direction:column; gap:14px;">
+            <form method="post" enctype="multipart/form-data" class="flex flex-col gap-3.5 flex-1">
                 {% csrf_token %}
                 <input type="hidden" name="action" value="upload_file">
                 
-                <div style="border:2px dashed var(--border-subtle); border-radius:10px; padding:24px; text-align:center; cursor:pointer; background:rgba(255,255,255,0.01);" onclick="document.getElementById('cookieFileInput').click();">
-                    <i data-lucide="file-up" style="width:32px; height:32px; color:var(--text-muted); margin-bottom:8px;"></i>
-                    <div style="font-weight:600; color:var(--text-primary); font-size:0.9rem;" id="cookieFileLabel">
-                        Haz clic o arrastra tu archivo aquí
+                <div class="border-2 border-dashed border-base-300 rounded-2xl p-6 text-center cursor-pointer bg-base-200/30 hover:bg-primary/5 hover:border-primary transition flex-1 flex flex-col items-center justify-center gap-2"
+                     onclick="document.getElementById('cookieFileInput').click();">
+                    <div class="w-12 h-12 rounded-2xl bg-base-200 flex items-center justify-center text-base-content/50 mb-1">
+                        <i data-lucide="file-up" class="w-6 h-6"></i>
                     </div>
-                    <div style="font-size:0.75rem; color:var(--text-muted); margin-top:4px;">Solo archivos .txt</div>
-                    <input type="file" name="cookie_file" id="cookieFileInput" accept=".txt" style="display:none;" onchange="handleCookieFileSelected(this)">
+                    <div class="font-bold text-xs text-base-content" id="cookieFileLabel">
+                        Hacé clic o arrastrá tu archivo aquí
+                    </div>
+                    <div class="text-[11px] text-base-content/50">Solo archivos .txt</div>
+                    <input type="file" name="cookie_file" id="cookieFileInput" accept=".txt" class="hidden" onchange="handleCookieFileSelected(this)">
                 </div>
 
-                <button type="submit" class="btn-brand" style="justify-content:center;">
-                    <i data-lucide="save" style="width:15px; height:15px;"></i>
+                <button type="submit" class="btn btn-primary btn-sm rounded-xl text-xs font-semibold gap-2 text-primary-content shadow-xs w-full h-10">
+                    <i data-lucide="save" class="w-3.5 h-3.5"></i>
                     Reemplazar Archivo cookies.txt
                 </button>
             </form>
         </div>
 
         <!-- Opción B: Pegar o Editar Contenido Directo -->
-        <div class="shadcn-card" style="padding:24px; display:flex; flex-direction:column; gap:16px;">
-            <div style="display:flex; align-items:center; justify-content:space-between;">
-                <div style="display:flex; align-items:center; gap:10px;">
-                    <i data-lucide="edit-3" style="width:20px; height:20px; color:#3b82f6;"></i>
-                    <h3 style="font-size:1.1rem; font-weight:700; color:var(--text-primary); margin:0;">
-                        Editor Directo de Cookies
-                    </h3>
+        <div class="card bg-base-100 shadow-sm border border-base-300 rounded-2xl p-6 flex flex-col gap-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
+                        <i data-lucide="edit-3" class="w-4 h-4"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-bold text-base-content m-0">Editor Directo de Cookies</h3>
+                        <p class="text-xs text-base-content/60 m-0">Edición manual tabulada Netscape</p>
+                    </div>
                 </div>
                 {% if info.exists %}
-                <form method="post" onsubmit="return confirm('¿Seguro que deseas eliminar el archivo cookies.txt del servidor?');">
+                <form method="post" onsubmit="return confirm('¿Seguro que deseas eliminar el archivo cookies.txt del servidor?');" class="m-0">
                     {% csrf_token %}
                     <input type="hidden" name="action" value="delete_file">
-                    <button type="submit" class="btn-ghost" style="color:#ef4444; font-size:0.75rem; padding:4px 8px;">
-                        <i data-lucide="trash-2" style="width:13px; height:13px;"></i>
+                    <button type="submit" class="btn btn-ghost btn-xs text-error hover:bg-error/10 rounded-lg gap-1 font-semibold">
+                        <i data-lucide="trash-2" class="w-3 h-3"></i>
                         Eliminar
                     </button>
                 </form>
                 {% endif %}
             </div>
-            <p style="font-size:0.82rem; color:var(--text-muted); margin:0;">
-                Podés pegar directamente las líneas de cookies en formato Netscape tabulado:
-            </p>
 
-            <form method="post" style="display:flex; flex-direction:column; gap:14px; flex:1;">
+            <form method="post" class="flex flex-col gap-3.5 flex-1">
                 {% csrf_token %}
                 <input type="hidden" name="action" value="save_raw">
 
-                <textarea name="raw_cookies" rows="10" 
+                <textarea name="raw_cookies" rows="8" 
                           placeholder="# Netscape HTTP Cookie File&#10;.instagram.com&#9;TRUE&#9;/&#9;TRUE&#9;1824184717&#9;sessionid&#9;..."
-                          class="shadcn-textarea" 
-                          style="width:100%; border-radius:10px !important; padding:12px 14px; font-family:Consolas, 'Courier New', monospace; font-size:0.78rem; resize:vertical; line-height:1.5; white-space:pre; background-color:var(--bg-card); border:1px solid var(--border-subtle); color:var(--text-primary); outline:none; transition:border-color 0.18s ease;"
-                          onfocus="this.style.borderColor='var(--primary-brand)';"
-                          onblur="this.style.borderColor='var(--border-subtle)';">{{ info.raw_content }}</textarea>
+                          class="textarea textarea-bordered w-full rounded-xl bg-base-200/40 border-base-300 text-xs font-mono focus:border-primary focus:outline-none resize-y p-3 leading-relaxed flex-1">{{ info.raw_content }}</textarea>
 
-                <button type="submit" class="btn-ghost" style="justify-content:center; border:1px solid var(--border-subtle);">
-                    <i data-lucide="check" style="width:15px; height:15px; color:#22c55e;"></i>
+                <button type="submit" class="btn btn-ghost btn-sm rounded-xl border border-base-300 text-xs font-semibold gap-2 w-full h-10">
+                    <i data-lucide="check" class="w-3.5 h-3.5 text-success"></i>
                     Guardar Texto de Cookies
                 </button>
             </form>
@@ -270,7 +285,7 @@ function handleCookieFileSelected(input) {
     }
 }
 
-document.getElementById('btnTestCookies').addEventListener('click', async function() {
+document.getElementById('btnTestCookies')?.addEventListener('click', async function() {
     const btn = this;
     const textSpan = document.getElementById('btnTestText');
     const resultBox = document.getElementById('testResultBox');
@@ -278,33 +293,32 @@ document.getElementById('btnTestCookies').addEventListener('click', async functi
 
     btn.disabled = true;
     textSpan.textContent = 'Probando extracción...';
-    resultBox.style.display = 'none';
+    resultBox.classList.add('hidden');
 
     try {
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
         const formData = new FormData();
         formData.append('test_url', testUrl);
 
         const response = await fetch("{% url 'test_cookies_ajax' %}", {
             method: 'POST',
             headers: {
-                'X-CSRFToken': getCsrfToken()
+                'X-CSRFToken': csrfToken,
             },
             body: formData
         });
 
         const data = await response.json();
 
-        resultBox.style.display = 'block';
+        resultBox.classList.remove('hidden');
         if (data.success) {
-            resultBox.style.background = 'rgba(34, 197, 94, 0.1)';
-            resultBox.style.border = '1px solid rgba(34, 197, 94, 0.3)';
-            resultBox.style.color = '#22c55e';
+            resultBox.className = 'mt-4 p-4 rounded-xl text-xs bg-success/10 border border-success/20 text-success';
             resultBox.innerHTML = `
-                <div style="display:flex; align-items:flex-start; gap:10px;">
-                    <i data-lucide="check-circle" style="width:20px; height:20px; flex-shrink:0; margin-top:2px;"></i>
+                <div class="flex items-start gap-2.5">
+                    <i data-lucide="check-circle-2" class="w-5 h-5 shrink-0 mt-0.5"></i>
                     <div>
-                        <div style="font-weight:700; font-size:0.95rem; margin-bottom:4px;">${data.message}</div>
-                        <div style="color:var(--text-primary); font-size:0.82rem;">
+                        <div class="font-bold text-sm mb-1">${data.message}</div>
+                        <div class="text-base-content text-xs">
                             <strong>Título obtenido:</strong> ${data.title}<br>
                             <strong>Creador:</strong> @${data.uploader}
                         </div>
@@ -312,26 +326,23 @@ document.getElementById('btnTestCookies').addEventListener('click', async functi
                 </div>
             `;
         } else {
-            resultBox.style.background = 'rgba(239, 68, 68, 0.1)';
-            resultBox.style.border = '1px solid rgba(239, 68, 68, 0.3)';
-            resultBox.style.color = '#ef4444';
+            resultBox.className = 'mt-4 p-4 rounded-xl text-xs bg-error/10 border border-error/20 text-error';
             resultBox.innerHTML = `
-                <div style="display:flex; align-items:flex-start; gap:10px;">
-                    <i data-lucide="alert-triangle" style="width:20px; height:20px; flex-shrink:0; margin-top:2px;"></i>
+                <div class="flex items-start gap-2.5">
+                    <i data-lucide="alert-triangle" class="w-5 h-5 shrink-0 mt-0.5"></i>
                     <div>
-                        <div style="font-weight:700; font-size:0.95rem; margin-bottom:4px;">Error en la extracción</div>
-                        <div style="color:var(--text-muted); font-size:0.8rem;">${data.message}</div>
+                        <div class="font-bold text-sm mb-1">Error en la extracción</div>
+                        <div class="text-base-content/75 text-xs">${data.message}</div>
                     </div>
                 </div>
             `;
         }
-        if (window.lucide) { lucide.createIcons(); }
+        if (window.lucide) lucide.createIcons();
     } catch (err) {
-        resultBox.style.display = 'block';
-        resultBox.style.background = 'rgba(239, 68, 68, 0.1)';
-        resultBox.style.border = '1px solid rgba(239, 68, 68, 0.3)';
-        resultBox.style.color = '#ef4444';
-        resultBox.innerHTML = 'Error de conexión con el servidor.';
+        resultBox.classList.remove('hidden');
+        resultBox.className = 'mt-4 p-4 rounded-xl text-xs bg-error/10 border border-error/20 text-error';
+        resultBox.innerHTML = '<div class="flex items-center gap-2"><i data-lucide="alert-circle" class="w-4 h-4"></i><span>Error de conexión con el servidor.</span></div>';
+        if (window.lucide) lucide.createIcons();
     } finally {
         btn.disabled = false;
         textSpan.textContent = 'Probar Extracción en Vivo';

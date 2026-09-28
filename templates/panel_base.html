@@ -884,7 +884,7 @@
             {% endif %}
             {% endif %}
 
-            {% if user.role == 'superadmin' or user.can_manage_users or user.can_manage_api_keys %}
+            {% if user.role == 'superadmin' or user.can_manage_users %}
             <div class="section-label" style="margin-top:14px;">Administración</div>
             {% if user.role == 'superadmin' or user.can_manage_users %}
             <a href="{% url 'user_list' %}"

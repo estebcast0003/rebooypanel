@@ -27,7 +27,6 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     can_view_extractor = models.BooleanField(default=True, help_text="Acceso a Facebook Fan Extractor")
     can_view_stats = models.BooleanField(default=True, help_text="Acceso a la pestaña de estadísticas y métricas del Reel")
     can_view_dashboard = models.BooleanField(default=True, help_text="Acceso al Dashboard general")
-    can_manage_api_keys = models.BooleanField(default=False, help_text="Permiso para gestionar el pool de API Keys")
     can_manage_users = models.BooleanField(default=False, help_text="Permiso para administrar usuarios")
 
     objects = CustomUserManager()

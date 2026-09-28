@@ -34,6 +34,9 @@
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
 
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <!-- Preloader de Tema: Migra de 'dark' viejo a 'coffee' automáticamente -->
     <script>
         (function() {
@@ -296,7 +299,7 @@
                     {% endif %}
                     {% endif %}
 
-                    {% if user.role == 'superadmin' or user.can_manage_users or user.can_manage_api_keys %}
+                    {% if user.role == 'superadmin' or user.can_manage_users %}
                     <li class="menu-title text-[11px] uppercase tracking-wider opacity-60 px-2 pt-3">Administración</li>
                     {% if user.role == 'superadmin' or user.can_manage_users %}
                     <li>

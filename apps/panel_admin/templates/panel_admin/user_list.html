@@ -1,147 +1,178 @@
-{% extends 'panel_base.html' %}
+{% extends 'panel_base_daisy.html' %}
 
 {% block title %}Usuarios — Rebooy Panel{% endblock %}
-{% block breadcrumb %}Administración / Usuarios{% endblock %}
+{% block breadcrumb %}
+<li><span class="opacity-60">Administración</span></li>
+<li class="font-semibold text-primary">Usuarios</li>
+{% endblock %}
 
 {% block content %}
-<div style="display:flex; flex-direction:column; gap:20px;">
+<div class="flex flex-col gap-6 pb-12">
 
     <!-- ═════════ HEADER ═════════ -->
-    <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px;">
-        <div>
-            <h1 style="font-size:1.85rem; font-weight:800; letter-spacing:-0.03em; color:var(--text-primary); margin:0 0 6px;">
-                Gestión de Usuarios
-            </h1>
-            <p style="font-size:0.875rem; color:var(--text-muted); margin:0;">
-                {{ users.paginator.count }} usuario{{ users.paginator.count|pluralize }} registrado{{ users.paginator.count|pluralize }}. Control de roles, límites diarios y accesos.
-            </p>
+    <div class="flex flex-wrap items-center justify-between gap-4">
+        <div class="flex items-center gap-3.5">
+            <div class="w-12 h-12 rounded-2xl bg-warning/10 text-warning border border-warning/20 flex items-center justify-center shrink-0 shadow-sm">
+                <i data-lucide="users" class="w-6 h-6"></i>
+            </div>
+            <div>
+                <h1 class="text-2xl lg:text-3xl font-extrabold tracking-tight text-base-content leading-tight m-0">
+                    Gestión de Usuarios
+                </h1>
+                <p class="text-xs lg:text-sm text-base-content/65 mt-0.5 leading-relaxed m-0">
+                    {{ users.paginator.count }} usuario{{ users.paginator.count|pluralize }} registrado{{ users.paginator.count|pluralize }}. Control de roles, límites diarios y accesos.
+                </p>
+            </div>
         </div>
-        <a href="{% url 'user_create' %}" class="btn-brand">
-            <i data-lucide="user-plus" style="width:15px; height:15px;"></i>
-            Nuevo Usuario
-        </a>
+
+        <div class="flex items-center gap-2.5 flex-wrap">
+            <a href="{% url 'user_statistics' %}" class="btn btn-ghost btn-sm rounded-xl gap-2 text-xs border border-base-300 text-base-content/80 hover:border-primary h-11 px-3.5">
+                <i data-lucide="bar-chart-2" class="w-4 h-4 text-warning"></i>
+                Ver Métricas
+            </a>
+            <a href="{% url 'user_create' %}" class="btn btn-primary gap-2 shadow-sm rounded-xl text-xs font-semibold px-4 h-11 min-h-11 text-primary-content">
+                <i data-lucide="user-plus" class="w-4 h-4"></i>
+                Nuevo Usuario
+            </a>
+        </div>
     </div>
 
     <!-- ═════════ FLASH MESSAGES ═════════ -->
     {% if messages %}
-    <div style="display:flex; flex-direction:column; gap:8px;">
+    <div class="flex flex-col gap-2">
         {% for message in messages %}
-        <div class="{% if message.tags == 'error' %}alert-error{% else %}alert-success{% endif %}">
-            <i data-lucide="{% if message.tags == 'error' %}alert-circle{% else %}check-circle{% endif %}" style="width:15px; height:15px; flex-shrink:0;"></i>
-            {{ message }}
+        <div class="alert {% if message.tags == 'error' %}alert-error text-white{% else %}alert-success text-white{% endif %} shadow-sm text-xs rounded-xl flex items-center gap-2">
+            <i data-lucide="{% if message.tags == 'error' %}alert-circle{% else %}check-circle{% endif %}" class="w-4 h-4 shrink-0"></i>
+            <span>{{ message }}</span>
         </div>
         {% endfor %}
     </div>
     {% endif %}
 
     <!-- ═════════ FILTRO Y BUSCADOR ═════════ -->
-    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
-        <form method="get" style="width:100%; max-width:320px;">
-            <div style="position:relative;">
-                <i data-lucide="search" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); width:15px; height:15px; color:var(--text-muted); pointer-events:none;"></i>
+    <div class="flex flex-wrap justify-between items-center gap-3">
+        <form method="get" class="w-full max-w-xs">
+            <div class="relative w-full">
+                <i data-lucide="search" class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-base-content/40 pointer-events-none"></i>
                 <input type="text" name="q" value="{{ query }}" placeholder="Buscar por usuario..."
-                    class="shadcn-input"
-                    style="width:100%; padding-left:36px !important;">
+                       class="input input-bordered input-sm w-full pl-10 pr-4 rounded-xl bg-base-100 border-base-300 text-xs focus:border-primary focus:outline-none placeholder:text-base-content/40 h-10" />
             </div>
         </form>
     </div>
 
-    <!-- ═════════ TABLA SHADCN DE USUARIOS ═════════ -->
-    <div class="shadcn-card" style="padding:0; overflow:hidden;">
-        <div style="overflow-x:auto;">
-            <table class="glass-table">
+    <!-- ═════════ TABLA DE USUARIOS ═════════ -->
+    <div class="card bg-base-100 shadow-sm border border-base-300 rounded-2xl overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="table table-zebra w-full">
                 <thead>
-                    <tr>
-                        <th>Usuario</th>
+                    <tr class="bg-base-200/50 border-b border-base-300 text-[11px] font-bold uppercase tracking-wider text-base-content/50">
+                        <th class="py-4 pl-6">Usuario</th>
                         <th>Rol</th>
                         <th>Estado</th>
                         <th>Cuota Diaria</th>
                         <th>Creado por</th>
                         <th>Fecha Registro</th>
-                        <th style="text-align:right;">Acciones</th>
+                        <th class="text-right pr-6">Acciones</th>
                     </tr>
                 </thead>
-                <tbody id="userTableBody">
+                <tbody id="userTableBody" class="text-sm">
                     {% for u in users %}
-                    <tr id="user-row-{{ u.pk }}">
-                        <td>
-                            <div style="display:flex; align-items:center; gap:10px;">
-                                <div class="avatar">{{ u.username|make_list|first|upper }}</div>
+                    <tr id="user-row-{{ u.pk }}" class="hover:bg-base-200/30 transition-colors">
+                        <td class="pl-6 py-3.5">
+                            <div class="flex items-center gap-3">
+                                <div class="w-9 h-9 rounded-xl bg-primary/10 border border-primary/20 text-primary font-extrabold flex items-center justify-center text-xs shrink-0 shadow-xs">
+                                    {{ u.username|make_list|first|upper }}
+                                </div>
                                 <div>
-                                    <span style="font-weight:600; color:var(--text-primary); font-size:0.9rem; display:block;">{{ u.username }}</span>
+                                    <span class="font-bold text-sm text-base-content block tracking-tight">{{ u.username }}</span>
                                 </div>
                             </div>
                         </td>
                         <td>
                             {% if u.role == 'superadmin' %}
-                                <span class="badge-pill badge-superadmin">Super Admin</span>
+                                <span class="badge badge-warning badge-md font-bold text-xs px-2.5">Super Admin</span>
                             {% elif u.role == 'admin' %}
-                                <span class="badge-pill badge-admin">Admin</span>
+                                <span class="badge badge-primary badge-md font-bold text-xs px-2.5">Admin</span>
                             {% else %}
-                                <span class="badge-pill badge-user">User</span>
+                                <span class="badge badge-neutral badge-md font-medium text-xs px-2.5">User</span>
                             {% endif %}
                         </td>
                         <td id="status-cell-{{ u.pk }}">
                             {% if u.is_active %}
-                                <span class="badge-active">
-                                    <span class="status-dot" style="background:#22c55e;"></span>Activo
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-success/10 text-success border border-success/20">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-success animate-pulse"></span>
+                                    Activo
                                 </span>
                             {% else %}
-                                <span class="badge-inactive">
-                                    <span class="status-dot" style="background:#ef4444;"></span>Inactivo
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-error/10 text-error border border-error/20">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-error"></span>
+                                    Inactivo
                                 </span>
                             {% endif %}
                         </td>
                         <td>
-                            <div id="quota-cell-{{ u.pk }}" style="display:inline-flex; align-items:center; gap:6px; cursor:pointer;" onclick="openQuotaModal({{ u.pk }}, '{{ u.username }}', {{ u.daily_prompt_limit }}, {% if u.role == 'superadmin' or u.is_unlimited_prompts %}true{% else %}false{% endif %})" title="Clic para ajustar cuota">
+                            <div id="quota-cell-{{ u.pk }}" class="inline-flex items-center gap-2 cursor-pointer group"
+                                 onclick="openQuotaModal({{ u.pk }}, '{{ u.username|escapejs }}', {{ u.daily_prompt_limit }}, {% if u.role == 'superadmin' or u.is_unlimited_prompts %}true{% else %}false{% endif %})"
+                                 title="Clic para ajustar cuota diaria">
                                 {% if u.role == 'superadmin' or u.is_unlimited_prompts %}
-                                    <span class="badge-pill badge-admin" style="font-size:0.75rem; display:inline-flex; align-items:center; gap:4px;">
-                                        <i data-lucide="infinity" style="width:12px; height:12px; color:#3b82f6;"></i>
+                                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-primary/10 text-primary border border-primary/20">
+                                        <i data-lucide="infinity" class="w-3 h-3 text-primary"></i>
                                         Ilimitada
                                     </span>
                                 {% else %}
-                                    <span class="badge-pill badge-user" style="font-size:0.75rem; display:inline-flex; align-items:center; gap:4px;">
-                                        <i data-lucide="zap" style="width:12px; height:12px; color:#ef4444;"></i>
+                                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-base-200 border border-base-300 text-base-content/80 font-mono">
+                                        <i data-lucide="zap" class="w-3 h-3 text-warning"></i>
                                         {{ u.daily_prompt_limit }} / día
                                     </span>
                                 {% endif %}
-                                <i data-lucide="sliders" style="width:12px; height:12px; color:var(--text-muted); opacity:0.6;"></i>
+                                <i data-lucide="sliders" class="w-3.5 h-3.5 text-base-content/40 opacity-0 group-hover:opacity-100 transition-opacity"></i>
                             </div>
                         </td>
-                        <td style="color:var(--text-muted); font-size:0.82rem;">{{ u.created_by.username|default:"—" }}</td>
-                        <td style="color:var(--text-muted); font-size:0.82rem;">{{ u.date_joined|date:"d M Y" }}</td>
-                        <td style="text-align:right;">
-                            <div style="display:inline-flex; align-items:center; justify-content:flex-end; gap:6px;">
+                        <td class="text-xs text-base-content/60 font-medium">{{ u.created_by.username|default:"—" }}</td>
+                        <td class="text-xs text-base-content/60 font-mono">{{ u.date_joined|date:"d M Y" }}</td>
+                        <td class="text-right pr-6">
+                            <div class="inline-flex items-center justify-end gap-1.5">
                                 <!-- Ajustar Cuota -->
-                                <button type="button" class="action-btn" title="Ajustar Cuota Diaria" onclick="openQuotaModal({{ u.pk }}, '{{ u.username }}', {{ u.daily_prompt_limit }}, {% if u.role == 'superadmin' or u.is_unlimited_prompts %}true{% else %}false{% endif %})">
-                                    <i data-lucide="zap" style="width:14px; height:14px; color:#ef4444;"></i>
+                                <button type="button" class="btn btn-ghost btn-square btn-xs border border-base-300 hover:border-warning hover:bg-warning/10 hover:text-warning rounded-lg h-8 w-8 text-base-content/75 transition-all"
+                                        title="Ajustar Cuota Diaria"
+                                        onclick="openQuotaModal({{ u.pk }}, '{{ u.username|escapejs }}', {{ u.daily_prompt_limit }}, {% if u.role == 'superadmin' or u.is_unlimited_prompts %}true{% else %}false{% endif %})">
+                                    <i data-lucide="zap" class="w-3.5 h-3.5 text-warning"></i>
                                 </button>
                                 <!-- Editar -->
-                                <a href="{% url 'user_edit' u.pk %}" class="action-btn action-btn-edit" title="Editar">
-                                    <i data-lucide="pencil"></i>
+                                <a href="{% url 'user_edit' u.pk %}" class="btn btn-ghost btn-square btn-xs border border-base-300 hover:border-primary hover:bg-primary/10 hover:text-primary rounded-lg h-8 w-8 text-base-content/75 transition-all"
+                                   title="Editar Usuario">
+                                    <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
                                 </a>
                                 <!-- Toggle Activo/Inactivo -->
-                                <button type="button" class="action-btn action-btn-toggle"
-                                    id="btn-toggle-{{ u.pk }}"
-                                    onclick="toggleUserStatus({{ u.pk }})"
-                                    title="{% if u.is_active %}Desactivar usuario{% else %}Activar usuario{% endif %}">
-                                    <i data-lucide="{% if u.is_active %}pause-circle{% else %}play-circle{% endif %}"></i>
+                                <button type="button" class="btn btn-ghost btn-square btn-xs border border-base-300 hover:border-secondary hover:bg-secondary/10 hover:text-secondary rounded-lg h-8 w-8 text-base-content/75 transition-all"
+                                        id="btn-toggle-{{ u.pk }}"
+                                        onclick="toggleUserStatus({{ u.pk }})"
+                                        title="{% if u.is_active %}Desactivar usuario{% else %}Activar usuario{% endif %}">
+                                    <i data-lucide="{% if u.is_active %}pause-circle{% else %}play-circle{% endif %}" class="w-3.5 h-3.5"></i>
                                 </button>
                                 <!-- Revocar Sesiones -->
-                                <button type="button" class="action-btn" title="Cerrar todas las sesiones remotas de este usuario" onclick="openRevokeUserSessionsModal({{ u.pk }}, '{{ u.username }}')">
-                                    <i data-lucide="shield-alert" style="width:14px; height:14px; color:#60a5fa;"></i>
+                                <button type="button" class="btn btn-ghost btn-square btn-xs border border-base-300 hover:border-info hover:bg-info/10 hover:text-info rounded-lg h-8 w-8 text-base-content/75 transition-all"
+                                        title="Cerrar sesiones remotas"
+                                        onclick="openRevokeUserSessionsModal({{ u.pk }}, '{{ u.username|escapejs }}')">
+                                    <i data-lucide="shield-alert" class="w-3.5 h-3.5 text-info"></i>
                                 </button>
                                 <!-- Eliminar -->
-                                <button type="button" class="action-btn action-btn-delete" title="Eliminar" onclick="openDeleteUserModal({{ u.pk }}, '{{ u.username }}')">
-                                    <i data-lucide="trash-2"></i>
+                                <button type="button" class="btn btn-ghost btn-square btn-xs border border-base-300 hover:border-error hover:bg-error/10 hover:text-error rounded-lg h-8 w-8 text-base-content/75 transition-all"
+                                        title="Eliminar usuario"
+                                        onclick="openDeleteUserModal({{ u.pk }}, '{{ u.username|escapejs }}')">
+                                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
                                 </button>
                             </div>
                         </td>
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="7" style="text-align:center; padding:48px; color:var(--text-muted);">
-                            No se encontraron usuarios{% if query %} para "{{ query }}"{% endif %}.
+                        <td colspan="7" class="p-16 text-center text-base-content/50">
+                            <div class="flex flex-col items-center justify-center gap-2">
+                                <i data-lucide="users" class="w-12 h-12 text-base-content/30 mb-1"></i>
+                                <div class="text-sm font-bold text-base-content">No se encontraron usuarios</div>
+                                <div class="text-xs text-base-content/60">{% if query %}No hay resultados para "{{ query }}"{% else %}Aún no hay usuarios creados.{% endif %}</div>
+                            </div>
                         </td>
                     </tr>
                     {% endfor %}
@@ -149,19 +180,19 @@
             </table>
         </div>
 
-        <!-- Pagination -->
+        <!-- Paginación DaisyUI -->
         {% if users.has_other_pages %}
-        <div style="padding:14px 20px; border-top:1px solid var(--border-subtle); display:flex; align-items:center; justify-content:space-between;">
-            <span style="font-size:0.8rem; color:var(--text-muted);">Página {{ users.number }} de {{ users.paginator.num_pages }}</span>
-            <div style="display:flex; gap:8px;">
+        <div class="p-4 border-t border-base-300/70 flex items-center justify-between flex-wrap gap-3 bg-base-200/20">
+            <span class="text-xs text-base-content/60 font-medium">Página {{ users.number }} de {{ users.paginator.num_pages }}</span>
+            <div class="join">
                 {% if users.has_previous %}
-                    <a href="?page={{ users.previous_page_number }}{% if query %}&q={{ query }}{% endif %}" class="btn-ghost" style="padding:6px 14px; font-size:0.8rem;">
-                        <i data-lucide="chevron-left" style="width:14px; height:14px;"></i> Anterior
+                    <a href="?page={{ users.previous_page_number }}{% if query %}&q={{ query }}{% endif %}" class="join-item btn btn-xs btn-ghost border border-base-300 h-8 px-3 text-xs">
+                        <i data-lucide="chevron-left" class="w-3.5 h-3.5"></i> Anterior
                     </a>
                 {% endif %}
                 {% if users.has_next %}
-                    <a href="?page={{ users.next_page_number }}{% if query %}&q={{ query }}{% endif %}" class="btn-ghost" style="padding:6px 14px; font-size:0.8rem;">
-                        Siguiente <i data-lucide="chevron-right" style="width:14px; height:14px;"></i>
+                    <a href="?page={{ users.next_page_number }}{% if query %}&q={{ query }}{% endif %}" class="join-item btn btn-xs btn-ghost border border-base-300 h-8 px-3 text-xs">
+                        Siguiente <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
                     </a>
                 {% endif %}
             </div>
@@ -171,27 +202,25 @@
 
 </div>
 
-<!-- ═════════ MODAL RADIX / SHADCN: AJUSTE RÁPIDO DE CUOTA ═════════ -->
-<div id="quotaModal" style="display:none; position:fixed; inset:0; z-index:100000; background:var(--modal-backdrop); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); align-items:center; justify-content:center; padding:16px;">
-    <div class="shadcn-card" style="width:100%; max-width:460px; padding:28px 30px; animation:modalIn 0.22s ease-out; position:relative; overflow:hidden;">
+<!-- ═════════ MODAL: AJUSTE RÁPIDO DE CUOTA ═════════ -->
+<div id="quotaModal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-md hidden items-center justify-center p-4">
+    <div class="card bg-base-100 shadow-2xl border border-base-300 w-full max-w-md p-6 lg:p-7 rounded-2xl relative">
         
         <!-- Header -->
-        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:18px;">
-            <div style="display:flex; align-items:center; gap:12px;">
-                <div style="width:38px; height:38px; border-radius:9999px; background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.25); display:flex; align-items:center; justify-content:center; flex-shrink:0; color:#ef4444;">
-                    <i data-lucide="zap" style="width:18px; height:18px;"></i>
+        <div class="flex justify-between items-center mb-5">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-warning/10 border border-warning/20 flex items-center justify-center text-warning shrink-0">
+                    <i data-lucide="zap" class="w-5 h-5"></i>
                 </div>
                 <div>
-                    <h3 style="font-size:1.15rem; font-weight:700; color:var(--text-primary); margin:0 0 2px;">
-                        Ajustar Cuota Diaria
-                    </h3>
-                    <div style="font-size:0.78rem; color:var(--text-muted); display:flex; align-items:center; gap:4px;">
-                        Usuario: <strong id="quotaUsernameText" style="color:var(--text-primary);"></strong>
-                    </div>
+                    <h3 class="text-base font-bold text-base-content m-0">Ajustar Cuota Diaria</h3>
+                    <p class="text-xs text-base-content/60 m-0">
+                        Usuario: <strong id="quotaUsernameText" class="text-base-content"></strong>
+                    </p>
                 </div>
             </div>
-            <button type="button" class="action-pill-btn" onclick="closeQuotaModal()">
-                <i data-lucide="x"></i>
+            <button type="button" class="btn btn-ghost btn-square btn-xs rounded-lg text-base-content/60 hover:text-base-content" onclick="closeQuotaModal()">
+                <i data-lucide="x" class="w-4 h-4"></i>
             </button>
         </div>
 
@@ -199,51 +228,54 @@
             {% csrf_token %}
             <input type="hidden" id="quotaUserId" value="">
 
-            <div id="stepperSection" style="margin-bottom:18px;">
-                <label style="display:block; text-align:center; font-size:0.75rem; font-weight:700; color:var(--text-muted); margin-bottom:10px; text-transform:uppercase; letter-spacing:0.05em;">
+            <div id="stepperSection" class="mb-5">
+                <label class="block text-center text-[11px] font-bold text-base-content/60 uppercase tracking-wider mb-2.5">
                     Prompts Permitidos por Día
                 </label>
                 
                 <!-- Stepper Principal -->
-                <div style="display:flex; align-items:center; justify-content:center; gap:12px; margin-bottom:12px;">
-                    <button type="button" class="btn-ghost" style="width:40px; height:40px; border-radius:9999px; padding:0; display:flex; align-items:center; justify-content:center;" onclick="adjustQuotaInput(-1)" title="Restar 1">
-                        <i data-lucide="minus" style="width:16px; height:16px;"></i>
+                <div class="flex items-center justify-center gap-3 mb-3">
+                    <button type="button" class="btn btn-ghost btn-square btn-sm rounded-xl border border-base-300" onclick="adjustQuotaInput(-1)" title="Restar 1">
+                        <i data-lucide="minus" class="w-4 h-4"></i>
                     </button>
                     
-                    <input type="number" id="quotaLimitInput" min="0" max="9999" required class="shadcn-input" style="width:120px; height:42px; font-size:1.4rem; font-weight:800; text-align:center;">
+                    <input type="number" id="quotaLimitInput" min="0" max="9999" required
+                           class="input input-bordered w-32 text-center text-xl font-bold font-mono rounded-xl bg-base-200/50 border-base-300 focus:border-primary" />
                     
-                    <button type="button" class="btn-ghost" style="width:40px; height:40px; border-radius:9999px; padding:0; display:flex; align-items:center; justify-content:center;" onclick="adjustQuotaInput(+1)" title="Sumar 1">
-                        <i data-lucide="plus" style="width:16px; height:16px;"></i>
+                    <button type="button" class="btn btn-ghost btn-square btn-sm rounded-xl border border-base-300" onclick="adjustQuotaInput(+1)" title="Sumar 1">
+                        <i data-lucide="plus" class="w-4 h-4"></i>
                     </button>
                 </div>
 
                 <!-- Chips de Acceso Rápido -->
-                <div style="display:flex; justify-content:center; gap:6px; flex-wrap:wrap;">
-                    <button type="button" class="btn-ghost" style="padding:3px 10px; font-size:0.75rem; height:30px;" onclick="adjustQuotaInput(+5)">+5</button>
-                    <button type="button" class="btn-ghost" style="padding:3px 10px; font-size:0.75rem; height:30px;" onclick="adjustQuotaInput(+10)">+10</button>
-                    <button type="button" class="btn-ghost" style="padding:3px 10px; font-size:0.75rem; height:30px;" onclick="setExactQuota(20)">20</button>
-                    <button type="button" class="btn-ghost" style="padding:3px 10px; font-size:0.75rem; height:30px;" onclick="setExactQuota(50)">50</button>
-                    <button type="button" class="btn-ghost" style="padding:3px 10px; font-size:0.75rem; height:30px;" onclick="setExactQuota(100)">100</button>
+                <div class="flex justify-center gap-1.5 flex-wrap">
+                    <button type="button" class="btn btn-ghost btn-xs rounded-lg border border-base-300 text-xs px-2.5 h-7" onclick="adjustQuotaInput(+5)">+5</button>
+                    <button type="button" class="btn btn-ghost btn-xs rounded-lg border border-base-300 text-xs px-2.5 h-7" onclick="adjustQuotaInput(+10)">+10</button>
+                    <button type="button" class="btn btn-ghost btn-xs rounded-lg border border-base-300 text-xs px-2.5 h-7" onclick="setExactQuota(20)">20</button>
+                    <button type="button" class="btn btn-ghost btn-xs rounded-lg border border-base-300 text-xs px-2.5 h-7" onclick="setExactQuota(50)">50</button>
+                    <button type="button" class="btn btn-ghost btn-xs rounded-lg border border-base-300 text-xs px-2.5 h-7" onclick="setExactQuota(100)">100</button>
                 </div>
             </div>
 
             <!-- Opción Cuota Ilimitada -->
-            <label id="unlimitedQuotaCard" style="display:flex; align-items:center; justify-content:space-between; padding:12px 16px; background:var(--bg-muted); border:1px solid var(--border-subtle); border-radius:0.875rem; cursor:pointer; margin-bottom:24px; transition:all 0.2s;">
-                <div style="display:flex; align-items:center; gap:10px;">
-                    <i data-lucide="infinity" style="width:18px; height:18px; color:#3b82f6;"></i>
+            <label id="unlimitedQuotaCard" class="flex items-center justify-between p-3.5 bg-base-200/50 border border-base-300 rounded-xl cursor-pointer mb-6 transition-all hover:bg-base-200">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
+                        <i data-lucide="infinity" class="w-4 h-4"></i>
+                    </div>
                     <div>
-                        <div style="font-size:0.85rem; font-weight:600; color:var(--text-primary);">Modo Ilimitado</div>
-                        <div style="font-size:0.72rem; color:var(--text-muted);">Sin límite diario de generaciones</div>
+                        <div class="text-xs font-bold text-base-content">Modo Ilimitado</div>
+                        <div class="text-[11px] text-base-content/60">Sin límite diario de generaciones</div>
                     </div>
                 </div>
-                <input type="checkbox" id="quotaUnlimitedCheckbox" style="width:18px; height:18px; accent-color:#ef4444; cursor:pointer;" onchange="toggleUnlimitedQuota(this.checked)">
+                <input type="checkbox" id="quotaUnlimitedCheckbox" class="toggle toggle-primary toggle-sm" onchange="toggleUnlimitedQuota(this.checked)">
             </label>
 
             <!-- Acciones -->
-            <div style="display:flex; gap:10px; justify-content:flex-end;">
-                <button type="button" class="btn-ghost" onclick="closeQuotaModal()">Cancelar</button>
-                <button type="submit" id="saveQuotaBtn" class="btn-brand">
-                    <i data-lucide="save" style="width:14px; height:14px;"></i>
+            <div class="flex gap-2 justify-end">
+                <button type="button" class="btn btn-ghost btn-sm rounded-xl border border-base-300 text-xs" onclick="closeQuotaModal()">Cancelar</button>
+                <button type="submit" id="saveQuotaBtn" class="btn btn-primary btn-sm rounded-xl text-xs font-semibold gap-1.5 text-primary-content shadow-xs">
+                    <i data-lucide="save" class="w-3.5 h-3.5"></i>
                     Guardar Cuota
                 </button>
             </div>
@@ -251,30 +283,30 @@
     </div>
 </div>
 
-<!-- ═════════ MODAL RADIX / SHADCN: CONFIRMAR ELIMINACIÓN DE USUARIO ═════════ -->
-<div id="deleteUserModal" style="display:none; position:fixed; inset:0; z-index:100000; background:var(--modal-backdrop); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); align-items:center; justify-content:center; padding:16px;">
-    <div class="shadcn-card" style="width:100%; max-width:440px; padding:28px; animation:modalIn 0.22s ease-out; text-align:center; position:relative; overflow:hidden;">
+<!-- ═════════ MODAL: CONFIRMAR ELIMINACIÓN DE USUARIO ═════════ -->
+<div id="deleteUserModal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-md hidden items-center justify-center p-4">
+    <div class="card bg-base-100 shadow-2xl border border-base-300 w-full max-w-sm p-6 rounded-2xl text-center">
         
-        <div style="width:48px; height:48px; border-radius:9999px; background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.3); display:flex; align-items:center; justify-content:center; margin:0 auto 16px; color:#ef4444;">
-            <i data-lucide="trash-2" style="width:22px; height:22px;"></i>
+        <div class="w-12 h-12 rounded-2xl bg-error/10 text-error border border-error/20 flex items-center justify-center mx-auto mb-3.5">
+            <i data-lucide="trash-2" class="w-5 h-5"></i>
         </div>
 
-        <h3 style="font-size:1.15rem; font-weight:700; color:var(--text-primary); margin:0 0 8px;">¿Eliminar este usuario?</h3>
-        <p style="font-size:0.85rem; color:var(--text-secondary); margin:0 0 12px; line-height:1.5;">
+        <h3 class="text-base font-bold text-base-content mb-1">¿Eliminar este usuario?</h3>
+        <p class="text-xs text-base-content/60 leading-relaxed mb-3">
             Estás a punto de eliminar definitivamente al usuario:
         </p>
-        <div style="margin-bottom:22px;">
-            <strong id="deleteUserUsernameText" class="badge-pill badge-superadmin" style="font-size:0.9rem; padding:4px 14px;"></strong>
+        <div class="mb-5">
+            <span id="deleteUserUsernameText" class="badge badge-warning badge-md font-bold px-3 py-1 text-xs font-mono"></span>
         </div>
 
         <form id="deleteUserForm" method="post" action="" onsubmit="submitDeleteUser(event)">
             {% csrf_token %}
-            <div style="display:flex; gap:10px; justify-content:center;">
-                <button type="button" class="btn-ghost" style="flex:1; justify-content:center;" onclick="closeDeleteUserModal()">
+            <div class="flex gap-2 justify-center">
+                <button type="button" class="btn btn-ghost btn-sm flex-1 rounded-xl border border-base-300 text-xs font-semibold" onclick="closeDeleteUserModal()">
                     Cancelar
                 </button>
-                <button type="submit" id="btnConfirmDeleteUser" class="btn-danger" style="flex:1; justify-content:center;">
-                    <i data-lucide="trash-2" style="width:14px; height:14px;"></i>
+                <button type="submit" id="btnConfirmDeleteUser" class="btn btn-error btn-sm text-white flex-1 rounded-xl text-xs font-semibold gap-1.5 shadow-xs">
+                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
                     Eliminar
                 </button>
             </div>
@@ -282,8 +314,67 @@
     </div>
 </div>
 
+<!-- ═════════ MODAL: CONFIRMAR REVOCAR SESIONES DE USUARIO ═════════ -->
+<div id="revokeUserSessionsModal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-md hidden items-center justify-center p-4">
+    <div class="card bg-base-100 shadow-2xl border border-base-300 w-full max-w-sm p-6 rounded-2xl text-center">
+        
+        <div class="w-12 h-12 rounded-2xl bg-info/10 text-info border border-info/20 flex items-center justify-center mx-auto mb-3.5">
+            <i data-lucide="shield-alert" class="w-5 h-5"></i>
+        </div>
+
+        <h3 class="text-base font-bold text-base-content mb-1">¿Cerrar sesiones remotas?</h3>
+        <p class="text-xs text-base-content/60 leading-relaxed mb-3">
+            Se desconectarán todos los dispositivos y sesiones activas del usuario:
+        </p>
+        <div class="mb-5">
+            <span id="revokeUserUsernameText" class="badge badge-info badge-md font-bold px-3 py-1 text-xs text-white font-mono"></span>
+        </div>
+
+        <div class="flex gap-2 justify-center">
+            <button type="button" class="btn btn-ghost btn-sm flex-1 rounded-xl border border-base-300 text-xs font-semibold" onclick="closeRevokeUserSessionsModal()">
+                Cancelar
+            </button>
+            <button type="button" id="btnConfirmRevokeUserSessions" class="btn btn-info btn-sm text-white flex-1 rounded-xl text-xs font-semibold gap-1.5 shadow-xs" onclick="executeRevokeUserSessions()">
+                <i data-lucide="shield-alert" class="w-3.5 h-3.5"></i>
+                Cerrar Sesiones
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Toast Container Flotante -->
+<div id="toastContainer" class="toast toast-bottom toast-end z-50 pointer-events-none p-4"></div>
+{% endblock %}
+
+{% block extra_js %}
 <script>
 let currentDeleteUserId = null;
+let currentRevokeUserId = null;
+let currentRevokeUsername = null;
+
+// Helper de Notificaciones Toast DaisyUI
+function showToast(message, type = 'info') {
+    const container = document.getElementById('toastContainer');
+    if (!container) return;
+
+    const alert = document.createElement('div');
+    const alertClass = type === 'success' ? 'alert-success text-white' :
+                       type === 'error' ? 'alert-error text-white' :
+                       type === 'warning' ? 'alert-warning text-zinc-900' :
+                       'alert-info text-white';
+
+    alert.className = `alert ${alertClass} text-xs shadow-xl rounded-xl p-3 flex items-center gap-2 pointer-events-auto border border-base-300`;
+    const iconName = type === 'success' ? 'check-circle-2' : type === 'error' ? 'alert-circle' : type === 'warning' ? 'alert-triangle' : 'info';
+    alert.innerHTML = `<i data-lucide="${iconName}" class="w-4 h-4 shrink-0"></i> <span>${message}</span>`;
+    container.appendChild(alert);
+    if (window.lucide) lucide.createIcons();
+
+    setTimeout(() => {
+        alert.style.opacity = '0';
+        alert.style.transition = 'opacity 0.25s ease';
+        setTimeout(() => alert.remove(), 260);
+    }, 3500);
+}
 
 function openQuotaModal(userId, username, currentLimit, isUnlimited) {
     document.getElementById('quotaUserId').value = userId;
@@ -294,14 +385,24 @@ function openQuotaModal(userId, username, currentLimit, isUnlimited) {
     unlCheck.checked = isUnlimited;
     toggleUnlimitedQuota(isUnlimited);
     
-    document.getElementById('quotaModal').style.display = 'flex';
-    document.body.style.overflow = 'hidden';
-    lucide.createIcons();
+    const modal = document.getElementById('quotaModal');
+    if (modal) {
+        modal.style.display = 'flex';
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        document.body.style.overflow = 'hidden';
+        if (window.lucide) lucide.createIcons();
+    }
 }
 
 function closeQuotaModal() {
-    document.getElementById('quotaModal').style.display = 'none';
-    document.body.style.overflow = 'auto';
+    const modal = document.getElementById('quotaModal');
+    if (modal) {
+        modal.style.display = 'none';
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+        document.body.style.overflow = 'auto';
+    }
 }
 
 function toggleUnlimitedQuota(isUnlimited) {
@@ -311,22 +412,18 @@ function toggleUnlimitedQuota(isUnlimited) {
     
     input.disabled = isUnlimited;
     if (isUnlimited) {
-        stepper.style.opacity = '0.35';
-        stepper.style.pointerEvents = 'none';
-        card.style.borderColor = 'rgba(59, 130, 246, 0.4)';
-        card.style.background = 'rgba(59, 130, 246, 0.08)';
+        stepper.classList.add('opacity-30', 'pointer-events-none');
+        card.classList.add('border-primary/40', 'bg-primary/5');
     } else {
-        stepper.style.opacity = '1';
-        stepper.style.pointerEvents = 'auto';
-        card.style.borderColor = 'var(--border-subtle)';
-        card.style.background = 'var(--bg-muted)';
+        stepper.classList.remove('opacity-30', 'pointer-events-none');
+        card.classList.remove('border-primary/40', 'bg-primary/5');
     }
 }
 
 function adjustQuotaInput(amount) {
     const input = document.getElementById('quotaLimitInput');
     if (input.disabled) return;
-    let val = parseInt(input.value) || 0;
+    let val = parseInt(input.value, 10) || 0;
     val = Math.max(0, val + amount);
     input.value = val;
 }
@@ -345,8 +442,8 @@ async function submitQuotaChange(e) {
     const saveBtn = document.getElementById('saveQuotaBtn');
     
     saveBtn.disabled = true;
-    saveBtn.innerHTML = '<i data-lucide="loader-2" class="animate-spin" style="width:14px; height:14px;"></i> Guardando...';
-    lucide.createIcons();
+    saveBtn.innerHTML = '<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i> Guardando...';
+    if (window.lucide) lucide.createIcons();
 
     const formData = new FormData();
     formData.append('is_unlimited', isUnlimited ? 'true' : 'false');
@@ -367,25 +464,25 @@ async function submitQuotaChange(e) {
             if (cell) {
                 if (data.is_unlimited) {
                     cell.innerHTML = `
-                        <span class="badge-pill badge-admin" style="font-size:0.75rem; display:inline-flex; align-items:center; gap:4px;">
-                            <i data-lucide="infinity" style="width:12px; height:12px; color:#3b82f6;"></i>
+                        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-primary/10 text-primary border border-primary/20">
+                            <i data-lucide="infinity" class="w-3 h-3 text-primary"></i>
                             Ilimitada
                         </span>
-                        <i data-lucide="sliders" style="width:12px; height:12px; color:var(--text-muted); opacity:0.6;"></i>
+                        <i data-lucide="sliders" class="w-3.5 h-3.5 text-base-content/40 opacity-0 group-hover:opacity-100 transition-opacity"></i>
                     `;
                 } else {
                     cell.innerHTML = `
-                        <span class="badge-pill badge-user" style="font-size:0.75rem; display:inline-flex; align-items:center; gap:4px;">
-                            <i data-lucide="zap" style="width:12px; height:12px; color:#ef4444;"></i>
+                        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-base-200 border border-base-300 text-base-content/80 font-mono">
+                            <i data-lucide="zap" class="w-3 h-3 text-warning"></i>
                             ${data.daily_limit} / día
                         </span>
-                        <i data-lucide="sliders" style="width:12px; height:12px; color:var(--text-muted); opacity:0.6;"></i>
+                        <i data-lucide="sliders" class="w-3.5 h-3.5 text-base-content/40 opacity-0 group-hover:opacity-100 transition-opacity"></i>
                     `;
                 }
             }
             closeQuotaModal();
             showToast('Cuota actualizada exitosamente', 'success');
-            lucide.createIcons();
+            if (window.lucide) lucide.createIcons();
         } else {
             showToast(data.message || 'Error al actualizar cuota.', 'error');
         }
@@ -393,8 +490,8 @@ async function submitQuotaChange(e) {
         showToast('Error de conexión con el servidor.', 'error');
     } finally {
         saveBtn.disabled = false;
-        saveBtn.innerHTML = '<i data-lucide="save" style="width:14px; height:14px;"></i> Guardar Cuota';
-        lucide.createIcons();
+        saveBtn.innerHTML = '<i data-lucide="save" class="w-3.5 h-3.5"></i> Guardar Cuota';
+        if (window.lucide) lucide.createIcons();
     }
 }
 
@@ -416,29 +513,31 @@ async function toggleUserStatus(userId) {
             if (cell) {
                 if (data.is_active) {
                     cell.innerHTML = `
-                        <span class="badge-active">
-                            <span class="status-dot" style="background:#22c55e;"></span>Activo
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-success/10 text-success border border-success/20">
+                            <span class="w-1.5 h-1.5 rounded-full bg-success animate-pulse"></span>
+                            Activo
                         </span>
                     `;
                     if (btn) {
                         btn.title = 'Desactivar usuario';
-                        btn.innerHTML = '<i data-lucide="pause-circle"></i>';
+                        btn.innerHTML = '<i data-lucide="pause-circle" class="w-3.5 h-3.5"></i>';
                     }
                     showToast('Usuario activado correctamente', 'success');
                 } else {
                     cell.innerHTML = `
-                        <span class="badge-inactive">
-                            <span class="status-dot" style="background:#ef4444;"></span>Inactivo
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-error/10 text-error border border-error/20">
+                            <span class="w-1.5 h-1.5 rounded-full bg-error"></span>
+                            Inactivo
                         </span>
                     `;
                     if (btn) {
                         btn.title = 'Activar usuario';
-                        btn.innerHTML = '<i data-lucide="play-circle"></i>';
+                        btn.innerHTML = '<i data-lucide="play-circle" class="w-3.5 h-3.5"></i>';
                     }
                     showToast('Usuario desactivado correctamente', 'info');
                 }
             }
-            lucide.createIcons();
+            if (window.lucide) lucide.createIcons();
         } else {
             showToast(data.message || 'Error al cambiar estado.', 'error');
         }
@@ -456,49 +555,25 @@ function openDeleteUserModal(userId, username) {
     document.getElementById('deleteUserUsernameText').innerText = username;
     
     const modal = document.getElementById('deleteUserModal');
-    modal.style.display = 'flex';
-    document.body.style.overflow = 'hidden';
-    lucide.createIcons();
+    if (modal) {
+        modal.style.display = 'flex';
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        document.body.style.overflow = 'hidden';
+        if (window.lucide) lucide.createIcons();
+    }
 }
 
 function closeDeleteUserModal() {
     currentDeleteUserId = null;
-    document.getElementById('deleteUserModal').style.display = 'none';
-    document.body.style.overflow = 'auto';
+    const modal = document.getElementById('deleteUserModal');
+    if (modal) {
+        modal.style.display = 'none';
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+        document.body.style.overflow = 'auto';
+    }
 }
-
-<!-- ═════════ MODAL RADIX / SHADCN: CONFIRMAR REVOCAR SESIONES DE USUARIO ═════════ -->
-<div id="revokeUserSessionsModal" style="display:none; position:fixed; inset:0; z-index:100000; background:var(--modal-backdrop); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); align-items:center; justify-content:center; padding:16px;">
-    <div class="shadcn-card" style="width:100%; max-width:440px; padding:28px; animation:modalIn 0.22s ease-out; text-align:center; position:relative; overflow:hidden;">
-        
-        <div style="width:48px; height:48px; border-radius:9999px; background:rgba(59,130,246,0.12); border:1px solid rgba(59,130,246,0.3); display:flex; align-items:center; justify-content:center; margin:0 auto 16px; color:#3b82f6;">
-            <i data-lucide="shield-alert" style="width:22px; height:22px;"></i>
-        </div>
-
-        <h3 style="font-size:1.15rem; font-weight:700; color:var(--text-primary); margin:0 0 8px;">¿Cerrar sesiones de este usuario?</h3>
-        <p style="font-size:0.85rem; color:var(--text-secondary); margin:0 0 12px; line-height:1.5;">
-            Se desconectarán todos los dispositivos y sesiones activas del usuario:
-        </p>
-        <div style="margin-bottom:22px;">
-            <strong id="revokeUserUsernameText" class="badge-pill badge-admin" style="font-size:0.9rem; padding:4px 14px;"></strong>
-        </div>
-
-        <div style="display:flex; gap:10px; justify-content:center;">
-            <button type="button" class="btn-ghost" style="flex:1; justify-content:center;" onclick="closeRevokeUserSessionsModal()">
-                Cancelar
-            </button>
-            <button type="button" id="btnConfirmRevokeUserSessions" class="btn-danger" style="flex:1; justify-content:center;" onclick="executeRevokeUserSessions()">
-                <i data-lucide="shield-alert" style="width:14px; height:14px;"></i>
-                Cerrar Sesiones
-            </button>
-        </div>
-    </div>
-</div>
-
-<script>
-let currentDeleteUserId = null;
-let currentRevokeUserId = null;
-let currentRevokeUsername = null;
 
 function openRevokeUserSessionsModal(userId, username) {
     currentRevokeUserId = userId;
@@ -506,24 +581,33 @@ function openRevokeUserSessionsModal(userId, username) {
     document.getElementById('revokeUserUsernameText').innerText = username;
     
     const modal = document.getElementById('revokeUserSessionsModal');
-    modal.style.display = 'flex';
-    document.body.style.overflow = 'hidden';
-    lucide.createIcons({ root: modal });
+    if (modal) {
+        modal.style.display = 'flex';
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        document.body.style.overflow = 'hidden';
+        if (window.lucide) lucide.createIcons();
+    }
 }
 
 function closeRevokeUserSessionsModal() {
     currentRevokeUserId = null;
     currentRevokeUsername = null;
-    document.getElementById('revokeUserSessionsModal').style.display = 'none';
-    document.body.style.overflow = 'auto';
+    const modal = document.getElementById('revokeUserSessionsModal');
+    if (modal) {
+        modal.style.display = 'none';
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+        document.body.style.overflow = 'auto';
+    }
 }
 
 async function executeRevokeUserSessions() {
     if (!currentRevokeUserId) return;
     const btn = document.getElementById('btnConfirmRevokeUserSessions');
     btn.disabled = true;
-    btn.innerHTML = '<i data-lucide="loader-2" class="animate-spin" style="width:14px; height:14px;"></i> Cerrando...';
-    lucide.createIcons();
+    btn.innerHTML = '<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i> Cerrando...';
+    if (window.lucide) lucide.createIcons();
 
     try {
         const res = await fetch(`/panel/usuarios/${currentRevokeUserId}/revocar-sesiones/`, {
@@ -544,8 +628,8 @@ async function executeRevokeUserSessions() {
         showToast('Error de conexión con el servidor.', 'error');
     } finally {
         btn.disabled = false;
-        btn.innerHTML = '<i data-lucide="shield-alert" style="width:14px; height:14px;"></i> Cerrar Sesiones';
-        lucide.createIcons();
+        btn.innerHTML = '<i data-lucide="shield-alert" class="w-3.5 h-3.5"></i> Cerrar Sesiones';
+        if (window.lucide) lucide.createIcons();
     }
 }
 
@@ -554,8 +638,8 @@ async function submitDeleteUser(e) {
     if (!currentDeleteUserId) return;
     const btn = document.getElementById('btnConfirmDeleteUser');
     btn.disabled = true;
-    btn.innerHTML = '<i data-lucide="loader-2" class="animate-spin" style="width:14px; height:14px;"></i> Eliminando...';
-    lucide.createIcons();
+    btn.innerHTML = '<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i> Eliminando...';
+    if (window.lucide) lucide.createIcons();
 
     try {
         const res = await fetch(`/panel/usuarios/${currentDeleteUserId}/eliminar/`, {
@@ -583,8 +667,8 @@ async function submitDeleteUser(e) {
         document.getElementById('deleteUserForm').submit();
     } finally {
         btn.disabled = false;
-        btn.innerHTML = '<i data-lucide="trash-2" style="width:14px; height:14px;"></i> Eliminar';
-        lucide.createIcons();
+        btn.innerHTML = '<i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Eliminar';
+        if (window.lucide) lucide.createIcons();
     }
 }
 
@@ -592,6 +676,7 @@ window.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
         closeQuotaModal();
         closeDeleteUserModal();
+        closeRevokeUserSessionsModal();
     }
 });
 document.getElementById('quotaModal')?.addEventListener('click', (e) => {
@@ -599,6 +684,9 @@ document.getElementById('quotaModal')?.addEventListener('click', (e) => {
 });
 document.getElementById('deleteUserModal')?.addEventListener('click', (e) => {
     if (e.target.id === 'deleteUserModal') closeDeleteUserModal();
+});
+document.getElementById('revokeUserSessionsModal')?.addEventListener('click', (e) => {
+    if (e.target.id === 'revokeUserSessionsModal') closeRevokeUserSessionsModal();
 });
 </script>
 {% endblock %}

@@ -1,65 +1,53 @@
-{% extends 'panel_base.html' %}
+{% extends 'panel_base_daisy.html' %}
 {% load static %}
 
 {% block title %}Métricas por Usuario — Rebooy Panel{% endblock %}
-{% block breadcrumb %}Administración / Métricas por Usuario{% endblock %}
-
-{% block extra_css %}
-<style>
-    .metric-card-shadcn {
-        background-color: var(--bg-card);
-        border: 1px solid var(--border-subtle);
-        border-radius: 1.25rem;
-        padding: 22px 24px;
-        transition: all 0.2s ease;
-        position: relative;
-        overflow: hidden;
-    }
-    .metric-card-shadcn:hover {
-        border-color: var(--border-highlight);
-        transform: translateY(-2px);
-        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
-    }
-    .metric-value-huge {
-        font-size: 2rem;
-        font-weight: 800;
-        letter-spacing: -0.03em;
-        line-height: 1.1;
-    }
-</style>
+{% block breadcrumb %}
+<li><span class="opacity-60">Administración</span></li>
+{% if selected_user %}
+<li><a href="{% url 'user_statistics' %}" class="opacity-60 hover:opacity-100">Métricas por Usuario</a></li>
+<li class="font-semibold text-primary">{{ selected_user.username }}</li>
+{% else %}
+<li class="font-semibold text-primary">Métricas por Usuario</li>
+{% endif %}
 {% endblock %}
 
 {% block content %}
-<div style="display:flex; flex-direction:column; gap:24px;">
+<div class="flex flex-col gap-6 pb-12">
 
     <!-- ═════════ HEADER PRINCIPAL ═════════ -->
-    <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px;">
-        <div>
-            <h1 style="font-size:1.85rem; font-weight:800; letter-spacing:-0.03em; color:var(--text-primary); margin:0 0 6px;">
-                {% if selected_user %}
-                    Métricas de {{ selected_user.username }}
-                {% else %}
-                    Métricas por Usuario
-                {% endif %}
-            </h1>
-            <p style="font-size:0.875rem; color:var(--text-muted); margin:0;">
-                {% if selected_user %}
-                    Inspección individual de fanpages monitoreadas, audiencia y actividad.
-                {% else %}
-                    Resumen comparativo de fanpages monitoreadas, volumen de seguidores y actividad de cada cuenta.
-                {% endif %}
-            </p>
+    <div class="flex flex-wrap items-center justify-between gap-4">
+        <div class="flex items-center gap-3.5">
+            <div class="w-12 h-12 rounded-2xl bg-warning/10 text-warning border border-warning/20 flex items-center justify-center shrink-0 shadow-sm">
+                <i data-lucide="bar-chart-2" class="w-6 h-6"></i>
+            </div>
+            <div>
+                <h1 class="text-2xl lg:text-3xl font-extrabold tracking-tight text-base-content leading-tight m-0">
+                    {% if selected_user %}
+                        Métricas de {{ selected_user.username }}
+                    {% else %}
+                        Métricas por Usuario
+                    {% endif %}
+                </h1>
+                <p class="text-xs lg:text-sm text-base-content/65 mt-0.5 leading-relaxed m-0">
+                    {% if selected_user %}
+                        Inspección individual de fanpages monitoreadas, audiencia y actividad.
+                    {% else %}
+                        Resumen comparativo de fanpages monitoreadas, volumen de seguidores y actividad de cada cuenta.
+                    {% endif %}
+                </p>
+            </div>
         </div>
 
-        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+        <div class="flex items-center gap-2.5 flex-wrap">
             {% if selected_user %}
-                <a href="{% url 'user_statistics' %}" class="btn-ghost">
-                    <i data-lucide="arrow-left" style="width:14px; height:14px;"></i>
+                <a href="{% url 'user_statistics' %}" class="btn btn-ghost btn-sm rounded-xl gap-2 text-xs border border-base-300 text-base-content/80 hover:border-primary h-11 px-3.5">
+                    <i data-lucide="arrow-left" class="w-4 h-4"></i>
                     Todos los Usuarios
                 </a>
             {% endif %}
-            <a href="{% url 'user_list' %}" class="btn-ghost">
-                <i data-lucide="users" style="width:14px; height:14px;"></i>
+            <a href="{% url 'user_list' %}" class="btn btn-ghost btn-sm rounded-xl gap-2 text-xs border border-base-300 text-base-content/80 hover:border-primary h-11 px-3.5">
+                <i data-lucide="users" class="w-4 h-4 text-warning"></i>
                 Gestionar Cuentas
             </a>
         </div>
@@ -69,80 +57,88 @@
     <!-- ═════════ VISTA GENERAL: TABLA COMPARATIVA DE USUARIOS ═════════ -->
     
     <!-- Buscador -->
-    <form method="get" style="display:flex; gap:10px; max-width:340px;">
-        <div style="position:relative; width:100%;">
-            <i data-lucide="search" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); width:15px; height:15px; color:var(--text-muted);"></i>
-            <input type="text" name="q" value="{{ query }}" placeholder="Filtrar usuario..." class="shadcn-input" style="width:100%; padding-left:36px !important;">
-        </div>
-        {% if query %}
-            <a href="{% url 'user_statistics' %}" class="btn-ghost" style="padding:6px 14px; font-size:0.8rem;">Limpiar</a>
-        {% endif %}
-    </form>
+    <div class="flex flex-wrap justify-between items-center gap-3">
+        <form method="get" class="flex gap-2 w-full max-w-xs">
+            <div class="relative w-full">
+                <i data-lucide="search" class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-base-content/40 pointer-events-none"></i>
+                <input type="text" name="q" value="{{ query }}" placeholder="Filtrar usuario..."
+                       class="input input-bordered input-sm w-full pl-10 pr-4 rounded-xl bg-base-100 border-base-300 text-xs focus:border-primary focus:outline-none placeholder:text-base-content/40 h-10" />
+            </div>
+            {% if query %}
+                <a href="{% url 'user_statistics' %}" class="btn btn-ghost btn-sm rounded-xl border border-base-300 text-xs h-10 px-3">Limpiar</a>
+            {% endif %}
+        </form>
+    </div>
 
-    <div class="shadcn-card" style="padding:0; overflow:hidden;">
-        <div style="overflow-x:auto;">
-            <table class="glass-table">
+    <div class="card bg-base-100 shadow-sm border border-base-300 rounded-2xl overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="table table-zebra w-full">
                 <thead>
-                    <tr>
-                        <th>Usuario</th>
+                    <tr class="bg-base-200/50 border-b border-base-300 text-[11px] font-bold uppercase tracking-wider text-base-content/50">
+                        <th class="py-4 pl-6">Usuario</th>
                         <th>Rol</th>
-                        <th style="text-align:center;">Fanpages Monitoreadas</th>
-                        <th style="text-align:right;">Seguidores Acumulados</th>
-                        <th style="text-align:center;">Prompts IA</th>
-                        <th style="text-align:center;">Fanpages IA</th>
-                        <th style="text-align:right; width:140px;">Acciones</th>
+                        <th class="text-center">Fanpages</th>
+                        <th class="text-right">Seguidores Acumulados</th>
+                        <th class="text-center">Prompts IA</th>
+                        <th class="text-center">Fanpages IA</th>
+                        <th class="text-right pr-6 w-36">Acciones</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody class="text-sm">
                     {% for item in user_stats %}
-                    <tr>
-                        <td>
-                            <div style="display:flex; align-items:center; gap:10px;">
-                                <div class="avatar" style="width:32px; height:32px; font-size:0.75rem;">
+                    <tr class="hover:bg-base-200/30 transition-colors">
+                        <td class="pl-6 py-3.5">
+                            <div class="flex items-center gap-3">
+                                <div class="w-9 h-9 rounded-xl bg-primary/10 border border-primary/20 text-primary font-extrabold flex items-center justify-center text-xs shrink-0 shadow-xs">
                                     {{ item.user.username|make_list|first|upper }}
                                 </div>
                                 <div>
-                                    <div style="font-weight:600; color:var(--text-primary); font-size:0.9rem;">{{ item.user.username }}</div>
-                                    <div style="font-size:0.72rem; color:var(--text-muted);">Registrado: {{ item.user.date_joined|date:"d/m/Y" }}</div>
+                                    <div class="font-bold text-sm text-base-content tracking-tight">{{ item.user.username }}</div>
+                                    <div class="text-[11px] text-base-content/60 font-mono">Registrado: {{ item.user.date_joined|date:"d/m/Y" }}</div>
                                 </div>
                             </div>
                         </td>
                         <td>
                             {% if item.user.role == 'superadmin' %}
-                                <span class="badge-pill badge-superadmin">Super Admin</span>
+                                <span class="badge badge-warning badge-md font-bold text-xs px-2.5">Super Admin</span>
                             {% elif item.user.role == 'admin' %}
-                                <span class="badge-pill badge-admin">Admin</span>
+                                <span class="badge badge-primary badge-md font-bold text-xs px-2.5">Admin</span>
                             {% else %}
-                                <span class="badge-pill badge-user">User</span>
+                                <span class="badge badge-neutral badge-md font-medium text-xs px-2.5">User</span>
                             {% endif %}
                         </td>
-                        <td style="text-align:center;">
-                            <span class="badge-pill badge-user" style="font-family:monospace; font-weight:700;">
+                        <td class="text-center">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-lg bg-base-200 border border-base-300 text-xs font-mono font-bold text-base-content">
                                 {{ item.pages_count }}
                             </span>
                         </td>
-                        <td style="text-align:right;">
-                            <span class="badge-pill badge-superadmin" title="{{ item.total_followers|floatformat:0 }} seguidores" style="font-family:monospace; font-weight:700; font-size:0.85rem; background:rgba(34,197,94,0.12); color:#22c55e; border-color:rgba(34,197,94,0.25);">
+                        <td class="text-right">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-lg bg-success/10 text-success border border-success/20 text-xs font-mono font-bold" title="{{ item.total_followers|floatformat:0 }} seguidores">
                                 {{ item.formatted_followers }}
                             </span>
                         </td>
-                        <td style="text-align:center; font-family:monospace; font-size:0.85rem; color:var(--text-primary);">
+                        <td class="text-center font-mono text-xs font-semibold text-base-content">
                             {{ item.prompts_count }}
                         </td>
-                        <td style="text-align:center; font-family:monospace; font-size:0.85rem; color:var(--text-primary);">
+                        <td class="text-center font-mono text-xs font-semibold text-base-content">
                             {{ item.fanpages_count }}
                         </td>
-                        <td style="text-align:right;">
-                            <a href="{% url 'user_statistics' %}?user_id={{ item.user.id }}" class="btn-brand" style="padding:4px 14px; font-size:0.75rem; text-decoration:none;">
-                                <i data-lucide="eye" style="width:13px; height:13px;"></i>
-                                Inspeccionar
+                        <td class="text-right pr-6 whitespace-nowrap">
+                            <a href="{% url 'user_statistics' %}?user_id={{ item.user.id }}" 
+                               class="btn btn-ghost btn-sm rounded-xl border border-base-300 hover:border-primary hover:bg-primary/10 hover:text-primary text-base-content/80 gap-2 h-8 min-h-8 px-3.5 text-xs font-semibold transition-all inline-flex flex-row flex-nowrap items-center justify-center whitespace-nowrap shadow-2xs group">
+                                <i data-lucide="eye" class="w-3.5 h-3.5 shrink-0 text-base-content/60 group-hover:text-primary transition-colors"></i>
+                                <span class="whitespace-nowrap leading-none">Inspeccionar</span>
                             </a>
                         </td>
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="7" style="padding:48px 20px; text-align:center; color:var(--text-muted);">
-                            No se encontraron usuarios coincidentes con la búsqueda.
+                        <td colspan="7" class="p-16 text-center text-base-content/50">
+                            <div class="flex flex-col items-center justify-center gap-2">
+                                <i data-lucide="users" class="w-12 h-12 text-base-content/30 mb-1"></i>
+                                <div class="text-sm font-bold text-base-content">No se encontraron usuarios</div>
+                                <div class="text-xs text-base-content/60">No hay registros coincidentes con el criterio de búsqueda.</div>
+                            </div>
                         </td>
                     </tr>
                     {% endfor %}
@@ -154,146 +150,155 @@
     {% else %}
     <!-- ═════════ VISTA DETALLADA: USUARIO SELECCIONADO ═════════ -->
 
-    <!-- Tarjetas KPI del Usuario -->
-    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:16px;">
+    <!-- Tarjetas KPI del Usuario (DaisyUI Stats) -->
+    <div class="stats stats-vertical lg:stats-horizontal shadow-sm bg-base-100 border border-base-300 w-full rounded-2xl divide-y lg:divide-y-0 lg:divide-x divide-base-300">
         
         <!-- Total Fanpages -->
-        <div class="metric-card-shadcn">
-            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px;">
-                <span style="font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-muted);">Fanpages Monitoreadas</span>
-                <div style="width:34px; height:34px; border-radius:9999px; background:rgba(239,68,68,0.12); display:flex; align-items:center; justify-content:center; color:#ef4444;">
-                    <i data-lucide="layers" style="width:16px; height:16px;"></i>
+        <div class="stat p-5 lg:p-6">
+            <div class="stat-figure">
+                <div class="w-12 h-12 rounded-2xl bg-warning/10 text-warning border border-warning/20 flex items-center justify-center shadow-xs">
+                    <i data-lucide="layers" class="w-6 h-6"></i>
                 </div>
             </div>
-            <div style="display:flex; align-items:baseline; gap:8px;">
-                <span class="metric-value-huge" style="color:var(--text-primary);">{{ selected_user_metrics.total_pages }}</span>
-                <span class="badge-pill badge-user" style="font-size:0.68rem;">activas</span>
+            <div class="stat-title text-[11px] font-bold uppercase tracking-wider text-base-content/50">Fanpages Monitoreadas</div>
+            <div class="stat-value text-3xl font-extrabold tracking-tight font-mono text-base-content mt-1 flex items-baseline gap-2.5">
+                <span>{{ selected_user_metrics.total_pages }}</span>
+                <span class="badge badge-neutral badge-md font-bold px-2.5 text-xs">activas</span>
             </div>
+            <div class="stat-desc text-xs text-base-content/60 mt-1">Registradas por el usuario</div>
         </div>
 
         <!-- Total Seguidores -->
-        <div class="metric-card-shadcn">
-            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px;">
-                <span style="font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-muted);">Audiencia Total</span>
-                <div style="width:34px; height:34px; border-radius:9999px; background:rgba(34,197,94,0.12); display:flex; align-items:center; justify-content:center; color:#22c55e;">
-                    <i data-lucide="users" style="width:16px; height:16px;"></i>
+        <div class="stat p-5 lg:p-6">
+            <div class="stat-figure">
+                <div class="w-12 h-12 rounded-2xl bg-success/10 text-success border border-success/20 flex items-center justify-center shadow-xs">
+                    <i data-lucide="users" class="w-6 h-6"></i>
                 </div>
             </div>
-            <div style="display:flex; align-items:baseline; gap:8px;">
-                <span class="metric-value-huge" style="color:#22c55e;" title="{{ selected_user_metrics.total_followers|floatformat:0 }} seguidores">{{ selected_user_metrics.formatted_followers }}</span>
-                <span class="badge-pill badge-superadmin" style="font-size:0.68rem; background:rgba(34,197,94,0.12); color:#22c55e; border-color:rgba(34,197,94,0.25);">seguidores</span>
+            <div class="stat-title text-[11px] font-bold uppercase tracking-wider text-base-content/50">Audiencia Total</div>
+            <div class="stat-value text-3xl font-extrabold tracking-tight font-mono text-success mt-1 flex items-baseline gap-2.5" title="{{ selected_user_metrics.total_followers|floatformat:0 }} seguidores">
+                <span>{{ selected_user_metrics.formatted_followers }}</span>
+                <span class="badge badge-success badge-md font-bold px-2.5 text-white text-xs">seguidores</span>
             </div>
+            <div class="stat-desc text-xs text-base-content/60 mt-1">Comunidad acumulada</div>
         </div>
 
         <!-- Prompts IA -->
-        <div class="metric-card-shadcn">
-            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px;">
-                <span style="font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-muted);">Prompts IA Creados</span>
-                <div style="width:34px; height:34px; border-radius:9999px; background:rgba(59,130,246,0.12); display:flex; align-items:center; justify-content:center; color:#3b82f6;">
-                    <i data-lucide="clapperboard" style="width:16px; height:16px;"></i>
+        <div class="stat p-5 lg:p-6">
+            <div class="stat-figure">
+                <div class="w-12 h-12 rounded-2xl bg-warning/10 text-warning border border-warning/20 flex items-center justify-center shadow-xs">
+                    <i data-lucide="clapperboard" class="w-6 h-6"></i>
                 </div>
             </div>
-            <div style="display:flex; align-items:baseline; gap:8px;">
-                <span class="metric-value-huge" style="color:var(--text-primary);">{{ selected_user_metrics.total_prompts }}</span>
-                <span class="badge-pill badge-admin" style="font-size:0.68rem;">completados</span>
+            <div class="stat-title text-[11px] font-bold uppercase tracking-wider text-base-content/50">Prompts IA Creados</div>
+            <div class="stat-value text-3xl font-extrabold tracking-tight font-mono text-base-content mt-1 flex items-baseline gap-2.5">
+                <span>{{ selected_user_metrics.total_prompts }}</span>
+                <span class="badge badge-warning badge-md font-bold px-2.5 text-xs">completados</span>
             </div>
+            <div class="stat-desc text-xs text-base-content/60 mt-1">Video to Prompt</div>
         </div>
 
         <!-- Fanpages IA -->
-        <div class="metric-card-shadcn">
-            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px;">
-                <span style="font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-muted);">Fanpages IA Creadas</span>
-                <div style="width:34px; height:34px; border-radius:9999px; background:rgba(250,204,21,0.12); display:flex; align-items:center; justify-content:center; color:#facc15;">
-                    <i data-lucide="sparkles" style="width:16px; height:16px;"></i>
+        <div class="stat p-5 lg:p-6">
+            <div class="stat-figure">
+                <div class="w-12 h-12 rounded-2xl bg-primary/10 text-primary border border-primary/20 flex items-center justify-center shadow-xs">
+                    <i data-lucide="sparkles" class="w-6 h-6"></i>
                 </div>
             </div>
-            <div style="display:flex; align-items:baseline; gap:8px;">
-                <span class="metric-value-huge" style="color:var(--text-primary);">{{ selected_user_metrics.total_fanpages }}</span>
-                <span class="badge-pill badge-user" style="font-size:0.68rem;">perfiles</span>
+            <div class="stat-title text-[11px] font-bold uppercase tracking-wider text-base-content/50">Fanpages IA Creadas</div>
+            <div class="stat-value text-3xl font-extrabold tracking-tight font-mono text-base-content mt-1 flex items-baseline gap-2.5">
+                <span>{{ selected_user_metrics.total_fanpages }}</span>
+                <span class="badge badge-primary badge-md font-bold px-2.5 text-xs text-primary-content">perfiles</span>
             </div>
+            <div class="stat-desc text-xs text-base-content/60 mt-1">Creator Studio</div>
         </div>
 
     </div>
 
     <!-- Tabla de Fanpages del Usuario Seleccionado -->
-    <div class="shadcn-card" style="padding:0; overflow:hidden;">
-        <div style="padding:16px 20px; border-bottom:1px solid var(--border-subtle); display:flex; justify-content:space-between; align-items:center;">
-            <div style="display:flex; align-items:center; gap:10px;">
-                <h2 style="font-size:1rem; font-weight:700; color:var(--text-primary); margin:0;">
+    <div class="card bg-base-100 shadow-sm border border-base-300 rounded-2xl overflow-hidden">
+        <div class="p-4 lg:px-6 border-b border-base-300/70 flex justify-between items-center bg-base-200/30">
+            <div class="flex items-center gap-2.5">
+                <h2 class="text-sm font-bold text-base-content m-0">
                     Fanpages Monitoreadas de {{ selected_user.username }}
                 </h2>
-                <span class="badge-pill badge-user" style="font-family:monospace;">{{ selected_user_pages.count }}</span>
+                <span class="badge badge-neutral badge-md font-mono font-bold px-2.5">{{ selected_user_pages.count }}</span>
             </div>
         </div>
 
-        <div style="overflow-x:auto;">
-            <table class="glass-table">
+        <div class="overflow-x-auto">
+            <table class="table table-zebra w-full">
                 <thead>
-                    <tr>
-                        <th style="width:50px; text-align:center;">#</th>
+                    <tr class="bg-base-200/50 border-b border-base-300 text-[11px] font-bold uppercase tracking-wider text-base-content/50">
+                        <th class="w-12 text-center py-4 pl-4">#</th>
                         <th>Fanpage</th>
-                        <th style="text-align:right;">Seguidores</th>
-                        <th style="text-align:center;">Crecimiento</th>
-                        <th style="text-align:center;">Estado</th>
-                        <th style="text-align:center; width:130px;">Seguimiento</th>
+                        <th class="text-right">Seguidores</th>
+                        <th class="text-center">Crecimiento</th>
+                        <th class="text-center">Estado</th>
+                        <th class="text-center pr-6 w-36">Seguimiento</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody class="text-sm">
                     {% for page in selected_user_pages %}
-                    <tr>
-                        <td style="text-align:center; font-family:monospace; color:var(--text-muted); font-size:0.8rem;">{{ page.id }}</td>
-                        <td>
-                            <div style="font-weight:600; color:var(--text-primary); font-size:0.9rem;">{{ page.name }}</div>
-                            <a href="{{ page.url }}" target="_blank" rel="noopener noreferrer" style="font-size:0.75rem; color:var(--text-muted); font-family:monospace; text-decoration:none;" onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='var(--text-muted)'">
+                    <tr class="hover:bg-base-200/30 transition-colors">
+                        <td class="text-center font-mono text-xs text-base-content/50 pl-4">{{ page.id }}</td>
+                        <td class="py-3.5">
+                            <div class="font-bold text-sm text-base-content tracking-tight">{{ page.name }}</div>
+                            <a href="{{ page.url }}" target="_blank" rel="noopener noreferrer" class="text-xs text-primary hover:underline font-mono opacity-80 inline-flex items-center gap-1 transition">
                                 {{ page.url }}
+                                <i data-lucide="external-link" class="w-3 h-3 opacity-60"></i>
                             </a>
                         </td>
-                        <td style="text-align:right;">
-                            <span class="badge-pill badge-superadmin" title="{{ page.followers|floatformat:0 }} seguidores" style="font-family:monospace; font-weight:700; font-size:0.85rem; background:rgba(34,197,94,0.12); color:#22c55e; border-color:rgba(34,197,94,0.25);">
+                        <td class="text-right font-mono font-bold text-sm text-base-content" title="{{ page.followers|floatformat:0 }} seguidores">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-lg bg-base-200 border border-base-300 text-xs">
                                 {{ page.formatted_followers }}
                             </span>
                         </td>
-                        <td style="text-align:center;">
+                        <td class="text-center font-mono text-xs">
                             {% with growth=page.growth_data %}
                                 {% if growth.is_positive %}
-                                    <span class="badge-pill" style="background:rgba(34,197,94,0.12); color:#22c55e; border:1px solid rgba(34,197,94,0.25); font-family:monospace;" title="Crecimiento: {{ growth.delta|floatformat:0 }} seguidores">
-                                        <i data-lucide="trending-up" style="width:12px; height:12px;"></i>
+                                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-success/10 text-success border border-success/20" title="Crecimiento: {{ growth.delta|floatformat:0 }} seguidores">
+                                        <i data-lucide="trending-up" class="w-3 h-3"></i>
                                         +{{ growth.formatted_delta }} ({{ growth.formatted_pct }})
                                     </span>
                                 {% else %}
-                                    <span class="badge-pill badge-user" style="font-family:monospace;">
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs text-base-content/50 bg-base-200 border border-base-300">
                                         0 (0%)
                                     </span>
                                 {% endif %}
                             {% endwith %}
                         </td>
-                        <td style="text-align:center;">
+                        <td class="text-center">
                             {% if page.followers > 0 %}
-                            <span class="badge-pill" style="background:rgba(34,197,94,0.12); color:#22c55e; border:1px solid rgba(34,197,94,0.25);">
-                                <i data-lucide="check" style="width:11px; height:11px;"></i> Activa
+                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-success/10 text-success border border-success/20">
+                                <i data-lucide="check" class="w-3 h-3"></i> Activa
                             </span>
                             {% else %}
-                            <span class="badge-pill badge-superadmin" title="{{ page.status }}">
-                                <i data-lucide="alert-triangle" style="width:11px; height:11px;"></i> {{ page.status|truncatechars:14 }}
+                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-warning/10 text-warning border border-warning/20" title="{{ page.status }}">
+                                <i data-lucide="alert-triangle" class="w-3 h-3"></i> {{ page.status|truncatechars:14 }}
                             </span>
                             {% endif %}
                         </td>
-                        <td style="text-align:center;">
-                            <div style="display:flex; align-items:center; justify-content:center; gap:6px;">
-                                <button type="button" class="btn-ghost" style="padding:4px 10px; font-size:0.72rem;" onclick="openGrowthModal({{ page.id }})" title="Ver tabla de evolución">
-                                    <i data-lucide="line-chart" style="width:12px; height:12px; color:#22c55e;"></i>
+                        <td class="text-center pr-6 whitespace-nowrap">
+                            <div class="inline-flex items-center gap-1.5 justify-center">
+                                <button type="button" class="btn btn-ghost btn-xs gap-1.5 border border-base-300 hover:border-primary hover:bg-primary/10 hover:text-primary rounded-xl text-xs h-8 px-2.5 text-base-content/75 transition-all inline-flex items-center" onclick="openGrowthModal({{ page.id }})" title="Ver tabla de evolución">
+                                    <i data-lucide="line-chart" class="w-3.5 h-3.5 text-success"></i>
                                     Historial
                                 </button>
-                                <a href="{{ page.url }}" target="_blank" rel="noopener noreferrer" class="action-pill-btn" style="width:28px; height:28px;" title="Abrir en Facebook">
-                                    <i data-lucide="external-link" style="width:13px; height:13px;"></i>
+                                <a href="{{ page.url }}" target="_blank" rel="noopener noreferrer" class="btn btn-ghost btn-square btn-xs border border-base-300 hover:border-primary hover:bg-primary/10 hover:text-primary rounded-xl h-8 w-8 text-base-content/75 transition-all" title="Abrir en Facebook">
+                                    <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
                                 </a>
                             </div>
                         </td>
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="6" style="padding:48px 20px; text-align:center; color:var(--text-muted);">
-                            Este usuario no tiene fanpages registradas en este momento.
+                        <td colspan="6" class="p-16 text-center text-base-content/50">
+                            <div class="flex flex-col items-center justify-center gap-2">
+                                <i data-lucide="inbox" class="w-12 h-12 text-base-content/30 mb-1"></i>
+                                <div class="text-sm font-bold text-base-content">Sin fanpages registradas</div>
+                                <div class="text-xs text-base-content/60">Este usuario no tiene fanpages registradas en este momento.</div>
+                            </div>
                         </td>
                     </tr>
                     {% endfor %}
@@ -306,67 +311,70 @@
 
 </div>
 
-<!-- ═════════ MODAL SHADCN / RADIX: HISTORIAL DE CRECIMIENTO ═════════ -->
-<div id="growthHistoryModal" style="display:none; position:fixed; inset:0; z-index:100000; background:var(--modal-backdrop); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); align-items:center; justify-content:center; padding:16px;">
-    <div class="shadcn-card" style="width:100%; max-width:680px; max-height:85vh; display:flex; flex-direction:column; animation:modalIn 0.22s ease-out; overflow:hidden;">
+<!-- ═════════ MODAL: HISTORIAL DE CRECIMIENTO ═════════ -->
+<div id="growthHistoryModal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-md hidden items-center justify-center p-4">
+    <div class="card bg-base-100 shadow-2xl border border-base-300 w-full max-w-2xl max-h-[85vh] flex flex-col rounded-2xl overflow-hidden p-0">
         
         <!-- Modal Header -->
-        <div style="padding:18px 24px; border-bottom:1px solid var(--border-subtle); display:flex; justify-content:space-between; align-items:center;">
-            <div style="display:flex; align-items:center; gap:12px;">
-                <div style="width:36px; height:36px; border-radius:9999px; background:rgba(34,197,94,0.12); border:1px solid rgba(34,197,94,0.25); display:flex; align-items:center; justify-content:center; color:#22c55e;">
-                    <i data-lucide="trending-up" style="width:18px; height:18px;"></i>
+        <div class="p-5 lg:px-6 border-b border-base-300 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-success/10 border border-success/20 flex items-center justify-center text-success shrink-0 shadow-xs">
+                    <i data-lucide="trending-up" class="w-5 h-5"></i>
                 </div>
                 <div>
-                    <h3 id="growthModalTitle" style="font-size:1.05rem; font-weight:700; color:var(--text-primary); margin:0;">Historial de Crecimiento</h3>
-                    <span id="growthModalUrl" style="font-size:0.75rem; color:var(--text-muted); font-family:monospace;"></span>
+                    <h3 id="growthModalTitle" class="text-base font-bold text-base-content m-0">Historial de Crecimiento</h3>
+                    <span id="growthModalUrl" class="text-xs text-base-content/60 font-mono block"></span>
                 </div>
             </div>
-            <button type="button" class="action-pill-btn" onclick="closeGrowthModal()">
-                <i data-lucide="x"></i>
+            <button type="button" class="btn btn-ghost btn-square btn-xs rounded-lg text-base-content/60 hover:text-base-content" onclick="closeGrowthModal()">
+                <i data-lucide="x" class="w-4 h-4"></i>
             </button>
         </div>
 
         <!-- Growth Summary Highlights -->
-        <div style="padding:14px 24px; background:var(--bg-muted); border-bottom:1px solid var(--border-subtle); display:grid; grid-template-columns:repeat(3, 1fr); gap:12px;">
-            <div style="text-align:center; padding:8px; background:var(--bg-card); border-radius:0.75rem; border:1px solid var(--border-subtle);">
-                <div style="font-size:0.7rem; color:var(--text-muted); text-transform:uppercase; font-weight:700;">Seguidores Iniciales</div>
-                <div id="growthModalInitial" style="font-size:1.1rem; font-weight:700; color:var(--text-primary); font-family:monospace;">-</div>
+        <div class="p-4 lg:px-6 bg-base-200/50 border-b border-base-300 grid grid-cols-3 gap-3">
+            <div class="text-center p-2.5 bg-base-100 rounded-xl border border-base-300">
+                <div class="text-[10px] text-base-content/60 uppercase font-bold">Iniciales</div>
+                <div id="growthModalInitial" class="text-base font-bold text-base-content font-mono mt-0.5">-</div>
             </div>
-            <div style="text-align:center; padding:8px; background:var(--bg-card); border-radius:0.75rem; border:1px solid var(--border-subtle);">
-                <div style="font-size:0.7rem; color:var(--text-muted); text-transform:uppercase; font-weight:700;">Seguidores Actuales</div>
-                <div id="growthModalCurrent" style="font-size:1.1rem; font-weight:700; color:#22c55e; font-family:monospace;">-</div>
+            <div class="text-center p-2.5 bg-base-100 rounded-xl border border-base-300">
+                <div class="text-[10px] text-base-content/60 uppercase font-bold">Actuales</div>
+                <div id="growthModalCurrent" class="text-base font-bold text-success font-mono mt-0.5">-</div>
             </div>
-            <div style="text-align:center; padding:8px; background:var(--bg-card); border-radius:0.75rem; border:1px solid var(--border-subtle);">
-                <div style="font-size:0.7rem; color:var(--text-muted); text-transform:uppercase; font-weight:700;">Crecimiento Total</div>
-                <div id="growthModalTotalDelta" style="font-size:1.1rem; font-weight:700; color:#22c55e; font-family:monospace;">-</div>
+            <div class="text-center p-2.5 bg-base-100 rounded-xl border border-base-300">
+                <div class="text-[10px] text-base-content/60 uppercase font-bold">Crecimiento</div>
+                <div id="growthModalTotalDelta" class="text-base font-bold text-success font-mono mt-0.5">-</div>
             </div>
         </div>
 
         <!-- Interactive Chart Visualizer -->
-        <div style="padding:14px 20px; border-bottom:1px solid var(--border-subtle); background:var(--bg-card);">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                <span style="font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-muted);">Curva de Evolución</span>
-                <span class="badge-pill badge-admin" style="font-size:0.7rem;">Tendencia</span>
+        <div class="p-4 lg:p-5 border-b border-base-300 bg-base-100">
+            <div class="flex justify-between items-center mb-2">
+                <span class="text-[11px] font-bold uppercase tracking-wider text-base-content/60">Curva de Evolución</span>
+                <span class="badge badge-success badge-md font-mono font-bold text-white px-2.5">Tendencia</span>
             </div>
-            <div style="height:150px; position:relative; width:100%;">
+            <div style="height: 160px; min-height: 160px; position: relative; width: 100%;">
                 <canvas id="growthChartCanvas"></canvas>
             </div>
         </div>
 
         <!-- Snapshots Table with Scroll -->
-        <div style="overflow-y:auto; max-height:220px; flex:1; padding:0;">
-            <table class="glass-table" style="margin:0;">
+        <div class="overflow-y-auto max-h-52 flex-1 p-0">
+            <table class="table table-zebra table-xs w-full">
                 <thead>
-                    <tr>
-                        <th>Fecha / Hora</th>
-                        <th style="text-align:right;">Seguidores</th>
-                        <th style="text-align:right;">Variación</th>
+                    <tr class="bg-base-200/40 text-[10px] uppercase font-bold text-base-content/50">
+                        <th class="py-2.5 pl-5">Fecha / Hora</th>
+                        <th class="text-right">Seguidores</th>
+                        <th class="text-right pr-5">Variación</th>
                     </tr>
                 </thead>
                 <tbody id="growthSnapshotsBody">
                     <tr>
-                        <td colspan="3" style="text-align:center; padding:30px; color:var(--text-muted);">
-                            Cargando registros históricos...
+                        <td colspan="3" class="text-center py-8 text-base-content/50">
+                            <div class="flex items-center justify-center gap-2 text-xs">
+                                <i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i>
+                                <span>Cargando registros históricos...</span>
+                            </div>
                         </td>
                     </tr>
                 </tbody>
@@ -374,8 +382,8 @@
         </div>
 
         <!-- Modal Footer -->
-        <div style="padding:14px 24px; border-top:1px solid var(--border-subtle); display:flex; justify-content:flex-end;">
-            <button type="button" class="btn-ghost" onclick="closeGrowthModal()">Cerrar</button>
+        <div class="p-3.5 lg:px-6 border-t border-base-300 flex justify-end bg-base-200/30">
+            <button type="button" class="btn btn-ghost btn-sm text-xs rounded-xl border border-base-300 px-4" onclick="closeGrowthModal()">Cerrar</button>
         </div>
     </div>
 </div>
@@ -396,69 +404,71 @@
 
         if (!historyList || historyList.length === 0) return;
 
-        const chronological = [...historyList].reverse();
-        const labels = chronological.map(item => {
+        const sorted = [...historyList].sort((a, b) => (a.id || 0) - (b.id || 0));
+        const labels = sorted.map(item => {
             return item.date.length > 10 ? item.date.substring(0, 5) + ' ' + item.date.substring(11, 16) : item.date;
         });
-        const values = chronological.map(item => item.followers);
+        const values = sorted.map(item => item.followers);
 
         const ctx = canvas.getContext('2d');
+        if (!ctx) return;
         const gradient = ctx.createLinearGradient(0, 0, 0, 150);
         gradient.addColorStop(0, 'rgba(34, 197, 94, 0.35)');
         gradient.addColorStop(1, 'rgba(34, 197, 94, 0.0)');
 
-        activeGrowthChart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'Seguidores',
-                    data: values,
-                    borderColor: '#22c55e',
-                    backgroundColor: gradient,
-                    fill: true,
-                    tension: 0.35,
-                    borderWidth: 2,
-                    pointRadius: values.length > 15 ? 2 : 4,
-                    pointBackgroundColor: '#22c55e',
-                    pointHoverRadius: 6,
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        backgroundColor: 'rgba(24, 24, 27, 0.95)',
-                        titleColor: '#fafafa',
-                        bodyColor: '#4ade80',
-                        borderColor: 'rgba(255, 255, 255, 0.1)',
-                        borderWidth: 1,
-                        padding: 10,
-                        displayColors: false,
-                        callbacks: {
-                            label: function(context) {
-                                return `${Number(context.raw).toLocaleString()} seguidores`;
+        try {
+            activeGrowthChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Seguidores',
+                        data: values,
+                        borderColor: '#22c55e',
+                        backgroundColor: gradient,
+                        fill: true,
+                        tension: 0.35,
+                        borderWidth: 2,
+                        pointRadius: values.length === 1 ? 6 : (values.length > 15 ? 2 : 4),
+                        pointBackgroundColor: '#22c55e',
+                        pointHoverRadius: 6,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                            titleColor: '#e2e8f0',
+                            bodyColor: '#4ade80',
+                            borderColor: 'rgba(255, 255, 255, 0.1)',
+                            borderWidth: 1,
+                            padding: 10,
+                            displayColors: false,
+                            callbacks: {
+                                label: function(context) {
+                                    return `${Number(context.raw).toLocaleString()} seguidores`;
+                                }
                             }
                         }
-                    }
-                },
-                scales: {
-                    x: {
-                        grid: { color: 'rgba(255, 255, 255, 0.04)' },
-                        ticks: { color: '#71717a', font: { size: 10 } }
                     },
-                    y: {
-                        grid: { color: 'rgba(255, 255, 255, 0.04)' },
-                        ticks: {
-                            color: '#71717a',
-                            font: { size: 10 }
+                    scales: {
+                        x: {
+                            grid: { color: 'rgba(0, 0, 0, 0.05)' },
+                            ticks: { color: '#888888', font: { size: 10 } }
+                        },
+                        y: {
+                            grid: { color: 'rgba(0, 0, 0, 0.05)' },
+                            ticks: { color: '#888888', font: { size: 10 } }
                         }
                     }
                 }
-            }
-        });
+            });
+        } catch (chartErr) {
+            console.warn('Error rendering growth chart:', chartErr);
+        }
     }
 
     async function openGrowthModal(pageId) {
@@ -466,63 +476,78 @@
         const tbody = document.getElementById('growthSnapshotsBody');
         if (modal) {
             modal.style.display = 'flex';
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
             document.body.style.overflow = 'hidden';
-            lucide.createIcons({ root: modal });
+            if (window.lucide) lucide.createIcons();
         }
+
+        if (!tbody) return;
 
         tbody.innerHTML = `
             <tr>
-                <td colspan="3" style="text-align:center; padding:30px; color:var(--text-muted);">
-                    <div style="display:flex; align-items:center; justify-content:center; gap:8px;">
-                        <i data-lucide="loader-2" class="animate-spin" style="width:16px; height:16px;"></i>
+                <td colspan="3" class="text-center py-8 text-base-content/50">
+                    <div class="flex items-center justify-center gap-2 text-xs">
+                        <i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i>
                         <span>Cargando historial de seguidores...</span>
                     </div>
                 </td>
             </tr>
         `;
-        lucide.createIcons({ root: tbody });
+        if (window.lucide) lucide.createIcons();
 
         try {
             const res = await fetch(`/extractor/api/page/${pageId}/history/`);
             const data = await res.json();
 
             if (data.status === 'ok') {
-                document.getElementById('growthModalTitle').textContent = data.page_name || 'Historial de Fanpage';
-                document.getElementById('growthModalUrl').textContent = data.page_url || '';
+                const titleEl = document.getElementById('growthModalTitle');
+                const urlEl = document.getElementById('growthModalUrl');
+                if (titleEl) titleEl.textContent = data.page_name || 'Historial de Fanpage';
+                if (urlEl) urlEl.textContent = data.page_url || '';
 
-                const initialFmt = Number(data.growth?.initial || data.current_followers).toLocaleString();
+                const initialFmt = Number(data.growth?.initial ?? data.current_followers).toLocaleString();
                 const currentFmt = Number(data.current_followers).toLocaleString();
                 const deltaFmt = data.growth?.formatted_delta || '0';
                 const pctFmt = data.growth?.formatted_pct || '0%';
 
-                document.getElementById('growthModalInitial').textContent = initialFmt;
-                document.getElementById('growthModalCurrent').textContent = currentFmt;
-                document.getElementById('growthModalTotalDelta').textContent = `${deltaFmt} (${pctFmt})`;
+                const initEl = document.getElementById('growthModalInitial');
+                const currEl = document.getElementById('growthModalCurrent');
+                const deltaEl = document.getElementById('growthModalTotalDelta');
 
-                renderGrowthChart(data.history, data.page_name);
+                if (initEl) initEl.textContent = initialFmt;
+                if (currEl) currEl.textContent = currentFmt;
+                if (deltaEl) {
+                    deltaEl.textContent = `${deltaFmt} (${pctFmt})`;
+                    if (data.growth?.is_positive) {
+                        deltaEl.className = 'text-base font-bold text-success font-mono mt-0.5';
+                    } else if (data.growth?.is_negative) {
+                        deltaEl.className = 'text-base font-bold text-error font-mono mt-0.5';
+                    } else {
+                        deltaEl.className = 'text-base font-bold text-base-content font-mono mt-0.5';
+                    }
+                }
+
+                setTimeout(() => renderGrowthChart(data.history, data.page_name), 60);
 
                 if (data.history && data.history.length > 0) {
                     tbody.innerHTML = data.history.map(item => `
-                        <tr>
-                            <td style="font-family:monospace; font-size:0.82rem; color:var(--text-muted);">${item.date}</td>
-                            <td style="text-align:right; font-family:monospace; font-weight:700; color:var(--text-primary);">
-                                ${Number(item.followers).toLocaleString()}
-                            </td>
-                            <td style="text-align:right;">
+                        <tr class="hover:bg-base-200/30 transition-colors">
+                            <td class="font-mono text-xs text-base-content/70 pl-5 py-2.5">${item.date}</td>
+                            <td class="text-right font-mono font-bold text-xs text-base-content">${Number(item.followers).toLocaleString()}</td>
+                            <td class="text-right pr-5">
                                 ${item.is_positive ? `
-                                    <span class="badge-pill" style="background:rgba(34,197,94,0.12); color:#22c55e; border:1px solid rgba(34,197,94,0.25); font-family:monospace;">
-                                        <i data-lucide="trending-up" style="width:11px; height:11px;"></i>
+                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-success/10 text-success border border-success/20">
+                                        <i data-lucide="trending-up" class="w-3 h-3"></i>
                                         ${item.formatted_delta}
                                     </span>
                                 ` : item.is_negative ? `
-                                    <span class="badge-pill" style="background:rgba(239,68,68,0.12); color:#f87171; border:1px solid rgba(239,68,68,0.25); font-family:monospace;">
-                                        <i data-lucide="trending-down" style="width:11px; height:11px;"></i>
+                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-error/10 text-error border border-error/20">
+                                        <i data-lucide="trending-down" class="w-3 h-3"></i>
                                         ${item.formatted_delta}
                                     </span>
                                 ` : `
-                                    <span class="badge-pill badge-user" style="font-family:monospace;">
-                                        0
-                                    </span>
+                                    <span class="text-base-content/40 text-xs font-mono">0</span>
                                 `}
                             </td>
                         </tr>
@@ -530,7 +555,7 @@
                 } else {
                     tbody.innerHTML = `
                         <tr>
-                            <td colspan="3" style="text-align:center; padding:24px; color:var(--text-muted);">
+                            <td colspan="3" class="text-center py-6 text-xs text-base-content/50">
                                 No hay registros adicionales aún.
                             </td>
                         </tr>
@@ -539,23 +564,22 @@
             } else {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="3" style="text-align:center; padding:24px; color:#f87171;">
+                        <td colspan="3" class="text-center py-6 text-xs text-error">
                             Error al cargar el historial.
                         </td>
                     </tr>
                 `;
             }
-            lucide.createIcons({ root: modal });
+            if (window.lucide) lucide.createIcons();
         } catch (err) {
-            console.error('Error fetching growth history:', err);
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="3" style="text-align:center; padding:24px; color:#f87171;">
+                    <td colspan="3" class="text-center py-6 text-xs text-error">
                         Error de conexión al cargar el historial.
                     </td>
                 </tr>
             `;
-            lucide.createIcons({ root: tbody });
+            if (window.lucide) lucide.createIcons();
         }
     }
 
@@ -563,14 +587,19 @@
         const modal = document.getElementById('growthHistoryModal');
         if (modal) {
             modal.style.display = 'none';
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
             document.body.style.overflow = 'auto';
+        }
+        if (activeGrowthChart) {
+            activeGrowthChart.destroy();
+            activeGrowthChart = null;
         }
     }
 
     window.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') closeGrowthModal();
     });
-
     document.getElementById('growthHistoryModal')?.addEventListener('click', (e) => {
         if (e.target.id === 'growthHistoryModal') closeGrowthModal();
     });

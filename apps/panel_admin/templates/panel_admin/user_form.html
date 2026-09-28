@@ -1,28 +1,28 @@
-{% extends 'panel_base.html' %}
+{% extends 'panel_base_daisy.html' %}
 
 {% block title %}{{ action }} Usuario — Rebooy Panel{% endblock %}
 {% block breadcrumb %}
-    <a href="{% url 'user_list' %}" style="color:var(--text-secondary); text-decoration:none;">Usuarios</a>
-    <span style="margin:0 6px; color:var(--text-muted);">/</span>
-    <span style="color:var(--text-primary); font-weight:600;">{{ action }}</span>
+<li><span class="opacity-60">Administración</span></li>
+<li><a href="{% url 'user_list' %}" class="opacity-60 hover:opacity-100 transition">Usuarios</a></li>
+<li class="font-semibold text-primary">{{ action }}</li>
 {% endblock %}
 
 {% block content %}
-<div style="max-width:920px; margin:0 auto; padding-bottom:40px;">
+<div class="flex flex-col gap-6 pb-12 w-full">
     
     <!-- ═════════ HEADER ═════════ -->
-    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; flex-wrap:wrap; gap:16px;">
-        <div style="display:flex; align-items:center; gap:14px;">
-            <a href="{% url 'user_list' %}" class="action-pill-btn" style="width:38px; height:38px;" title="Volver a usuarios">
-                <i data-lucide="arrow-left" style="width:18px; height:18px;"></i>
+    <div class="flex items-center justify-between flex-wrap gap-4">
+        <div class="flex items-center gap-3.5">
+            <a href="{% url 'user_list' %}" class="btn btn-ghost btn-square btn-sm rounded-xl border border-base-300 text-base-content/75 hover:border-primary transition" title="Volver a usuarios">
+                <i data-lucide="arrow-left" class="w-4 h-4"></i>
             </a>
             <div>
-                <h1 style="font-size:1.85rem; font-weight:800; letter-spacing:-0.03em; color:var(--text-primary); margin:0 0 4px; display:flex; align-items:center; gap:8px;">
+                <h1 class="text-2xl lg:text-3xl font-extrabold tracking-tight text-base-content leading-tight m-0">
                     {{ action }} Usuario
                 </h1>
-                <p style="font-size:0.875rem; color:var(--text-muted); margin:0;">
+                <p class="text-xs lg:text-sm text-base-content/65 mt-0.5 leading-relaxed m-0">
                     {% if action == 'Editar' %}
-                        Configura permisos granulares, visibilidad de módulos y cuotas para <strong style="color:var(--text-primary);">{{ target.username }}</strong>.
+                        Configura permisos granulares, visibilidad de módulos y cuotas para <strong class="text-base-content font-bold">{{ target.username }}</strong>.
                     {% else %}
                         Define credenciales, rol, pestañas accesibles y cuotas diarias de IA.
                     {% endif %}
@@ -31,302 +31,324 @@
         </div>
     </div>
 
-    <!-- ═════════ TARJETA PRINCIPAL SHADCN ═════════ -->
-    <div class="shadcn-card" style="padding:32px; position:relative; overflow:hidden;">
-        
-        <form method="post" id="userForm">
-            {% csrf_token %}
+    <form method="post" id="userForm" class="flex flex-col gap-6">
+        {% csrf_token %}
 
-            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(360px, 1fr)); gap:32px; position:relative; z-index:1;">
-                
-                <!-- ═════════ COLUMNA 1: PERFIL, CREDENCIALES Y ROL ═════════ -->
-                <div style="display:flex; flex-direction:column; gap:20px;">
-                    <h3 style="font-size:0.95rem; font-weight:700; color:var(--text-primary); margin:0; display:flex; align-items:center; gap:8px; border-bottom:1px solid var(--border-subtle); padding-bottom:10px;">
-                        <i data-lucide="shield" style="width:16px; height:16px; color:#ef4444;"></i>
-                        Credenciales y Rol
+        <!-- ═════════ FILA 1: CREDENCIALES & ESTADO (IZQ) + CUOTA DE PROMPTS (DER) ═════════ -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            
+            <!-- TARJETA 1: CREDENCIALES Y ESTADO -->
+            <div class="card bg-base-100 shadow-sm border border-base-300 rounded-2xl p-6 flex flex-col justify-between gap-5">
+                <div>
+                    <h3 class="text-xs font-bold text-base-content uppercase tracking-wider pb-3 border-b border-base-300 flex items-center gap-2 m-0 mb-4">
+                        <i data-lucide="shield" class="w-4 h-4 text-warning"></i>
+                        Credenciales y Estado
                     </h3>
 
-                    <!-- Username -->
-                    <div>
-                        <label style="display:flex; align-items:center; gap:6px; font-size:0.75rem; font-weight:700; color:var(--text-muted); margin-bottom:8px; text-transform:uppercase; letter-spacing:0.05em;">
-                            Nombre de Usuario
-                        </label>
-                        <div style="position:relative;">
-                            <i data-lucide="user" style="position:absolute; left:14px; top:50%; transform:translateY(-50%); width:16px; height:16px; color:var(--text-muted);"></i>
-                            <input type="text" name="username" id="id_username" value="{{ form.username.value|default:'' }}" required placeholder="ej: usuario_pro" class="shadcn-input" style="width:100%; padding-left:40px !important;">
+                    <div class="flex flex-col gap-4">
+                        <!-- Username -->
+                        <div>
+                            <label class="block text-[11px] font-bold text-base-content/60 uppercase tracking-wider mb-1.5">
+                                Nombre de Usuario
+                            </label>
+                            <div class="relative">
+                                <i data-lucide="user" class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-base-content/40 pointer-events-none"></i>
+                                <input type="text" name="username" id="id_username" value="{{ form.username.value|default:'' }}" required placeholder="ej: usuario_pro"
+                                       class="input input-bordered w-full pl-10 pr-4 rounded-xl bg-base-200/40 border-base-300 text-xs focus:border-primary focus:outline-none transition h-10" />
+                            </div>
+                            {% if form.username.errors %}
+                                <div class="mt-1 text-xs text-error font-medium">{{ form.username.errors|join:", " }}</div>
+                            {% endif %}
                         </div>
-                        {% if form.username.errors %}
-                            <div style="margin-top:6px; font-size:0.78rem; color:#f87171;">{{ form.username.errors|join:", " }}</div>
+
+                        <!-- Password (Solo en Crear) -->
+                        {% if action == 'Crear' %}
+                        <div>
+                            <label class="block text-[11px] font-bold text-base-content/60 uppercase tracking-wider mb-1.5">
+                                Contraseña
+                            </label>
+                            <div class="relative">
+                                <i data-lucide="lock" class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-base-content/40 pointer-events-none"></i>
+                                <input type="password" name="password" id="id_password" required placeholder="••••••••"
+                                       class="input input-bordered w-full pl-10 pr-10 rounded-xl bg-base-200/40 border-base-300 text-xs focus:border-primary focus:outline-none transition h-10" />
+                                <button type="button" onclick="toggleAdminPasswordVisibility('id_password', this)"
+                                        class="btn btn-ghost btn-square btn-xs absolute right-2 top-1/2 -translate-y-1/2 text-base-content/50 hover:text-base-content"
+                                        title="Mostrar u ocultar contraseña">
+                                    <i data-lucide="eye" class="w-4 h-4 eye-open"></i>
+                                    <i data-lucide="eye-off" class="w-4 h-4 eye-closed hidden"></i>
+                                </button>
+                            </div>
+                            {% if form.password.errors %}
+                                <div class="mt-1 text-xs text-error font-medium">{{ form.password.errors|join:", " }}</div>
+                            {% endif %}
+                        </div>
                         {% endif %}
                     </div>
+                </div>
 
-                    <!-- Password (Solo en Crear) -->
-                    {% if action == 'Crear' %}
-                    <div>
-                        <label style="display:flex; align-items:center; gap:6px; font-size:0.75rem; font-weight:700; color:var(--text-muted); margin-bottom:8px; text-transform:uppercase; letter-spacing:0.05em;">
-                            Contraseña
+                <!-- Estado de la Cuenta (Switch Activo / Inactivo) -->
+                <div class="p-3.5 rounded-xl border border-base-300 bg-base-200/40 flex items-center justify-between cursor-pointer hover:bg-base-200/60 transition" onclick="toggleActiveSwitch()">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-xl bg-success/10 border border-success/20 flex items-center justify-center text-success shrink-0 shadow-2xs">
+                            <i data-lucide="power" class="w-4 h-4"></i>
+                        </div>
+                        <div>
+                            <div class="text-xs font-bold text-base-content">Estado de la Cuenta</div>
+                            <div id="activeStateLabel" class="text-[11px] text-success font-medium">Usuario habilitado para ingresar</div>
+                        </div>
+                    </div>
+                    <input type="checkbox" name="is_active" id="id_is_active" {% if form.is_active.value|default:True %}checked{% endif %} class="toggle toggle-success toggle-sm pointer-events-none">
+                </div>
+            </div>
+
+            <!-- TARJETA 2: CUOTA DIARIA DE PROMPTS -->
+            <div class="card bg-base-100 shadow-sm border border-base-300 rounded-2xl p-6 flex flex-col justify-between gap-5">
+                <div>
+                    <div class="flex items-center justify-between pb-3 border-b border-base-300 mb-4">
+                        <h3 class="text-xs font-bold text-base-content uppercase tracking-wider flex items-center gap-2 m-0">
+                            <i data-lucide="zap" class="w-4 h-4 text-warning"></i>
+                            Cuota Diaria de Prompts
+                        </h3>
+                        <span id="quotaHeaderBadge" class="badge badge-warning badge-md font-mono font-bold text-xs px-2.5">10 / día</span>
+                    </div>
+
+                    <div id="quotaControls" class="flex flex-col gap-3">
+                        <label class="block text-center text-[11px] font-bold text-base-content/60 uppercase tracking-wider">
+                            Límite de Generaciones Diarias
                         </label>
-                        <div style="position:relative;">
-                            <i data-lucide="lock" style="position:absolute; left:14px; top:50%; transform:translateY(-50%); width:16px; height:16px; color:var(--text-muted);"></i>
-                            <input type="password" name="password" id="id_password" required placeholder="••••••••" class="shadcn-input" style="width:100%; padding-left:40px !important; padding-right:42px !important;">
-                            <button type="button" onclick="toggleAdminPasswordVisibility('id_password', this)" style="position:absolute; right:12px; top:50%; transform:translateY(-50%); background:transparent; border:none; color:var(--text-muted); cursor:pointer; padding:4px; display:flex; align-items:center; justify-content:center;" title="Mostrar u ocultar contraseña">
-                                <i data-lucide="eye" class="eye-open" style="width:16px; height:16px;"></i>
-                                <i data-lucide="eye-off" class="eye-closed" style="width:16px; height:16px; display:none;"></i>
+                        <div class="flex items-center justify-center gap-3">
+                            <button type="button" class="btn btn-ghost btn-square btn-sm rounded-xl border border-base-300" onclick="adjustFormQuota(-1)" title="Restar 1">
+                                <i data-lucide="minus" class="w-4 h-4"></i>
+                            </button>
+                            <input type="number" name="daily_prompt_limit" id="id_daily_prompt_limit" value="{{ form.daily_prompt_limit.value|default:10 }}" min="0" max="9999"
+                                   class="input input-bordered w-32 text-center text-xl font-bold font-mono rounded-xl bg-base-200/50 border-base-300 focus:border-primary h-11" />
+                            <button type="button" class="btn btn-ghost btn-square btn-sm rounded-xl border border-base-300" onclick="adjustFormQuota(+1)" title="Sumar 1">
+                                <i data-lucide="plus" class="w-4 h-4"></i>
                             </button>
                         </div>
-                        {% if form.password.errors %}
-                            <div style="margin-top:6px; font-size:0.78rem; color:#f87171;">{{ form.password.errors|join:", " }}</div>
-                        {% endif %}
-                    </div>
-                    {% endif %}
 
-                    <!-- Selector de Rol Visual con Cards -->
-                    <div>
-                        <label style="display:block; font-size:0.75rem; font-weight:700; color:var(--text-muted); margin-bottom:10px; text-transform:uppercase; letter-spacing:0.05em;">
-                            Rol en el Sistema
-                        </label>
-                        <div style="display:none;">{{ form.role }}</div>
-                        
-                        <div style="display:grid; grid-template-columns:1fr; gap:10px;" id="roleCardsContainer">
-                            <!-- Superadmin -->
-                            <div class="role-card" data-role="superadmin" onclick="selectRole('superadmin')" style="display:flex; align-items:center; gap:12px;">
-                                <div style="width:34px; height:34px; border-radius:9999px; background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.25); display:flex; align-items:center; justify-content:center; color:#ef4444; flex-shrink:0;">
-                                    <i data-lucide="crown" style="width:16px; height:16px;"></i>
-                                </div>
-                                <div style="flex:1;">
-                                    <div style="font-size:0.88rem; font-weight:700; color:var(--text-primary);">Super Admin</div>
-                                    <div style="font-size:0.72rem; color:var(--text-muted);">Acceso total a todo el panel y control de usuarios</div>
-                                </div>
-                            </div>
-
-                            <!-- Admin -->
-                            <div class="role-card" data-role="admin" onclick="selectRole('admin')" style="display:flex; align-items:center; gap:12px;">
-                                <div style="width:34px; height:34px; border-radius:9999px; background:rgba(59,130,246,0.12); border:1px solid rgba(59,130,246,0.25); display:flex; align-items:center; justify-content:center; color:#3b82f6; flex-shrink:0;">
-                                    <i data-lucide="shield-check" style="width:16px; height:16px;"></i>
-                                </div>
-                                <div style="flex:1;">
-                                    <div style="font-size:0.88rem; font-weight:700; color:var(--text-primary);">Admin</div>
-                                    <div style="font-size:0.72rem; color:var(--text-muted);">Administración delegada y métricas</div>
-                                </div>
-                            </div>
-
-                            <!-- Usuario Estándar -->
-                            <div class="role-card" data-role="user" onclick="selectRole('user')" style="display:flex; align-items:center; gap:12px;">
-                                <div style="width:34px; height:34px; border-radius:9999px; background:var(--pill-bg); border:1px solid var(--border-subtle); display:flex; align-items:center; justify-content:center; color:var(--text-secondary); flex-shrink:0;">
-                                    <i data-lucide="user" style="width:16px; height:16px;"></i>
-                                </div>
-                                <div style="flex:1;">
-                                    <div style="font-size:0.88rem; font-weight:700; color:var(--text-primary);">Usuario Estándar</div>
-                                    <div style="font-size:0.72rem; color:var(--text-muted);">Generación de prompts según cuota y permisos</div>
-                                </div>
-                            </div>
+                        <!-- Chips de selección rápida -->
+                        <div class="flex justify-center gap-1.5 flex-wrap pt-1">
+                            <button type="button" class="btn btn-ghost btn-xs rounded-lg border border-base-300 text-xs px-2.5 h-7" onclick="setFormQuota(5)">5</button>
+                            <button type="button" class="btn btn-ghost btn-xs rounded-lg border border-base-300 text-xs px-2.5 h-7" onclick="setFormQuota(10)">10</button>
+                            <button type="button" class="btn btn-ghost btn-xs rounded-lg border border-base-300 text-xs px-2.5 h-7" onclick="setFormQuota(25)">25</button>
+                            <button type="button" class="btn btn-ghost btn-xs rounded-lg border border-base-300 text-xs px-2.5 h-7" onclick="setFormQuota(50)">50</button>
+                            <button type="button" class="btn btn-ghost btn-xs rounded-lg border border-base-300 text-xs px-2.5 h-7" onclick="setFormQuota(100)">100</button>
                         </div>
                     </div>
+                </div>
 
-                    <!-- Estado de la Cuenta (Switch Activo / Inactivo) -->
-                    <div style="background:var(--bg-muted); border:1px solid var(--border-subtle); border-radius:0.875rem; padding:16px; display:flex; align-items:center; justify-content:space-between; cursor:pointer;" onclick="toggleActiveSwitch()">
-                        <div style="display:flex; align-items:center; gap:12px;">
-                            <div style="width:32px; height:32px; border-radius:9999px; background:rgba(34,197,94,0.12); border:1px solid rgba(34,197,94,0.25); display:flex; align-items:center; justify-content:center; color:#22c55e;">
-                                <i data-lucide="power" style="width:16px; height:16px;"></i>
+                <!-- Opción Cuota Ilimitada -->
+                <label id="formUnlimitedCard" class="flex items-center justify-between p-3.5 bg-base-200/40 border border-base-300 rounded-xl cursor-pointer hover:bg-base-200/70 transition">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
+                            <i data-lucide="infinity" class="w-4 h-4"></i>
+                        </div>
+                        <div>
+                            <div class="text-xs font-bold text-base-content">Generación Ilimitada</div>
+                            <div class="text-[11px] text-base-content/60">Sin restricción de cuota diaria</div>
+                        </div>
+                    </div>
+                    <input type="checkbox" name="is_unlimited_prompts" id="id_is_unlimited_prompts" {% if form.is_unlimited_prompts.value %}checked{% endif %}
+                           class="toggle toggle-primary toggle-sm" onchange="toggleFormUnlimited(this.checked)">
+                </label>
+            </div>
+
+        </div>
+
+        <!-- ═════════ FILA 2: ROL EN EL SISTEMA (3 CARDS HORIZONTALES) ═════════ -->
+        <div class="card bg-base-100 shadow-sm border border-base-300 rounded-2xl p-6">
+            <div class="flex justify-between items-center pb-3 border-b border-base-300 mb-4">
+                <div>
+                    <h3 class="text-xs font-bold text-base-content uppercase tracking-wider flex items-center gap-2 m-0">
+                        <i data-lucide="crown" class="w-4 h-4 text-warning"></i>
+                        Rol y Nivel de Privilegios
+                    </h3>
+                    <p class="text-xs text-base-content/60 m-0 mt-0.5">Seleccioná la jerarquía del usuario en la plataforma:</p>
+                </div>
+            </div>
+            
+            <div class="hidden">{{ form.role }}</div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="roleCardsContainer">
+                <!-- Superadmin -->
+                <div class="role-card flex flex-col justify-between gap-3 p-4 rounded-xl border border-base-300 bg-base-200/40 cursor-pointer transition-all hover:border-warning/60 hover:bg-warning/5"
+                     data-role="superadmin" onclick="selectRole('superadmin')">
+                    <div class="flex items-start justify-between">
+                        <div class="w-10 h-10 rounded-xl bg-warning/10 border border-warning/20 flex items-center justify-center text-warning shrink-0 shadow-2xs">
+                            <i data-lucide="crown" class="w-5 h-5"></i>
+                        </div>
+                        <span class="badge badge-warning badge-sm font-bold text-[10px] px-2">Total</span>
+                    </div>
+                    <div>
+                        <div class="text-sm font-bold text-base-content tracking-tight">Super Admin</div>
+                        <div class="text-xs text-base-content/60 mt-0.5 leading-relaxed">Acceso completo a todos los módulos y gestión de cuentas</div>
+                    </div>
+                </div>
+
+                <!-- Admin -->
+                <div class="role-card flex flex-col justify-between gap-3 p-4 rounded-xl border border-base-300 bg-base-200/40 cursor-pointer transition-all hover:border-primary/60 hover:bg-primary/5"
+                     data-role="admin" onclick="selectRole('admin')">
+                    <div class="flex items-start justify-between">
+                        <div class="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0 shadow-2xs">
+                            <i data-lucide="shield-check" class="w-5 h-5"></i>
+                        </div>
+                        <span class="badge badge-primary badge-sm font-bold text-[10px] px-2 text-primary-content">Gestión</span>
+                    </div>
+                    <div>
+                        <div class="text-sm font-bold text-base-content tracking-tight">Admin</div>
+                        <div class="text-xs text-base-content/60 mt-0.5 leading-relaxed">Supervisión delegada, auditorías y analíticas avanzadas</div>
+                    </div>
+                </div>
+
+                <!-- Usuario Estándar -->
+                <div class="role-card flex flex-col justify-between gap-3 p-4 rounded-xl border border-base-300 bg-base-200/40 cursor-pointer transition-all hover:border-neutral/60 hover:bg-base-200"
+                     data-role="user" onclick="selectRole('user')">
+                    <div class="flex items-start justify-between">
+                        <div class="w-10 h-10 rounded-xl bg-base-300/60 border border-base-300 flex items-center justify-center text-base-content/75 shrink-0 shadow-2xs">
+                            <i data-lucide="user" class="w-5 h-5"></i>
+                        </div>
+                        <span class="badge badge-neutral badge-sm font-medium text-[10px] px-2">Estándar</span>
+                    </div>
+                    <div>
+                        <div class="text-sm font-bold text-base-content tracking-tight">Usuario Estándar</div>
+                        <div class="text-xs text-base-content/60 mt-0.5 leading-relaxed">Uso operativo de herramientas IA según cuota asignada</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═════════ FILA 3: MATRIZ DE PESTAÑAS Y MÓDULOS (2 SUB-COLUMNAS BALANCEADAS) ═════════ -->
+        <div class="card bg-base-100 shadow-sm border border-base-300 rounded-2xl p-6">
+            <div class="flex justify-between items-center pb-3 border-b border-base-300 mb-5">
+                <div>
+                    <h3 class="text-xs font-bold text-base-content uppercase tracking-wider flex items-center gap-2 m-0">
+                        <i data-lucide="layers" class="w-4 h-4 text-warning"></i>
+                        Visibilidad de Pestañas y Módulos
+                    </h3>
+                    <p class="text-xs text-base-content/60 m-0 mt-0.5">
+                        Definí con precisión a qué herramientas y secciones tendrá acceso este usuario:
+                    </p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                
+                <!-- Subcolumna 1: Herramientas IA y Creación -->
+                <div class="flex flex-col gap-3">
+                    <div class="text-[11px] font-bold text-base-content/50 uppercase tracking-wider flex items-center gap-1.5 pb-1">
+                        <i data-lucide="sparkles" class="w-3.5 h-3.5 text-warning"></i>
+                        Herramientas de IA & Creación
+                    </div>
+
+                    <!-- 1. Video to Prompt Studio -->
+                    <label class="flex items-center justify-between p-3.5 bg-base-200/40 border border-base-300 rounded-xl cursor-pointer hover:bg-base-200/60 transition" for="id_can_view_videoprompt">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-lg bg-warning/10 text-warning border border-warning/20 flex items-center justify-center shrink-0">
+                                <i data-lucide="clapperboard" class="w-4 h-4"></i>
                             </div>
                             <div>
-                                <div style="font-size:0.88rem; font-weight:700; color:var(--text-primary);">Estado de la Cuenta</div>
-                                <div id="activeStateLabel" style="font-size:0.72rem; color:#22c55e;">Usuario habilitado para ingresar</div>
+                                <div class="text-xs font-bold text-base-content">Video to Prompt Studio</div>
+                                <div class="text-[11px] text-base-content/60">Análisis y generación de prompts con IA</div>
                             </div>
                         </div>
-                        <input type="checkbox" name="is_active" id="id_is_active" {% if form.is_active.value|default:True %}checked{% endif %} style="display:none;">
-                        <div id="activeToggleVisual" style="width:44px; height:24px; border-radius:9999px; background:#16a34a; position:relative; transition:all 0.2s;">
-                            <div id="activeToggleCircle" style="width:18px; height:18px; border-radius:50%; background:#ffffff; position:absolute; top:3px; right:3px; transition:all 0.2s;"></div>
+                        <input type="checkbox" name="can_view_videoprompt" id="id_can_view_videoprompt" {% if form.can_view_videoprompt.value %}checked{% endif %} class="toggle toggle-primary toggle-sm">
+                    </label>
+
+                    <!-- 2. IG Downloader -->
+                    <label class="flex items-center justify-between p-3.5 bg-base-200/40 border border-base-300 rounded-xl cursor-pointer hover:bg-base-200/60 transition" for="id_can_view_ig_downloader">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-lg bg-secondary/10 text-secondary border border-secondary/20 flex items-center justify-center shrink-0">
+                                <i data-lucide="download" class="w-4 h-4"></i>
+                            </div>
+                            <div>
+                                <div class="text-xs font-bold text-base-content">IG Downloader</div>
+                                <div class="text-[11px] text-base-content/60">Descarga de reels y videos sin marca de agua</div>
+                            </div>
                         </div>
-                    </div>
+                        <input type="checkbox" name="can_view_ig_downloader" id="id_can_view_ig_downloader" {% if form.can_view_ig_downloader.value %}checked{% endif %} class="toggle toggle-primary toggle-sm">
+                    </label>
+
+                    <!-- 3. Fanpage Creator Studio -->
+                    <label class="flex items-center justify-between p-3.5 bg-base-200/40 border border-base-300 rounded-xl cursor-pointer hover:bg-base-200/60 transition" for="id_can_view_fanpages">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-lg bg-warning/10 text-warning border border-warning/20 flex items-center justify-center shrink-0">
+                                <i data-lucide="sparkles" class="w-4 h-4"></i>
+                            </div>
+                            <div>
+                                <div class="text-xs font-bold text-base-content">Fanpage Creator Studio</div>
+                                <div class="text-[11px] text-base-content/60">Identidades completas y prompts para Fanpages</div>
+                            </div>
+                        </div>
+                        <input type="checkbox" name="can_view_fanpages" id="id_can_view_fanpages" {% if form.can_view_fanpages.value %}checked{% endif %} class="toggle toggle-primary toggle-sm">
+                    </label>
+
+                    <!-- 4. Fan Extractor -->
+                    <label class="flex items-center justify-between p-3.5 bg-base-200/40 border border-base-300 rounded-xl cursor-pointer hover:bg-base-200/60 transition" for="id_can_view_extractor">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-lg bg-success/10 text-success border border-success/20 flex items-center justify-center shrink-0">
+                                <i data-lucide="activity" class="w-4 h-4"></i>
+                            </div>
+                            <div>
+                                <div class="text-xs font-bold text-base-content">Facebook Fan Extractor</div>
+                                <div class="text-[11px] text-base-content/60">Monitoreo de audiencia y métricas en tiempo real</div>
+                            </div>
+                        </div>
+                        <input type="checkbox" name="can_view_extractor" id="id_can_view_extractor" {% if form.can_view_extractor.value %}checked{% endif %} class="toggle toggle-primary toggle-sm">
+                    </label>
                 </div>
 
-                <!-- ═════════ COLUMNA 2: CUOTAS DE IA Y MATRIZ DE PESTAÑAS ═════════ -->
-                <div style="display:flex; flex-direction:column; gap:20px;">
-                    
-                    <!-- Sección A: Cuota Diaria de Prompts -->
-                    <div style="background:var(--bg-muted); border:1px solid var(--border-subtle); border-radius:0.875rem; padding:20px;">
-                        <h3 style="font-size:0.92rem; font-weight:700; color:var(--text-primary); margin:0 0 14px; display:flex; align-items:center; justify-content:space-between;">
-                            <span style="display:flex; align-items:center; gap:8px;">
-                                <i data-lucide="zap" style="width:16px; height:16px; color:#ef4444;"></i>
-                                Cuota Diaria de Prompts
-                            </span>
-                            <span id="quotaHeaderBadge" class="badge-pill badge-admin" style="font-size:0.72rem;">10 / día</span>
-                        </h3>
-
-                        <div id="quotaControls">
-                            <div style="display:flex; align-items:center; justify-content:center; gap:12px; margin-bottom:12px;">
-                                <button type="button" class="btn-ghost" style="width:40px; height:40px; border-radius:9999px; padding:0; display:flex; align-items:center; justify-content:center;" onclick="adjustFormQuota(-1)">
-                                    <i data-lucide="minus" style="width:16px; height:16px;"></i>
-                                </button>
-                                <input type="number" name="daily_prompt_limit" id="id_daily_prompt_limit" value="{{ form.daily_prompt_limit.value|default:10 }}" min="0" max="9999" class="shadcn-input" style="width:110px; height:42px; font-size:1.35rem; font-weight:800; text-align:center;">
-                                <button type="button" class="btn-ghost" style="width:40px; height:40px; border-radius:9999px; padding:0; display:flex; align-items:center; justify-content:center;" onclick="adjustFormQuota(+1)">
-                                    <i data-lucide="plus" style="width:16px; height:16px;"></i>
-                                </button>
-                            </div>
-
-                            <!-- Chips de selección rápida -->
-                            <div style="display:flex; justify-content:center; gap:6px; flex-wrap:wrap; margin-bottom:14px;">
-                                <button type="button" class="btn-ghost" style="padding:3px 10px; font-size:0.75rem; height:30px;" onclick="setFormQuota(5)">5</button>
-                                <button type="button" class="btn-ghost" style="padding:3px 10px; font-size:0.75rem; height:30px;" onclick="setFormQuota(10)">10</button>
-                                <button type="button" class="btn-ghost" style="padding:3px 10px; font-size:0.75rem; height:30px;" onclick="setFormQuota(25)">25</button>
-                                <button type="button" class="btn-ghost" style="padding:3px 10px; font-size:0.75rem; height:30px;" onclick="setFormQuota(50)">50</button>
-                                <button type="button" class="btn-ghost" style="padding:3px 10px; font-size:0.75rem; height:30px;" onclick="setFormQuota(100)">100</button>
-                            </div>
-                        </div>
-
-                        <!-- Opción Cuota Ilimitada -->
-                        <label id="formUnlimitedCard" style="display:flex; align-items:center; justify-content:space-between; padding:10px 14px; background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:0.75rem; cursor:pointer; transition:all 0.2s;">
-                            <div style="display:flex; align-items:center; gap:8px;">
-                                <i data-lucide="infinity" style="width:16px; height:16px; color:#3b82f6;"></i>
-                                <span style="font-size:0.82rem; color:var(--text-primary); font-weight:600;">Generación Ilimitada</span>
-                            </div>
-                            <input type="checkbox" name="is_unlimited_prompts" id="id_is_unlimited_prompts" {% if form.is_unlimited_prompts.value %}checked{% endif %} style="width:16px; height:16px; accent-color:#ef4444;" onchange="toggleFormUnlimited(this.checked)">
-                        </label>
+                <!-- Subcolumna 2: Panel & Administración -->
+                <div class="flex flex-col gap-3">
+                    <div class="text-[11px] font-bold text-base-content/50 uppercase tracking-wider flex items-center gap-1.5 pb-1">
+                        <i data-lucide="sliders" class="w-3.5 h-3.5 text-primary"></i>
+                        Panel & Control Administrativo
                     </div>
 
-                    <!-- Sección B: Permisos de Visibilidad de Pestañas y Módulos -->
-                    <div>
-                        <h3 style="font-size:0.95rem; font-weight:700; color:var(--text-primary); margin:0 0 4px; display:flex; align-items:center; gap:8px; border-bottom:1px solid var(--border-subtle); padding-bottom:10px;">
-                            <i data-lucide="layers" style="width:16px; height:16px; color:#ef4444;"></i>
-                            Visibilidad de Pestañas y Módulos
-                        </h3>
-                        <p style="font-size:0.75rem; color:var(--text-muted); margin:0 0 12px;">
-                            Elige qué secciones y funciones estarán activas para este usuario:
-                        </p>
-
-                        <div style="display:flex; flex-direction:column; gap:8px;">
-                            
-                            <!-- 1. Video to Prompt Studio -->
-                            <label class="perm-row" for="id_can_view_videoprompt">
-                                <div style="display:flex; align-items:center; gap:10px;">
-                                    <div style="width:30px; height:30px; border-radius:9999px; background:rgba(239,68,68,0.12); display:flex; align-items:center; justify-content:center; color:#ef4444;">
-                                        <i data-lucide="clapperboard" style="width:15px; height:15px;"></i>
-                                    </div>
-                                    <div>
-                                        <div style="font-size:0.85rem; font-weight:600; color:var(--text-primary);">Video to Prompt Studio</div>
-                                        <div style="font-size:0.7rem; color:var(--text-muted);">Creación y análisis de prompts con IA</div>
-                                    </div>
-                                </div>
-                                <input type="checkbox" name="can_view_videoprompt" id="id_can_view_videoprompt" {% if form.can_view_videoprompt.value %}checked{% endif %} style="width:18px; height:18px; accent-color:#ef4444; cursor:pointer;">
-                            </label>
-
-                            <!-- 2. IG Downloader -->
-                            <label class="perm-row" for="id_can_view_ig_downloader">
-                                <div style="display:flex; align-items:center; gap:10px;">
-                                    <div style="width:30px; height:30px; border-radius:9999px; background:rgba(236,72,153,0.12); display:flex; align-items:center; justify-content:center; color:#ec4899;">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"></line></svg>
-                                    </div>
-                                    <div>
-                                        <div style="font-size:0.85rem; font-weight:600; color:var(--text-primary);">IG Downloader</div>
-                                        <div style="font-size:0.7rem; color:var(--text-muted);">Descarga de videos de Instagram sin marca de agua</div>
-                                    </div>
-                                </div>
-                                <input type="checkbox" name="can_view_ig_downloader" id="id_can_view_ig_downloader" {% if form.can_view_ig_downloader.value %}checked{% endif %} style="width:18px; height:18px; accent-color:#ef4444; cursor:pointer;">
-                            </label>
-
-                            <!-- 3. Fanpage Creator Studio -->
-                            <label class="perm-row" for="id_can_view_fanpages">
-                                <div style="display:flex; align-items:center; gap:10px;">
-                                    <div style="width:30px; height:30px; border-radius:9999px; background:rgba(250,204,21,0.12); display:flex; align-items:center; justify-content:center; color:#facc15;">
-                                        <i data-lucide="sparkles" style="width:15px; height:15px;"></i>
-                                    </div>
-                                    <div>
-                                        <div style="font-size:0.85rem; font-weight:600; color:var(--text-primary);">Fanpage Creator Studio</div>
-                                        <div style="font-size:0.7rem; color:var(--text-muted);">Generación de identidades y prompts para Fanpages</div>
-                                    </div>
-                                </div>
-                                <input type="checkbox" name="can_view_fanpages" id="id_can_view_fanpages" {% if form.can_view_fanpages.value %}checked{% endif %} style="width:18px; height:18px; accent-color:#ef4444; cursor:pointer;">
-                            </label>
-
-                            <!-- 3. Fan Extractor -->
-                            <label class="perm-row" for="id_can_view_extractor">
-                                <div style="display:flex; align-items:center; gap:10px;">
-                                    <div style="width:30px; height:30px; border-radius:9999px; background:rgba(34,197,94,0.12); display:flex; align-items:center; justify-content:center; color:#22c55e;">
-                                        <i data-lucide="activity" style="width:15px; height:15px;"></i>
-                                    </div>
-                                    <div>
-                                        <div style="font-size:0.85rem; font-weight:600; color:var(--text-primary);">Facebook Fan Extractor</div>
-                                        <div style="font-size:0.7rem; color:var(--text-muted);">Extracción de seguidores y métricas de Facebook</div>
-                                    </div>
-                                </div>
-                                <input type="checkbox" name="can_view_extractor" id="id_can_view_extractor" {% if form.can_view_extractor.value %}checked{% endif %} style="width:18px; height:18px; accent-color:#ef4444; cursor:pointer;">
-                            </label>
-
-                            <!-- 4. Pestaña Stats del Reel -->
-                            <label class="perm-row" for="id_can_view_stats">
-                                <div style="display:flex; align-items:center; gap:10px;">
-                                    <div style="width:30px; height:30px; border-radius:9999px; background:rgba(59,130,246,0.12); display:flex; align-items:center; justify-content:center; color:#3b82f6;">
-                                        <i data-lucide="bar-chart-2" style="width:15px; height:15px;"></i>
-                                    </div>
-                                    <div>
-                                        <div style="font-size:0.85rem; font-weight:600; color:var(--text-primary);">Pestaña "Stats del Reel"</div>
-                                        <div style="font-size:0.7rem; color:var(--text-muted);">Métricas de likes, comentarios, views y fecha</div>
-                                    </div>
-                                </div>
-                                <input type="checkbox" name="can_view_stats" id="id_can_view_stats" {% if form.can_view_stats.value %}checked{% endif %} style="width:18px; height:18px; accent-color:#ef4444; cursor:pointer;">
-                            </label>
-
-                            <!-- 5. Dashboard General -->
-                            <label class="perm-row" for="id_can_view_dashboard">
-                                <div style="display:flex; align-items:center; gap:10px;">
-                                    <div style="width:30px; height:30px; border-radius:9999px; background:rgba(168,85,247,0.12); display:flex; align-items:center; justify-content:center; color:#c084fc;">
-                                        <i data-lucide="layout-dashboard" style="width:15px; height:15px;"></i>
-                                    </div>
-                                    <div>
-                                        <div style="font-size:0.85rem; font-weight:600; color:var(--text-primary);">Dashboard General</div>
-                                        <div style="font-size:0.7rem; color:var(--text-muted);">Visualización de analítica y métricas de panel</div>
-                                    </div>
-                                </div>
-                                <input type="checkbox" name="can_view_dashboard" id="id_can_view_dashboard" {% if form.can_view_dashboard.value %}checked{% endif %} style="width:18px; height:18px; accent-color:#ef4444; cursor:pointer;">
-                            </label>
-
-                            <!-- 6. Gestión de Claves de IA -->
-                            <label class="perm-row" for="id_can_manage_api_keys">
-                                <div style="display:flex; align-items:center; gap:10px;">
-                                    <div style="width:30px; height:30px; border-radius:9999px; background:rgba(250,204,21,0.12); display:flex; align-items:center; justify-content:center; color:#facc15;">
-                                        <i data-lucide="key" style="width:15px; height:15px;"></i>
-                                    </div>
-                                    <div>
-                                        <div style="font-size:0.85rem; font-weight:600; color:var(--text-primary);">Pool de Claves de IA</div>
-                                        <div style="font-size:0.7rem; color:var(--text-muted);">Agregar y administrar claves de Google Gemini</div>
-                                    </div>
-                                </div>
-                                <input type="checkbox" name="can_manage_api_keys" id="id_can_manage_api_keys" {% if form.can_manage_api_keys.value %}checked{% endif %} style="width:18px; height:18px; accent-color:#ef4444; cursor:pointer;">
-                            </label>
-
-                            <!-- 7. Administrar Usuarios -->
-                            <label class="perm-row" for="id_can_manage_users">
-                                <div style="display:flex; align-items:center; gap:10px;">
-                                    <div style="width:30px; height:30px; border-radius:9999px; background:rgba(52,211,153,0.12); display:flex; align-items:center; justify-content:center; color:#34d399;">
-                                        <i data-lucide="users" style="width:15px; height:15px;"></i>
-                                    </div>
-                                    <div>
-                                        <div style="font-size:0.85rem; font-weight:600; color:var(--text-primary);">Administrar Usuarios</div>
-                                        <div style="font-size:0.7rem; color:var(--text-muted);">Crear, editar o suspender cuentas de usuario</div>
-                                    </div>
-                                </div>
-                                <input type="checkbox" name="can_manage_users" id="id_can_manage_users" {% if form.can_manage_users.value %}checked{% endif %} style="width:18px; height:18px; accent-color:#ef4444; cursor:pointer;">
-                            </label>
-
+                    <!-- 5. Dashboard General -->
+                    <label class="flex items-center justify-between p-3.5 bg-base-200/40 border border-base-300 rounded-xl cursor-pointer hover:bg-base-200/60 transition" for="id_can_view_dashboard">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-lg bg-primary/10 text-primary border border-primary/20 flex items-center justify-center shrink-0">
+                                <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+                            </div>
+                            <div>
+                                <div class="text-xs font-bold text-base-content">Dashboard General</div>
+                                <div class="text-[11px] text-base-content/60">Analítica general de producción y accesos</div>
+                            </div>
                         </div>
-                    </div>
+                        <input type="checkbox" name="can_view_dashboard" id="id_can_view_dashboard" {% if form.can_view_dashboard.value %}checked{% endif %} class="toggle toggle-primary toggle-sm">
+                    </label>
 
+                    <!-- 6. Administrar Usuarios -->
+                    <label class="flex items-center justify-between p-3.5 bg-base-200/40 border border-base-300 rounded-xl cursor-pointer hover:bg-base-200/60 transition" for="id_can_manage_users">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-lg bg-success/10 text-success border border-success/20 flex items-center justify-center shrink-0">
+                                <i data-lucide="users" class="w-4 h-4"></i>
+                            </div>
+                            <div>
+                                <div class="text-xs font-bold text-base-content">Administrar Usuarios</div>
+                                <div class="text-[11px] text-base-content/60">Alta, modificación y suspensión de cuentas</div>
+                            </div>
+                        </div>
+                        <input type="checkbox" name="can_manage_users" id="id_can_manage_users" {% if form.can_manage_users.value %}checked{% endif %} class="toggle toggle-primary toggle-sm">
+                    </label>
                 </div>
 
             </div>
+        </div>
 
-            <!-- Botones de Acción Principales -->
-            <div style="display:flex; justify-content:flex-end; align-items:center; gap:12px; margin-top:32px; border-top:1px solid var(--border-subtle); padding-top:20px;">
-                <a href="{% url 'user_list' %}" class="btn-ghost">Cancelar</a>
-                <button type="submit" class="btn-brand">
-                    <i data-lucide="{% if action == 'Crear' %}plus{% else %}save{% endif %}" style="width:15px; height:15px;"></i>
-                    {{ action }} Usuario
-                </button>
-            </div>
+        <!-- ═════════ BARRA DE ACCIÓN INFERIOR ═════════ -->
+        <div class="card bg-base-100 shadow-sm border border-base-300 rounded-2xl p-4 flex flex-row justify-end items-center gap-3">
+            <a href="{% url 'user_list' %}" class="btn btn-ghost btn-sm rounded-xl border border-base-300 text-xs px-4">
+                Cancelar
+            </a>
+            <button type="submit" class="btn btn-primary btn-sm rounded-xl text-xs font-semibold gap-2 text-primary-content shadow-xs px-5 h-9">
+                <i data-lucide="{% if action == 'Crear' %}plus{% else %}save{% endif %}" class="w-4 h-4"></i>
+                {{ action }} Usuario
+            </button>
+        </div>
 
-        </form>
-    </div>
+    </form>
 </div>
 
 <script>
@@ -336,7 +358,13 @@ function selectRole(role, isUserAction = true) {
     
     document.querySelectorAll('.role-card').forEach(card => {
         const isMatch = card.getAttribute('data-role') === role;
-        card.classList.toggle('selected', isMatch);
+        if (isMatch) {
+            card.classList.add('border-primary', 'bg-primary/10', 'ring-1', 'ring-primary');
+            card.classList.remove('border-base-300', 'bg-base-200/40');
+        } else {
+            card.classList.remove('border-primary', 'bg-primary/10', 'ring-1', 'ring-primary');
+            card.classList.add('border-base-300', 'bg-base-200/40');
+        }
     });
 
     if (isUserAction && role === 'superadmin') {
@@ -346,7 +374,7 @@ function selectRole(role, isUserAction = true) {
 }
 
 function setAllPerms(val) {
-    ['id_can_view_videoprompt', 'id_can_view_ig_downloader', 'id_can_view_fanpages', 'id_can_view_extractor', 'id_can_view_stats', 'id_can_view_dashboard', 'id_can_manage_api_keys', 'id_can_manage_users'].forEach(id => {
+    ['id_can_view_videoprompt', 'id_can_view_ig_downloader', 'id_can_view_fanpages', 'id_can_view_extractor', 'id_can_view_dashboard', 'id_can_manage_users'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.checked = val;
     });
@@ -360,28 +388,21 @@ function toggleActiveSwitch() {
 
 function updateActiveVisual() {
     const chk = document.getElementById('id_is_active');
-    const visual = document.getElementById('activeToggleVisual');
-    const circle = document.getElementById('activeToggleCircle');
     const label = document.getElementById('activeStateLabel');
+    if (!chk || !label) return;
     
     if (chk.checked) {
-        visual.style.background = '#16a34a';
-        circle.style.right = '3px';
-        circle.style.left = 'auto';
         label.innerText = 'Usuario habilitado para ingresar';
-        label.style.color = '#22c55e';
+        label.className = 'text-[11px] text-success font-medium';
     } else {
-        visual.style.background = 'var(--border-highlight)';
-        circle.style.left = '3px';
-        circle.style.right = 'auto';
         label.innerText = 'Cuenta suspendida / bloqueada';
-        label.style.color = 'var(--text-muted)';
+        label.className = 'text-[11px] text-base-content/50 font-medium';
     }
 }
 
 function adjustFormQuota(amt) {
     const input = document.getElementById('id_daily_prompt_limit');
-    let val = parseInt(input.value) || 0;
+    let val = parseInt(input.value, 10) || 0;
     val = Math.max(0, val + amt);
     input.value = val;
     updateQuotaBadge();
@@ -399,10 +420,10 @@ function updateQuotaBadge() {
     const isUnl = document.getElementById('id_is_unlimited_prompts').checked;
     if (isUnl) {
         badge.innerText = 'Ilimitado';
-        badge.className = 'badge-pill badge-admin';
+        badge.className = 'badge badge-primary badge-md font-mono font-bold text-xs px-2.5';
     } else {
         badge.innerText = `${input.value || 0} / día`;
-        badge.className = 'badge-pill badge-user';
+        badge.className = 'badge badge-warning badge-md font-mono font-bold text-xs px-2.5';
     }
 }
 
@@ -417,15 +438,11 @@ function setUnlimited(isUnl) {
     const card = document.getElementById('formUnlimitedCard');
     
     if (isUnl) {
-        controls.style.opacity = '0.35';
-        controls.style.pointerEvents = 'none';
-        card.style.borderColor = 'rgba(59, 130, 246, 0.4)';
-        card.style.background = 'rgba(59, 130, 246, 0.08)';
+        controls.classList.add('opacity-30', 'pointer-events-none');
+        card.classList.add('border-primary/40', 'bg-primary/5');
     } else {
-        controls.style.opacity = '1';
-        controls.style.pointerEvents = 'auto';
-        card.style.borderColor = 'var(--border-subtle)';
-        card.style.background = 'var(--bg-card)';
+        controls.classList.remove('opacity-30', 'pointer-events-none');
+        card.classList.remove('border-primary/40', 'bg-primary/5');
     }
     updateQuotaBadge();
 }
@@ -438,7 +455,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     const isUnl = document.getElementById('id_is_unlimited_prompts').checked;
     setUnlimited(isUnl);
-    lucide.createIcons();
+    if (window.lucide) lucide.createIcons();
 });
 
 function toggleAdminPasswordVisibility(inputId, btn) {
@@ -448,12 +465,12 @@ function toggleAdminPasswordVisibility(inputId, btn) {
     const eyeClosed = btn.querySelector('.eye-closed');
     if (input.type === 'password') {
         input.type = 'text';
-        if (eyeOpen) eyeOpen.style.display = 'none';
-        if (eyeClosed) eyeClosed.style.display = 'block';
+        if (eyeOpen) eyeOpen.classList.add('hidden');
+        if (eyeClosed) eyeClosed.classList.remove('hidden');
     } else {
         input.type = 'password';
-        if (eyeOpen) eyeOpen.style.display = 'block';
-        if (eyeClosed) eyeClosed.style.display = 'none';
+        if (eyeOpen) eyeOpen.classList.remove('hidden');
+        if (eyeClosed) eyeClosed.classList.add('hidden');
     }
 }
 </script>

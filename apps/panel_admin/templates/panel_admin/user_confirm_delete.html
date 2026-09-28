@@ -1,34 +1,38 @@
-{% extends 'panel_base.html' %}
+{% extends 'panel_base_daisy.html' %}
 
 {% block title %}Eliminar Usuario — Rebooy Panel{% endblock %}
 {% block breadcrumb %}
-    <a href="{% url 'user_list' %}" style="color:var(--text-secondary); text-decoration:none;">Usuarios</a>
-    <span style="margin:0 6px; color:var(--text-muted);">/</span>
-    <span style="color:#ef4444; font-weight:600;">Eliminar</span>
+<li><span class="opacity-60">Administración</span></li>
+<li><a href="{% url 'user_list' %}" class="opacity-60 hover:opacity-100">Usuarios</a></li>
+<li class="font-semibold text-error">Eliminar</li>
 {% endblock %}
 
 {% block content %}
-<div style="display:flex; align-items:center; justify-content:center; min-height:60vh;">
-    <div class="shadcn-card" style="padding:36px; max-width:440px; width:100%; text-align:center;">
+<div class="min-h-[55vh] flex items-center justify-center p-4">
+    <div class="card bg-base-100 shadow-xl border border-base-300 w-full max-w-sm p-6 lg:p-7 rounded-2xl text-center">
 
-        <!-- Danger icon -->
-        <div style="width:52px; height:52px; border-radius:9999px; background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.25); display:flex; align-items:center; justify-content:center; margin:0 auto 20px; color:#ef4444;">
-            <i data-lucide="trash-2" style="width:24px; height:24px;"></i>
+        <!-- Icono de Peligro -->
+        <div class="w-12 h-12 rounded-2xl bg-error/10 text-error border border-error/20 flex items-center justify-center mx-auto mb-3.5 shadow-xs">
+            <i data-lucide="trash-2" class="w-5 h-5"></i>
         </div>
 
-        <h2 style="font-size:1.35rem; font-weight:800; letter-spacing:-0.02em; color:var(--text-primary); margin:0 0 8px;">¿Eliminar usuario?</h2>
-        <p style="font-size:0.875rem; color:var(--text-muted); margin:0 0 16px;">Esta acción es permanente e irreversible.</p>
+        <h2 class="text-base font-bold text-base-content mb-1">¿Eliminar usuario?</h2>
+        <p class="text-xs text-base-content/60 leading-relaxed mb-3">
+            Esta acción es permanente e irreversible. Se eliminarán sus registros y configuraciones.
+        </p>
         
-        <div style="margin-bottom:28px;">
-            <span class="badge-pill badge-superadmin" style="font-size:1rem; padding:6px 16px;">{{ target.username }}</span>
+        <div class="mb-5">
+            <span class="badge badge-warning badge-md font-mono font-bold px-3 py-1 text-xs">{{ target.username }}</span>
         </div>
 
-        <div style="display:flex; gap:10px; justify-content:center;">
-            <a href="{% url 'user_list' %}" class="btn-ghost" style="flex:1; justify-content:center;">Cancelar</a>
-            <form method="post" style="flex:1; margin:0;">
+        <div class="flex gap-2 justify-center">
+            <a href="{% url 'user_list' %}" class="btn btn-ghost btn-sm flex-1 rounded-xl border border-base-300 text-xs font-semibold">
+                Cancelar
+            </a>
+            <form method="post" class="flex-1 m-0">
                 {% csrf_token %}
-                <button type="submit" class="btn-danger" style="width:100%; justify-content:center;">
-                    <i data-lucide="trash-2" style="width:14px; height:14px;"></i>
+                <button type="submit" class="btn btn-error btn-sm text-white w-full rounded-xl text-xs font-semibold gap-1.5 shadow-xs">
+                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
                     Sí, eliminar
                 </button>
             </form>

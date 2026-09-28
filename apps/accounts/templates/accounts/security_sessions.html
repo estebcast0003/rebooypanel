@@ -1,170 +1,161 @@
-{% extends 'panel_base.html' %}
+{% extends 'panel_base_daisy.html' %}
 
 {% block title %}Monitoreo de Sesiones Activas — Rebooy Panel{% endblock %}
-{% block breadcrumb %}Administración / Sesiones Activas{% endblock %}
-
-{% block extra_css %}
-<style>
-    .metric-card-shadcn {
-        background-color: var(--bg-card);
-        border: 1px solid var(--border-subtle);
-        border-radius: 1.25rem;
-        padding: 22px 24px;
-        transition: all 0.2s ease;
-        position: relative;
-        overflow: hidden;
-    }
-    .metric-card-shadcn:hover {
-        border-color: var(--border-highlight);
-        transform: translateY(-2px);
-        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
-    }
-    .metric-value-huge {
-        font-size: 2rem;
-        font-weight: 800;
-        letter-spacing: -0.03em;
-        line-height: 1.1;
-    }
-</style>
+{% block breadcrumb %}
+<li><span class="opacity-60">Seguridad</span></li>
+<li class="font-semibold text-primary">Sesiones Activas</li>
 {% endblock %}
 
 {% block content %}
 <input type="hidden" id="pageCsrfToken" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
 
-<div style="display:flex; flex-direction:column; gap:24px;">
+<div class="flex flex-col gap-6 pb-12">
 
     <!-- ═════════ HEADER PRINCIPAL ═════════ -->
-    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
-        <div>
-            <h1 style="font-size:1.85rem; font-weight:800; letter-spacing:-0.03em; color:var(--text-primary); margin:0 0 6px; display:flex; align-items:center; gap:10px;">
-                Monitoreo de Sesiones Activas
-            </h1>
-            <p style="font-size:0.875rem; color:var(--text-muted); margin:0;">
-                Auditoría en tiempo real de usuarios y dispositivos conectados al panel de control.
-            </p>
+    <div class="flex flex-wrap items-center justify-between gap-4">
+        <div class="flex items-center gap-3.5">
+            <div class="w-12 h-12 rounded-2xl bg-warning/10 text-warning border border-warning/20 flex items-center justify-center shrink-0 shadow-sm">
+                <i data-lucide="shield-check" class="w-6 h-6"></i>
+            </div>
+            <div>
+                <h1 class="text-2xl lg:text-3xl font-extrabold tracking-tight text-base-content leading-tight m-0">
+                    Monitoreo de Sesiones Activas
+                </h1>
+                <p class="text-xs lg:text-sm text-base-content/65 mt-0.5 leading-relaxed m-0">
+                    Auditoría en tiempo real de usuarios y dispositivos conectados al panel de control.
+                </p>
+            </div>
         </div>
 
-        <div style="display:flex; align-items:center; gap:10px;">
-            <button type="button" class="btn-danger" onclick="openRevokeOthersModal()">
-                <i data-lucide="shield-alert" style="width:15px; height:15px;"></i>
+        <div class="flex items-center gap-2.5 flex-wrap">
+            <button type="button" class="btn btn-error btn-sm text-white rounded-xl gap-2 font-semibold shadow-xs h-11 px-4 text-xs" onclick="openRevokeOthersModal()">
+                <i data-lucide="shield-alert" class="w-4 h-4"></i>
                 Cerrar Mis Otras Sesiones
             </button>
         </div>
     </div>
 
-    <!-- ═════════ TARJETAS KPI ═════════ -->
-    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:16px;">
+    <!-- ═════════ TARJETAS KPI (DAISYUI STATS) ═════════ -->
+    <div class="stats stats-vertical lg:stats-horizontal shadow-sm bg-base-100 border border-base-300 w-full rounded-2xl divide-y lg:divide-y-0 lg:divide-x divide-base-300">
         
         <!-- Total Sesiones Activas -->
-        <div class="metric-card-shadcn">
-            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px;">
-                <span style="font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-muted);">Sesiones Activas</span>
-                <div style="width:34px; height:34px; border-radius:9999px; background:rgba(59,130,246,0.12); display:flex; align-items:center; justify-content:center; color:#3b82f6;">
-                    <i data-lucide="laptop" style="width:16px; height:16px;"></i>
+        <div class="stat p-5 lg:p-6">
+            <div class="stat-figure">
+                <div class="w-12 h-12 rounded-2xl bg-primary/10 text-primary border border-primary/20 flex items-center justify-center shadow-xs">
+                    <i data-lucide="laptop" class="w-6 h-6"></i>
                 </div>
             </div>
-            <div style="display:flex; align-items:baseline; gap:8px;">
-                <span class="metric-value-huge" id="totalSessionsKpi" style="color:#3b82f6;">{{ total_active_sessions }}</span>
-                <span class="badge-pill badge-admin" style="font-size:0.68rem;">globales</span>
+            <div class="stat-title text-[11px] font-bold uppercase tracking-wider text-base-content/50">Sesiones Activas</div>
+            <div class="stat-value text-3xl font-extrabold tracking-tight font-mono text-primary mt-1 flex items-baseline gap-2.5">
+                <span id="totalSessionsKpi">{{ total_active_sessions }}</span>
+                <span class="badge badge-primary badge-md font-bold px-2.5 text-xs text-primary-content">globales</span>
             </div>
+            <div class="stat-desc text-xs text-base-content/60 mt-1">Navegadores conectados</div>
         </div>
 
         <!-- Usuarios Conectados -->
-        <div class="metric-card-shadcn">
-            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px;">
-                <span style="font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-muted);">Usuarios Conectados</span>
-                <div style="width:34px; height:34px; border-radius:9999px; background:rgba(239,68,68,0.12); display:flex; align-items:center; justify-content:center; color:#ef4444;">
-                    <i data-lucide="users" style="width:16px; height:16px;"></i>
+        <div class="stat p-5 lg:p-6">
+            <div class="stat-figure">
+                <div class="w-12 h-12 rounded-2xl bg-warning/10 text-warning border border-warning/20 flex items-center justify-center shadow-xs">
+                    <i data-lucide="users" class="w-6 h-6"></i>
                 </div>
             </div>
-            <div style="display:flex; align-items:baseline; gap:8px;">
-                <span class="metric-value-huge" style="color:var(--text-primary);">{{ connected_users_count }}</span>
-                <span class="badge-pill badge-user" style="font-size:0.68rem;">conectados</span>
+            <div class="stat-title text-[11px] font-bold uppercase tracking-wider text-base-content/50">Usuarios Conectados</div>
+            <div class="stat-value text-3xl font-extrabold tracking-tight font-mono text-base-content mt-1 flex items-baseline gap-2.5">
+                <span>{{ connected_users_count }}</span>
+                <span class="badge badge-neutral badge-md font-bold px-2.5 text-xs">en línea</span>
             </div>
+            <div class="stat-desc text-xs text-base-content/60 mt-1">Cuentas distintas</div>
         </div>
 
         <!-- Móviles vs Desktop -->
-        <div class="metric-card-shadcn">
-            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px;">
-                <span style="font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-muted);">Dispositivos Móviles</span>
-                <div style="width:34px; height:34px; border-radius:9999px; background:rgba(168,85,247,0.12); display:flex; align-items:center; justify-content:center; color:#a855f7;">
-                    <i data-lucide="smartphone" style="width:16px; height:16px;"></i>
+        <div class="stat p-5 lg:p-6">
+            <div class="stat-figure">
+                <div class="w-12 h-12 rounded-2xl bg-secondary/10 text-secondary border border-secondary/20 flex items-center justify-center shadow-xs">
+                    <i data-lucide="smartphone" class="w-6 h-6"></i>
                 </div>
             </div>
-            <div style="display:flex; align-items:baseline; gap:8px;">
-                <span class="metric-value-huge" style="color:#a855f7;">{{ mobile_sessions_count }}</span>
-                <span class="badge-pill badge-admin" style="font-size:0.68rem;">móviles / tablets</span>
+            <div class="stat-title text-[11px] font-bold uppercase tracking-wider text-base-content/50">Dispositivos Móviles</div>
+            <div class="stat-value text-3xl font-extrabold tracking-tight font-mono text-secondary mt-1 flex items-baseline gap-2.5">
+                <span>{{ mobile_sessions_count }}</span>
+                <span class="badge badge-secondary badge-md font-bold px-2.5 text-xs text-secondary-content">móviles</span>
             </div>
+            <div class="stat-desc text-xs text-base-content/60 mt-1">Celulares / Tablets</div>
         </div>
 
         <!-- Estado de Auditoría -->
-        <div class="metric-card-shadcn">
-            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px;">
-                <span style="font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-muted);">Auditoría en Vivo</span>
-                <div style="width:34px; height:34px; border-radius:9999px; background:rgba(34,197,94,0.12); display:flex; align-items:center; justify-content:center; color:#22c55e;">
-                    <i data-lucide="shield-check" style="width:16px; height:16px;"></i>
+        <div class="stat p-5 lg:p-6">
+            <div class="stat-figure">
+                <div class="w-12 h-12 rounded-2xl bg-success/10 text-success border border-success/20 flex items-center justify-center shadow-xs">
+                    <i data-lucide="activity" class="w-6 h-6"></i>
                 </div>
             </div>
-            <div style="display:flex; align-items:baseline; gap:8px;">
-                <span style="font-size:1.25rem; font-weight:800; color:#22c55e;">Monitoreando</span>
-                <span class="badge-pill badge-superadmin" style="font-size:0.68rem; background:rgba(34,197,94,0.12); color:#22c55e; border-color:rgba(34,197,94,0.25);">Heartbeat Activo</span>
+            <div class="stat-title text-[11px] font-bold uppercase tracking-wider text-base-content/50">Auditoría en Vivo</div>
+            <div class="stat-value text-2xl font-extrabold tracking-tight text-success mt-1 flex items-baseline gap-2.5">
+                <span>Activa</span>
+                <span class="badge badge-success badge-md font-bold px-2.5 text-white text-xs inline-flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full bg-white animate-pulse"></span>
+                    Heartbeat
+                </span>
             </div>
+            <div class="stat-desc text-xs text-base-content/60 mt-1">Verificación continua</div>
         </div>
 
     </div>
 
     <!-- ═════════ FILTRO Y BÚSQUEDA ═════════ -->
-    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
-        <form method="get" style="width:100%; max-width:340px;">
-            <div style="position:relative;">
-                <i data-lucide="search" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); width:15px; height:15px; color:var(--text-muted); pointer-events:none;"></i>
+    <div class="flex flex-wrap justify-between items-center gap-3">
+        <form method="get" class="w-full max-w-xs">
+            <div class="relative w-full">
+                <i data-lucide="search" class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-base-content/40 pointer-events-none"></i>
                 <input type="text" name="q" value="{{ query }}" placeholder="Buscar por usuario, IP o dispositivo..."
-                    class="shadcn-input"
-                    style="width:100%; padding-left:36px !important;">
+                       class="input input-bordered input-sm w-full pl-10 pr-4 rounded-xl bg-base-100 border-base-300 text-xs focus:border-primary focus:outline-none placeholder:text-base-content/40 h-10" />
             </div>
         </form>
     </div>
 
     <!-- ═════════ TABLA DE SESIONES ACTIVAS ═════════ -->
-    <div class="shadcn-card" style="padding:0; overflow:hidden;">
+    <div class="card bg-base-100 shadow-sm border border-base-300 rounded-2xl overflow-hidden">
         
-        <div style="padding:16px 20px; border-bottom:1px solid var(--border-subtle); display:flex; justify-content:space-between; align-items:center;">
-            <div style="display:flex; align-items:center; gap:10px;">
-                <h2 style="font-size:1rem; font-weight:700; color:var(--text-primary); margin:0;">
+        <div class="p-4 lg:px-6 border-b border-base-300/70 flex justify-between items-center bg-base-200/30">
+            <div class="flex items-center gap-2.5">
+                <h2 class="text-sm font-bold text-base-content m-0">
                     Dispositivos & Usuarios Conectados
                 </h2>
             </div>
-            <span class="badge-pill badge-user" id="tableSessionCountBadge">{{ sessions.count }} sesión{{ sessions.count|pluralize:"es" }} activa{{ sessions.count|pluralize }}</span>
+            <span class="badge badge-neutral badge-md font-mono font-bold px-2.5 text-xs" id="tableSessionCountBadge">
+                {{ sessions.count }} sesión{{ sessions.count|pluralize:"es" }} activa{{ sessions.count|pluralize }}
+            </span>
         </div>
 
-        <div style="overflow-x:auto;">
-            <table class="glass-table">
+        <div class="overflow-x-auto">
+            <table class="table table-zebra w-full">
                 <thead>
-                    <tr>
-                        <th>Usuario</th>
+                    <tr class="bg-base-200/50 border-b border-base-300 text-[11px] font-bold uppercase tracking-wider text-base-content/50">
+                        <th class="py-4 pl-6">Usuario</th>
                         <th>Dispositivo / SO</th>
                         <th>Navegador</th>
                         <th>Dirección IP</th>
-                        <th>Inicio de Sesión</th>
+                        <th>Inicio</th>
                         <th>Última Actividad</th>
-                        <th style="text-align:center;">Estado</th>
-                        <th style="text-align:right; width:120px;">Acción</th>
+                        <th class="text-center">Estado</th>
+                        <th class="text-right pr-6 w-36 whitespace-nowrap">Acción</th>
                     </tr>
                 </thead>
-                <tbody id="sessionsTableBody">
+                <tbody id="sessionsTableBody" class="text-sm">
                     {% for item in sessions %}
-                    <tr id="row-session-{{ item.session_key }}">
+                    <tr id="row-session-{{ item.session_key }}" class="hover:bg-base-200/30 transition-colors">
                         <!-- Usuario -->
-                        <td>
-                            <div style="display:flex; align-items:center; gap:10px;">
-                                <div class="avatar" style="width:32px; height:32px; font-size:0.8rem;">
+                        <td class="pl-6 py-3.5">
+                            <div class="flex items-center gap-3">
+                                <div class="w-9 h-9 rounded-xl bg-primary/10 border border-primary/20 text-primary font-extrabold flex items-center justify-center text-xs shrink-0 shadow-xs">
                                     {{ item.user.username|make_list|first|upper }}
                                 </div>
                                 <div>
-                                    <span style="font-weight:700; color:var(--text-primary); font-size:0.88rem; display:block;">
+                                    <span class="font-bold text-sm text-base-content block tracking-tight">
                                         {{ item.user.username }}
                                     </span>
-                                    <span class="badge-pill badge-{% if item.user.role == 'superadmin' %}superadmin{% elif item.user.role == 'admin' %}admin{% else %}user{% endif %}" style="font-size:0.65rem; padding:1px 6px;">
+                                    <span class="badge {% if item.user.role == 'superadmin' %}badge-warning{% elif item.user.role == 'admin' %}badge-primary{% else %}badge-neutral{% endif %} badge-sm font-bold text-[10px] px-2">
                                         {{ item.user.get_role_display }}
                                     </span>
                                 </div>
@@ -173,73 +164,82 @@
 
                         <!-- Dispositivo -->
                         <td>
-                            <div style="display:flex; align-items:center; gap:8px;">
-                                <div style="width:30px; height:30px; border-radius:9999px; background:var(--bg-muted); display:flex; align-items:center; justify-content:center; color:var(--text-secondary); flex-shrink:0;">
+                            <div class="flex items-center gap-2.5">
+                                <div class="w-8 h-8 rounded-lg bg-base-200 border border-base-300 flex items-center justify-center shrink-0">
                                     {% if 'Móvil' in item.device_info or 'iPhone' in item.device_info or 'Android' in item.device_info %}
-                                        <i data-lucide="smartphone" style="width:15px; height:15px; color:#3b82f6;"></i>
+                                        <i data-lucide="smartphone" class="w-4 h-4 text-primary"></i>
                                     {% elif 'iPad' in item.device_info or 'Tablet' in item.device_info %}
-                                        <i data-lucide="tablet" style="width:15px; height:15px; color:#a855f7;"></i>
+                                        <i data-lucide="tablet" class="w-4 h-4 text-secondary"></i>
                                     {% else %}
-                                        <i data-lucide="laptop" style="width:15px; height:15px; color:#38bdf8;"></i>
+                                        <i data-lucide="laptop" class="w-4 h-4 text-warning"></i>
                                     {% endif %}
                                 </div>
-                                <span style="font-weight:600; color:var(--text-primary); font-size:0.86rem;">{{ item.device_info }}</span>
+                                <span class="font-semibold text-xs text-base-content">{{ item.device_info }}</span>
                             </div>
                         </td>
 
                         <!-- Navegador -->
                         <td>
-                            <span style="font-size:0.84rem; color:var(--text-secondary);">{{ item.browser_info }}</span>
+                            <span class="text-xs text-base-content/75">{{ item.browser_info }}</span>
                         </td>
 
                         <!-- IP -->
                         <td>
-                            <code style="background:var(--bg-muted); padding:3px 8px; border-radius:6px; font-size:0.8rem; color:var(--text-muted); font-family:monospace; border:1px solid var(--border-subtle);">
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-lg bg-base-200 border border-base-300 text-xs font-mono text-base-content/80">
                                 {{ item.ip_address|default:"Desconocida" }}
-                            </code>
+                            </span>
                         </td>
 
                         <!-- Inicio -->
                         <td>
-                            <span style="font-size:0.8rem; color:var(--text-muted);">{{ item.created_at|date:"d/m/Y H:i" }}</span>
+                            <span class="text-xs text-base-content/60 font-mono">{{ item.created_at|date:"d/m/Y H:i" }}</span>
                         </td>
 
                         <!-- Última Actividad -->
                         <td>
-                            <span style="font-size:0.8rem; color:var(--text-primary); font-weight:600;">{{ item.last_activity|date:"d/m/Y H:i" }}</span>
+                            <span class="text-xs text-base-content font-bold font-mono">{{ item.last_activity|date:"d/m/Y H:i" }}</span>
                         </td>
 
                         <!-- Estado -->
-                        <td style="text-align:center;">
+                        <td class="text-center">
                             {% if item.session_key == current_session_key %}
-                                <span class="badge-active">
-                                    <span class="status-dot" style="background:#22c55e;"></span>Esta Sesión
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-success/10 text-success border border-success/20">
+                                    <span class="w-2 h-2 rounded-full bg-success animate-pulse"></span>
+                                    Esta Sesión
                                 </span>
                             {% else %}
-                                <span class="badge-pill badge-admin" style="font-size:0.75rem;">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-base-200 border border-base-300 text-base-content/70">
                                     Remota
                                 </span>
                             {% endif %}
                         </td>
 
                         <!-- Acción -->
-                        <td style="text-align:right;">
+                        <td class="text-right pr-6 whitespace-nowrap">
                             {% if item.session_key != current_session_key %}
-                                <button type="button" class="btn-danger" style="padding:4px 10px; font-size:0.75rem;" 
-                                    onclick="openRevokeSingleModal('{{ item.session_key }}', '{{ item.user.username }}', '{{ item.device_info }}', '{{ item.ip_address|default:"Desconocida" }}')" 
-                                    title="Cerrar esta sesión remota">
-                                    <i data-lucide="log-out" style="width:12px; height:12px;"></i>
-                                    Revocar
+                                <button type="button" 
+                                        class="btn btn-ghost btn-xs rounded-xl border border-base-300 hover:border-error hover:bg-error/10 hover:text-error text-base-content/75 gap-1.5 h-8 px-3 font-semibold transition-all inline-flex items-center" 
+                                        onclick="openRevokeSingleModal('{{ item.session_key|escapejs }}', '{{ item.user.username|escapejs }}', '{{ item.device_info|escapejs }}', '{{ item.ip_address|default:"Desconocida"|escapejs }}')" 
+                                        title="Cerrar esta sesión remota">
+                                    <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
+                                    <span>Revocar</span>
                                 </button>
                             {% else %}
-                                <span class="badge-pill badge-user" style="font-size:0.72rem;">Actual</span>
+                                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-success/10 border border-success/20 text-success text-xs font-bold font-mono">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-success animate-pulse"></span>
+                                    Actual
+                                </span>
                             {% endif %}
                         </td>
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="8" style="text-align:center; padding:40px; color:var(--text-muted);">
-                            No hay registros de sesiones disponibles{% if query %} para "{{ query }}"{% endif %}.
+                        <td colspan="8" class="p-16 text-center text-base-content/50">
+                            <div class="flex flex-col items-center justify-center gap-2">
+                                <i data-lucide="shield-check" class="w-12 h-12 text-base-content/30 mb-1"></i>
+                                <div class="text-sm font-bold text-base-content">No hay registros de sesiones disponibles</div>
+                                <div class="text-xs text-base-content/60">{% if query %}No se encontraron resultados para "{{ query }}".{% else %}No hay sesiones activas adicionales.{% endif %}</div>
+                            </div>
                         </td>
                     </tr>
                     {% endfor %}
@@ -250,71 +250,73 @@
 
 </div>
 
-<!-- ═════════ MODAL RADIX / SHADCN: CONFIRMAR REVOCAR SESIÓN ESPECÍFICA ═════════ -->
-<div id="revokeSingleModal" style="display:none; position:fixed; inset:0; z-index:100000; background:var(--modal-backdrop); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); align-items:center; justify-content:center; padding:16px;">
-    <div class="shadcn-card" style="width:100%; max-width:440px; padding:28px; animation:modalIn 0.22s ease-out; text-align:center; position:relative; overflow:hidden;">
-        <div style="width:48px; height:48px; border-radius:9999px; background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.3); display:flex; align-items:center; justify-content:center; margin:0 auto 16px; color:#ef4444;">
-            <i data-lucide="log-out" style="width:22px; height:22px;"></i>
+<!-- ═════════ MODAL: CONFIRMAR REVOCAR SESIÓN ESPECÍFICA ═════════ -->
+<div id="revokeSingleModal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-md hidden items-center justify-center p-4">
+    <div class="card bg-base-100 shadow-2xl border border-base-300 w-full max-w-sm p-6 rounded-2xl text-center">
+        
+        <div class="w-12 h-12 rounded-2xl bg-error/10 text-error border border-error/20 flex items-center justify-center mx-auto mb-3.5 shadow-xs">
+            <i data-lucide="log-out" class="w-5 h-5"></i>
         </div>
 
-        <h3 style="font-size:1.15rem; font-weight:700; color:var(--text-primary); margin:0 0 6px;">¿Cerrar esta sesión remota?</h3>
-        <p style="font-size:0.85rem; color:var(--text-secondary); margin:0 0 16px; line-height:1.4;">
+        <h3 class="text-base font-bold text-base-content mb-1">¿Cerrar esta sesión remota?</h3>
+        <p class="text-xs text-base-content/60 leading-relaxed mb-4">
             El usuario será desconectado inmediatamente del dispositivo seleccionado.
         </p>
 
-        <div style="background:var(--bg-muted); border:1px solid var(--border-subtle); border-radius:0.875rem; padding:12px 14px; margin-bottom:20px; text-align:left;">
-            <div style="font-size:0.82rem; margin-bottom:4px;">
-                <span style="color:var(--text-muted);">Usuario:</span>
-                <strong id="revokeTargetUsername" style="color:var(--text-primary); margin-left:4px;"></strong>
+        <div class="bg-base-200/50 border border-base-300 rounded-xl p-3.5 text-xs flex flex-col gap-2 text-left mb-5">
+            <div class="flex justify-between items-center">
+                <span class="text-base-content/60">Usuario:</span>
+                <strong id="revokeTargetUsername" class="text-base-content font-bold"></strong>
             </div>
-            <div style="font-size:0.82rem; margin-bottom:4px;">
-                <span style="color:var(--text-muted);">Dispositivo:</span>
-                <span id="revokeTargetDevice" style="color:var(--text-secondary); margin-left:4px;"></span>
+            <div class="flex justify-between items-center">
+                <span class="text-base-content/60">Dispositivo:</span>
+                <span id="revokeTargetDevice" class="text-base-content/80 font-medium"></span>
             </div>
-            <div style="font-size:0.82rem;">
-                <span style="color:var(--text-muted);">IP:</span>
-                <code id="revokeTargetIp" style="margin-left:4px; font-size:0.78rem;"></code>
+            <div class="flex justify-between items-center">
+                <span class="text-base-content/60">IP:</span>
+                <code id="revokeTargetIp" class="font-mono text-[11px] text-primary"></code>
             </div>
         </div>
 
-        <div style="display:flex; gap:10px; justify-content:center;">
-            <button type="button" class="btn-ghost" style="flex:1; justify-content:center;" onclick="closeRevokeSingleModal()">
+        <div class="flex gap-2 justify-center">
+            <button type="button" class="btn btn-ghost btn-sm flex-1 rounded-xl border border-base-300 text-xs font-semibold" onclick="closeRevokeSingleModal()">
                 Cancelar
             </button>
-            <button type="button" id="confirmRevokeSingleBtn" class="btn-danger" style="flex:1; justify-content:center;" onclick="executeRevokeSingleSession()">
-                <i data-lucide="log-out" style="width:14px; height:14px;"></i>
+            <button type="button" id="confirmRevokeSingleBtn" class="btn btn-error btn-sm text-white flex-1 rounded-xl text-xs font-semibold gap-1.5 shadow-xs" onclick="executeRevokeSingleSession()">
+                <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
                 Revocar Sesión
             </button>
         </div>
     </div>
 </div>
 
-<!-- ═════════ MODAL RADIX / SHADCN: CONFIRMAR REVOCAR OTRAS SESIONES ═════════ -->
-<div id="revokeOthersModal" style="display:none; position:fixed; inset:0; z-index:100000; background:var(--modal-backdrop); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); align-items:center; justify-content:center; padding:16px;">
-    <div class="shadcn-card" style="width:100%; max-width:440px; padding:28px; animation:modalIn 0.22s ease-out; text-align:center; position:relative; overflow:hidden;">
-        <div style="width:48px; height:48px; border-radius:9999px; background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.3); display:flex; align-items:center; justify-content:center; margin:0 auto 16px; color:#ef4444;">
-            <i data-lucide="shield-alert" style="width:22px; height:22px;"></i>
+<!-- ═════════ MODAL: CONFIRMAR REVOCAR OTRAS SESIONES ═════════ -->
+<div id="revokeOthersModal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-md hidden items-center justify-center p-4">
+    <div class="card bg-base-100 shadow-2xl border border-base-300 w-full max-w-sm p-6 rounded-2xl text-center">
+        
+        <div class="w-12 h-12 rounded-2xl bg-warning/10 text-warning border border-warning/20 flex items-center justify-center mx-auto mb-3.5 shadow-xs">
+            <i data-lucide="shield-alert" class="w-5 h-5"></i>
         </div>
 
-        <h3 style="font-size:1.15rem; font-weight:700; color:var(--text-primary); margin:0 0 8px;">¿Cerrar todas tus demás sesiones?</h3>
-        <p style="font-size:0.85rem; color:var(--text-secondary); margin:0 0 24px; line-height:1.5;">
+        <h3 class="text-base font-bold text-base-content mb-1">¿Cerrar todas tus demás sesiones?</h3>
+        <p class="text-xs text-base-content/60 leading-relaxed mb-6">
             Se desconectarán todos tus otros navegadores y dispositivos excepto este en el que estás actualmente.
         </p>
 
-        <div style="display:flex; gap:10px; justify-content:center;">
-            <button type="button" class="btn-ghost" style="flex:1; justify-content:center;" onclick="closeRevokeOthersModal()">
+        <div class="flex gap-2 justify-center">
+            <button type="button" class="btn btn-ghost btn-sm flex-1 rounded-xl border border-base-300 text-xs font-semibold" onclick="closeRevokeOthersModal()">
                 Cancelar
             </button>
-            <button type="button" id="confirmRevokeOthersBtn" class="btn-danger" style="flex:1; justify-content:center;" onclick="executeRevokeOtherSessions()">
-                <i data-lucide="shield-alert" style="width:14px; height:14px;"></i>
+            <button type="button" id="confirmRevokeOthersBtn" class="btn btn-error btn-sm text-white flex-1 rounded-xl text-xs font-semibold gap-1.5 shadow-xs" onclick="executeRevokeOtherSessions()">
+                <i data-lucide="shield-alert" class="w-3.5 h-3.5"></i>
                 Cerrar Sesiones
             </button>
         </div>
     </div>
 </div>
 
-<!-- Toast Container -->
-<div id="toastContainer" style="position:fixed; bottom:24px; right:24px; z-index:100000; display:flex; flex-direction:column; gap:8px; pointer-events:none;"></div>
+<!-- Toast Container Flotante -->
+<div id="toastContainer" class="toast toast-bottom toast-end z-50 pointer-events-none p-4"></div>
 {% endblock %}
 
 {% block extra_js %}
@@ -325,29 +327,33 @@
     function getCsrfToken() {
         const input = document.getElementById('pageCsrfToken');
         if (input && input.value) return input.value;
-        return getCookie('csrftoken') || '{{ csrf_token }}';
+        const cookieValue = document.cookie
+            .split('; ')
+            .find(row => row.startsWith('csrftoken='))
+            ?.split('=')[1];
+        return cookieValue || '{{ csrf_token }}';
     }
 
     function showToast(message, type = 'info') {
         const container = document.getElementById('toastContainer');
         if (!container) return;
-        const toast = document.createElement('div');
-        toast.className = 'shadcn-card';
-        toast.style.cssText = 'padding:12px 18px; border-radius:0.75rem; display:flex; align-items:center; gap:10px; font-size:0.85rem; box-shadow:0 10px 25px rgba(0,0,0,0.3); pointer-events:auto; animation:modalIn 0.2s ease-out;';
-        
-        const colors = {
-            success: '#22c55e',
-            error: '#ef4444',
-            info: '#3b82f6'
-        };
-        const icon = type === 'success' ? 'check-circle' : type === 'error' ? 'alert-circle' : 'info';
-        toast.innerHTML = `<i data-lucide="${icon}" style="color:${colors[type] || '#3b82f6'}; width:16px; height:16px;"></i><span>${message}</span>`;
-        container.appendChild(toast);
-        lucide.createIcons({ root: toast });
+
+        const alert = document.createElement('div');
+        const alertClass = type === 'success' ? 'alert-success text-white' :
+                           type === 'error' ? 'alert-error text-white' :
+                           type === 'warning' ? 'alert-warning text-zinc-900' :
+                           'alert-info text-white';
+
+        alert.className = `alert ${alertClass} text-xs shadow-xl rounded-xl p-3 flex items-center gap-2 pointer-events-auto border border-base-300`;
+        const iconName = type === 'success' ? 'check-circle-2' : type === 'error' ? 'alert-circle' : type === 'warning' ? 'alert-triangle' : 'info';
+        alert.innerHTML = `<i data-lucide="${iconName}" class="w-4 h-4 shrink-0"></i> <span>${message}</span>`;
+        container.appendChild(alert);
+        if (window.lucide) lucide.createIcons();
+
         setTimeout(() => {
-            toast.style.opacity = '0';
-            toast.style.transition = 'opacity 0.3s ease';
-            setTimeout(() => toast.remove(), 300);
+            alert.style.opacity = '0';
+            alert.style.transition = 'opacity 0.25s ease';
+            setTimeout(() => alert.remove(), 260);
         }, 3500);
     }
 
@@ -360,38 +366,56 @@
         document.getElementById('revokeTargetIp').innerText = ipAddress;
 
         const modal = document.getElementById('revokeSingleModal');
-        modal.style.display = 'flex';
-        document.body.style.overflow = 'hidden';
-        lucide.createIcons({ root: modal });
+        if (modal) {
+            modal.style.display = 'flex';
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            document.body.style.overflow = 'hidden';
+            if (window.lucide) lucide.createIcons();
+        }
     }
 
     function closeRevokeSingleModal() {
         activeRevokeSessionKey = null;
         activeRevokeUsername = null;
         const modal = document.getElementById('revokeSingleModal');
-        modal.style.display = 'none';
-        document.body.style.overflow = 'auto';
+        if (modal) {
+            modal.style.display = 'none';
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            document.body.style.overflow = 'auto';
+        }
     }
 
     function openRevokeOthersModal() {
         const modal = document.getElementById('revokeOthersModal');
-        modal.style.display = 'flex';
-        document.body.style.overflow = 'hidden';
-        lucide.createIcons({ root: modal });
+        if (modal) {
+            modal.style.display = 'flex';
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            document.body.style.overflow = 'hidden';
+            if (window.lucide) lucide.createIcons();
+        }
     }
 
     function closeRevokeOthersModal() {
         const modal = document.getElementById('revokeOthersModal');
-        modal.style.display = 'none';
-        document.body.style.overflow = 'auto';
+        if (modal) {
+            modal.style.display = 'none';
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            document.body.style.overflow = 'auto';
+        }
     }
 
     async function executeRevokeSingleSession() {
         if (!activeRevokeSessionKey) return;
         const btn = document.getElementById('confirmRevokeSingleBtn');
-        btn.disabled = true;
-        btn.innerHTML = '<i data-lucide="loader-2" class="animate-spin" style="width:14px; height:14px;"></i> Revocando...';
-        lucide.createIcons();
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i> Revocando...';
+            if (window.lucide) lucide.createIcons();
+        }
 
         const sessionKey = activeRevokeSessionKey;
         const username = activeRevokeUsername;
@@ -418,7 +442,7 @@
                 
                 const kpi = document.getElementById('totalSessionsKpi');
                 if (kpi) {
-                    const current = parseInt(kpi.innerText) || 1;
+                    const current = parseInt(kpi.innerText, 10) || 1;
                     kpi.innerText = Math.max(0, current - 1);
                 }
                 const badge = document.getElementById('tableSessionCountBadge');
@@ -433,17 +457,21 @@
             console.error('Error revoking session:', e);
             showToast('Error de conexión con el servidor', 'error');
         } finally {
-            btn.disabled = false;
-            btn.innerHTML = '<i data-lucide="log-out" style="width:14px; height:14px;"></i> Revocar Sesión';
-            lucide.createIcons();
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '<i data-lucide="log-out" class="w-3.5 h-3.5"></i> Revocar Sesión';
+                if (window.lucide) lucide.createIcons();
+            }
         }
     }
 
     async function executeRevokeOtherSessions() {
         const btn = document.getElementById('confirmRevokeOthersBtn');
-        btn.disabled = true;
-        btn.innerHTML = '<i data-lucide="loader-2" class="animate-spin" style="width:14px; height:14px;"></i> Cerrando...';
-        lucide.createIcons();
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i> Cerrando...';
+            if (window.lucide) lucide.createIcons();
+        }
 
         try {
             const res = await fetch('/seguridad/api/sesiones/revoke-other/', {
@@ -466,9 +494,11 @@
             console.error('Error revoking other sessions:', e);
             showToast('Error de conexión', 'error');
         } finally {
-            btn.disabled = false;
-            btn.innerHTML = '<i data-lucide="shield-alert" style="width:14px; height:14px;"></i> Cerrar Sesiones';
-            lucide.createIcons();
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '<i data-lucide="shield-alert" class="w-3.5 h-3.5"></i> Cerrar Sesiones';
+                if (window.lucide) lucide.createIcons();
+            }
         }
     }
 
