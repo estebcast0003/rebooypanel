@@ -7,7 +7,7 @@
 {% endblock %}
 
 {% block content %}
-<div class="max-w-6xl mx-auto flex flex-col gap-8 pb-12">
+<div class="flex flex-col gap-6 pb-12 w-full">
 
     <!-- ═════════ HEADER ═════════ -->
     <div class="flex items-center justify-between flex-wrap gap-4">
@@ -134,7 +134,7 @@
 
         <!-- SECCIÓN 1: MIS FANPAGES -->
         <div id="myFpSection">
-            <div id="myFpGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            <div id="myFpGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
                 {% for fp in my_fanpages %}
                 <div class="card bg-base-100 shadow-sm border border-base-300 rounded-2xl p-5 hover:border-primary/50 transition flex flex-col justify-between" id="fp-item-{{ fp.id }}">
                     <div>
@@ -206,7 +206,7 @@
         {% if user.role == 'superadmin' %}
         <!-- SECCIÓN 2: OTRAS FANPAGES (SUPERADMIN) -->
         <div id="allFpSection" class="hidden">
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
                 {% for fp in all_fanpages %}
                 <div class="card bg-base-100 shadow-sm border border-base-300 rounded-2xl p-5 hover:border-primary/50 transition flex flex-col justify-between" id="fp-item-{{ fp.id }}">
                     <div>

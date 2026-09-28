@@ -72,7 +72,7 @@
 {% endblock %}
 
 {% block content %}
-<div class="max-w-6xl mx-auto flex flex-col gap-8 pb-12">
+<div class="flex flex-col gap-6 pb-12 w-full">
 
     <!-- ═════════ HEADER ═════════ -->
     <div class="flex items-center justify-between flex-wrap gap-4">
@@ -437,12 +437,10 @@
                     <i data-lucide="film" class="w-3.5 h-3.5"></i>
                     Ficha y Escenas
                 </button>
-                {% if user.role == 'superadmin' or user.can_view_stats %}
                 <button type="button" id="tabStatsBtn" class="tab tab-sm rounded-lg text-xs font-semibold gap-1.5 transition-all text-base-content/70 hover:text-base-content" onclick="switchPromptView('stats')">
                     <i data-lucide="bar-chart-2" class="w-3.5 h-3.5"></i>
                     Stats del Reel
                 </button>
-                {% endif %}
                 <button type="button" id="tabRawBtn" class="tab tab-sm rounded-lg text-xs font-semibold gap-1.5 transition-all text-base-content/70 hover:text-base-content" onclick="switchPromptView('raw')">
                     <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
                     Markdown Completo
@@ -556,18 +554,35 @@
 
             <!-- Vista 3: Código Fuente Markdown -->
             <div id="rawView" class="hidden -m-6 mt-0">
-                <div class="flex items-center justify-between p-3 px-6 border-b border-base-300 bg-base-200/60">
-                    <div class="flex items-center gap-1.5 text-xs text-base-content/60 font-bold uppercase tracking-wider">
-                        <i data-lucide="code-2" class="w-3.5 h-3.5"></i>
-                        <span>Código fuente Markdown</span>
+                <div class="flex items-center justify-between p-3 px-6 border-b border-base-300 bg-base-200/60 flex-wrap gap-2">
+                    <div class="flex items-center gap-3">
+                        <span class="flex items-center gap-1.5 text-xs text-base-content/60 font-bold uppercase tracking-wider">
+                            <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
+                            <span>Markdown Completo</span>
+                        </span>
+                        <div class="join border border-base-300 rounded-lg p-0.5 bg-base-100 shadow-2xs">
+                            <button type="button" id="btnMdPreview" class="join-item btn btn-xs btn-ghost rounded-md text-[11px] h-6 px-2.5 font-bold tab-active bg-primary/10 text-primary transition" onclick="switchMarkdownSubTab('preview')">
+                                Vista Formateada
+                            </button>
+                            <button type="button" id="btnMdSource" class="join-item btn btn-xs btn-ghost rounded-md text-[11px] h-6 px-2.5 font-medium text-base-content/60 transition" onclick="switchMarkdownSubTab('source')">
+                                Código Raw
+                            </button>
+                        </div>
                     </div>
-                    <button type="button" class="btn btn-ghost btn-xs gap-1 border border-base-300 rounded-lg text-xs" onclick="copyFullPrompt()">
-                        <i data-lucide="copy" class="w-3 h-3"></i>
-                        Copiar
+                    <button type="button" class="btn btn-ghost btn-xs gap-1.5 border border-base-300 hover:border-primary hover:bg-primary/10 hover:text-primary rounded-xl text-xs font-semibold px-3 h-8 transition-all inline-flex items-center" onclick="copyFullPrompt()">
+                        <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                        <span>Copiar Markdown</span>
                     </button>
                 </div>
-                <textarea id="rawMarkdownContent" readonly
-                    class="textarea w-full h-[460px] p-6 font-mono text-xs text-base-content bg-base-100 border-none outline-none resize-none rounded-none leading-relaxed block overflow-x-auto whitespace-pre"></textarea>
+                
+                <!-- Subvista A: Vista Formateada (HTML Renderizado vía marked) -->
+                <div id="mdPreviewContainer" class="md-prose p-6 max-h-[500px] overflow-y-auto leading-relaxed text-sm text-base-content"></div>
+
+                <!-- Subvista B: Código Raw (Textarea con auto-wrap y saltos de línea) -->
+                <div id="mdSourceContainer" class="hidden">
+                    <textarea id="rawMarkdownContent" readonly
+                        class="textarea w-full h-[500px] p-6 font-mono text-xs text-base-content bg-base-100 border-none outline-none resize-none rounded-none leading-relaxed block whitespace-pre-wrap break-words overflow-y-auto"></textarea>
+                </div>
             </div>
         </div>
 
@@ -663,6 +678,93 @@ function switchPromptView(view) {
         btn.classList.toggle('font-bold', isActive);
         btn.classList.toggle('text-base-content/70', !isActive);
     });
+}
+
+function formatMarkdownContent(rawMd, promptData) {
+    if (rawMd && typeof rawMd === 'string') {
+        let text = rawMd;
+        if (!text.includes('\n') || text.split('\n').length < 5) {
+            text = text
+                .replace(/\s*###\s+/g, '\n\n### ')
+                .replace(/\s*---\s*/g, '\n\n---\n\n')
+                .replace(/\s*\*\s+\*\*/g, '\n* **')
+                .replace(/\s*\*\*(Scene\s+\d+[^*]*?)\*\*\s*/gi, '\n\n**$1**\n')
+                .replace(/\s*\*\*Actions:?\*\*\s*/gi, '\n\n**Actions:**\n')
+                .replace(/\s*\*\*Dialogue:?\*\*\s*/gi, '\n\n**Dialogue:**\n')
+                .replace(/\s*\*\*Background Sound:?\*\*\s*/gi, '\n\n**Background Sound:**\n')
+                .trim();
+        }
+        return text;
+    }
+    
+    // Fallback if rawMd is missing: format from promptData
+    if (promptData) {
+        let md = '';
+        if (promptData.style) {
+            md += '### Style\n';
+            md += `* **Visual Texture:** ${promptData.style.visual_texture || ''}\n`;
+            md += `* **Lighting Quality:** ${promptData.style.lighting_quality || ''}\n`;
+            md += `* **Color Palette:** ${promptData.style.color_palette || ''}\n`;
+            md += `* **Atmosphere:** ${promptData.style.atmosphere || ''}\n\n`;
+        }
+        if (promptData.cinematography) {
+            md += '### Cinematography\n';
+            md += `* **Camera:** ${promptData.cinematography.camera || ''}\n`;
+            md += `* **Lens:** ${promptData.cinematography.lens || ''}\n`;
+            md += `* **Lighting:** ${promptData.cinematography.lighting || ''}\n`;
+            md += `* **Mood:** ${promptData.cinematography.mood || ''}\n\n`;
+        }
+        if (promptData.scenes && promptData.scenes.length > 0) {
+            md += '---\n\n### Scene Breakdown\n\n';
+            promptData.scenes.forEach(sc => {
+                md += `**Scene ${sc.scene_number || ''} (${sc.timestamp || (sc.start_time + ' - ' + sc.end_time)}):**\n`;
+                if (sc.description || sc.action_description) md += `${sc.description || sc.action_description}\n\n`;
+                if (sc.actions && sc.actions.length > 0) {
+                    md += '**Actions:**\n';
+                    sc.actions.forEach(a => {
+                        md += `* **${a.character || ''}:** ${a.action || ''}\n`;
+                    });
+                    md += '\n';
+                }
+                if (sc.dialogue && sc.dialogue.length > 0) {
+                    md += '**Dialogue:**\n';
+                    sc.dialogue.forEach(d => {
+                        md += `* **${d.speaker || ''}** (${d.tone || ''}): "${d.text || ''}"\n`;
+                    });
+                    md += '\n';
+                }
+                if (sc.background_sound) {
+                    md += `**Background Sound:**\n${sc.background_sound}\n\n`;
+                }
+            });
+        }
+        return md.trim();
+    }
+    return '';
+}
+
+function switchMarkdownSubTab(mode) {
+    const isPreview = mode === 'preview';
+    const previewEl = document.getElementById('mdPreviewContainer');
+    const sourceEl = document.getElementById('mdSourceContainer');
+    const btnPreview = document.getElementById('btnMdPreview');
+    const btnSource = document.getElementById('btnMdSource');
+
+    if (previewEl) previewEl.classList.toggle('hidden', !isPreview);
+    if (sourceEl) sourceEl.classList.toggle('hidden', isPreview);
+
+    if (btnPreview) {
+        btnPreview.classList.toggle('bg-primary/10', isPreview);
+        btnPreview.classList.toggle('text-primary', isPreview);
+        btnPreview.classList.toggle('font-bold', isPreview);
+        btnPreview.classList.toggle('text-base-content/60', !isPreview);
+    }
+    if (btnSource) {
+        btnSource.classList.toggle('bg-primary/10', !isPreview);
+        btnSource.classList.toggle('text-primary', !isPreview);
+        btnSource.classList.toggle('font-bold', !isPreview);
+        btnSource.classList.toggle('text-base-content/60', isPreview);
+    }
 }
 
 // Envío del formulario
@@ -874,8 +976,19 @@ function openPromptModalData(data) {
 
     if (!data.prompt_data) return;
 
-    currentRawMarkdown = data.prompt_data.full_prompt_markdown || JSON.stringify(data.prompt_data, null, 2);
-    document.getElementById('rawMarkdownContent').value = currentRawMarkdown;
+    currentRawMarkdown = formatMarkdownContent(data.prompt_data.full_prompt_markdown, data.prompt_data);
+    const rawTextarea = document.getElementById('rawMarkdownContent');
+    if (rawTextarea) rawTextarea.value = currentRawMarkdown;
+
+    const previewContainer = document.getElementById('mdPreviewContainer');
+    if (previewContainer) {
+        if (typeof marked !== 'undefined' && marked.parse) {
+            previewContainer.innerHTML = marked.parse(currentRawMarkdown);
+        } else {
+            previewContainer.innerHTML = `<pre class="whitespace-pre-wrap font-mono text-xs text-base-content leading-relaxed">${currentRawMarkdown}</pre>`;
+        }
+    }
+    switchMarkdownSubTab('preview');
 
     const styleList = document.getElementById('styleList');
     styleList.innerHTML = '';

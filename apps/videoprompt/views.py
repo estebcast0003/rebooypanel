@@ -17,6 +17,24 @@ def is_superadmin(user):
     return user.is_authenticated and user.role == 'superadmin'
 
 
+def normalize_markdown_formatting(text: str) -> str:
+    """Restores multi-line markdown headers and bullet points if LLM output collapsed into a single line."""
+    if not text:
+        return ""
+    if "\n" not in text or text.count("\n") < 5:
+        import re
+        t = text
+        t = re.sub(r"\s*###\s+", "\n\n### ", t)
+        t = re.sub(r"\s*---\s*", "\n\n---\n\n", t)
+        t = re.sub(r"\s*\*\s+\*\*", "\n* **", t)
+        t = re.sub(r"\s*\*\*(Scene\s+\d+[^*]*?)\*\*\s*", r"\n\n**\1**\n", t)
+        t = re.sub(r"\s*\*\*Actions:?\*\*\s*", "\n\n**Actions:**\n", t)
+        t = re.sub(r"\s*\*\*Dialogue:?\*\*\s*", "\n\n**Dialogue:**\n", t)
+        t = re.sub(r"\s*\*\*Background Sound:?\*\*\s*", "\n\n**Background Sound:**\n", t)
+        return t.strip()
+    return text
+
+
 def process_video_background(prompt_id, input_type, video_url, local_video_path, additional_context, prompt_language):
     """
     Procesamiento en segundo plano: descarga si es URL, genera thumbnail, transcodifica y analiza con Gemini.
@@ -90,16 +108,19 @@ def process_video_background(prompt_id, input_type, video_url, local_video_path,
         # Validar formato JSON
         try:
             if isinstance(raw_json_result, str):
-                json.loads(raw_json_result)
+                parsed = json.loads(raw_json_result)
+                if isinstance(parsed, dict) and 'full_prompt_markdown' in parsed:
+                    parsed['full_prompt_markdown'] = normalize_markdown_formatting(parsed['full_prompt_markdown'])
+                    raw_json_result = json.dumps(parsed, ensure_ascii=False)
             prompt_record.generated_prompt = raw_json_result
         except json.JSONDecodeError:
             fallback_data = {
                 "style": {"visual_texture": "Cinematográfica", "lighting_quality": "Natural", "color_palette": "Orgánica", "atmosphere": "Inmersiva"},
                 "cinematography": {"camera": "Dinámica", "lens": "Estándar", "lighting": "Equilibrada", "mood": "Realista"},
                 "scenes": [],
-                "full_prompt_markdown": raw_json_result
+                "full_prompt_markdown": normalize_markdown_formatting(raw_json_result)
             }
-            prompt_record.generated_prompt = json.dumps(fallback_data)
+            prompt_record.generated_prompt = json.dumps(fallback_data, ensure_ascii=False)
             
         prompt_record.status = 'completed'
         prompt_record.error_message = ''
@@ -255,9 +276,12 @@ def check_prompt_status_ajax(request, pk):
     
     if prompt_record.status == 'completed' and prompt_record.generated_prompt:
         try:
-            data['prompt_data'] = json.loads(prompt_record.generated_prompt)
+            parsed = json.loads(prompt_record.generated_prompt)
+            if isinstance(parsed, dict) and 'full_prompt_markdown' in parsed:
+                parsed['full_prompt_markdown'] = normalize_markdown_formatting(parsed['full_prompt_markdown'])
+            data['prompt_data'] = parsed
         except json.JSONDecodeError:
-            data['prompt_data'] = {'full_prompt_markdown': prompt_record.generated_prompt}
+            data['prompt_data'] = {'full_prompt_markdown': normalize_markdown_formatting(prompt_record.generated_prompt)}
             
     return JsonResponse(data)
 
