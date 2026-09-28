@@ -172,6 +172,138 @@ def build_wordpress_article_html(
     return f"{media_block}\n\n{content}"
 
 
+def generate_cinematic_cover_16_9(image_path: str) -> str:
+    """
+    Transforms vertical/square video thumbnails (e.g. 9:16 Instagram Reels)
+    into a professional, high-resolution 16:9 cinematic landscape cover (1280x720).
+
+    Features:
+    - Ambient background: Original frame expanded to fill 16:9, Gaussian blurred and subtly dimmed.
+    - Centered foreground: Original vertical frame preserving exact aspect ratio with zero distortion.
+    - Soft depth shadow: Subtle shadow separating foreground from background.
+
+    If the image is already landscape (aspect ratio >= 1.5), it returns the original path unchanged.
+    """
+    if not image_path or not os.path.exists(image_path):
+        return image_path
+
+    try:
+        from PIL import Image, ImageFilter, ImageEnhance, ImageOps, ImageDraw
+
+        with Image.open(image_path) as img:
+            img = ImageOps.exif_transpose(img)
+            w, h = img.size
+            if h <= 0 or w <= 0:
+                return image_path
+
+            current_ratio = w / h
+            # If already landscape (16:9, 3:2, etc. >= 1.5), no need to adapt
+            if current_ratio >= 1.5:
+                return image_path
+
+            target_w = 1280
+            target_h = 720
+
+            # 1. Background: scale to cover 1280x720, center-crop, blur, dim
+            scale_bg = max(target_w / w, target_h / h)
+            bg_w = max(1, int(w * scale_bg))
+            bg_h = max(1, int(h * scale_bg))
+            bg = img.resize((bg_w, bg_h), Image.Resampling.LANCZOS)
+
+            crop_left = (bg_w - target_w) // 2
+            crop_top = (bg_h - target_h) // 2
+            bg = bg.crop((crop_left, crop_top, crop_left + target_w, crop_top + target_h))
+
+            # Cinematic Gaussian Blur & Dimming
+            bg = bg.filter(ImageFilter.GaussianBlur(radius=28))
+            bg = ImageEnhance.Brightness(bg).enhance(0.60)
+
+            # 2. Foreground: scale vertical image to fit target height 720
+            fg_h = target_h
+            fg_w = max(1, int(w * (fg_h / h)))
+            fg = img.resize((fg_w, fg_h), Image.Resampling.LANCZOS)
+
+            # Position centered horizontally
+            pos_x = (target_w - fg_w) // 2
+
+            # Soft drop shadow behind foreground
+            shadow = Image.new('RGBA', (target_w, target_h), (0, 0, 0, 0))
+            draw = ImageDraw.Draw(shadow)
+            draw.rectangle([pos_x - 12, 0, pos_x + fg_w + 12, target_h], fill=(0, 0, 0, 150))
+            shadow = shadow.filter(ImageFilter.GaussianBlur(radius=16))
+
+            bg_rgba = bg.convert('RGBA')
+            bg_rgba = Image.alpha_composite(bg_rgba, shadow)
+            bg_rgba.paste(fg, (pos_x, 0))
+
+            final_img = bg_rgba.convert('RGB')
+
+            # Save alongside original with _cover_16_9 suffix
+            dir_name = os.path.dirname(image_path)
+            base_name, _ = os.path.splitext(os.path.basename(image_path))
+            out_filename = f"{base_name}_cover_16_9.jpg"
+            out_path = os.path.join(dir_name, out_filename)
+
+            final_img.save(out_path, 'JPEG', quality=93, optimize=True)
+            return out_path
+    except Exception as exc:
+        logger.warning("Error generating 16:9 cinematic cover for '%s': %s", image_path, exc)
+        return image_path
+
+
+def get_or_create_wordpress_category(site, category_name: str) -> int | None:
+    """
+    Busca o crea una categoría en el sitio WordPress mediante la REST API
+    (/wp-json/wp/v2/categories) y retorna su ID numérico.
+    Soporta categorías como 'Dramas', 'Comedia', 'Entretenimiento'.
+    """
+    if not category_name or not site:
+        return None
+
+    clean_name = category_name.strip()
+    clean_password = (site.application_password or '').replace(' ', '')
+    api_url = site.get_api_url('categories')
+
+    # 1. Buscar si la categoría ya existe en WordPress
+    try:
+        response = requests.get(
+            api_url,
+            params={'search': clean_name, 'per_page': 20},
+            auth=(site.username, clean_password),
+            timeout=12,
+        )
+        if response.status_code == 200:
+            for cat in response.json():
+                if cat.get('name', '').strip().lower() == clean_name.lower():
+                    return cat.get('id')
+    except Exception as search_err:
+        logger.warning("Error buscando categoría '%s' en %s: %s", clean_name, getattr(site, 'name', ''), search_err)
+
+    # 2. Si no existe, crearla vía POST
+    try:
+        slug = clean_slug_for_wordpress(clean_name)
+        create_payload = {'name': clean_name, 'slug': slug}
+        resp_create = requests.post(
+            api_url,
+            json=create_payload,
+            auth=(site.username, clean_password),
+            timeout=12,
+        )
+        if resp_create.status_code in (200, 201):
+            return resp_create.json().get('id')
+
+        # Si ya existía con conflicto de slug (term_exists), extraer el ID existente
+        if resp_create.status_code == 400:
+            err_data = resp_create.json()
+            term_id = err_data.get('data', {}).get('term_id') or err_data.get('data', {}).get('resource_id')
+            if term_id:
+                return term_id
+    except Exception as create_err:
+        logger.warning("Error creando categoría '%s' en %s: %s", clean_name, getattr(site, 'name', ''), create_err)
+
+    return None
+
+
 def upload_featured_media_to_wordpress(
     site,
     thumbnail_path: str,
@@ -180,20 +312,22 @@ def upload_featured_media_to_wordpress(
     """
     Sube una imagen local (thumbnail) a la biblioteca de medios de WordPress
     (POST /wp-json/wp/v2/media) y retorna (media_id, source_url).
+    Si la imagen original es vertical, genera automáticamente un Canvas Cinemático 16:9.
     En caso de error o si el archivo no existe, retorna (None, None).
     """
     if not thumbnail_path or not os.path.exists(thumbnail_path):
         return None, None
 
     try:
-        with open(thumbnail_path, 'rb') as f:
+        media_path = generate_cinematic_cover_16_9(thumbnail_path)
+        with open(media_path, 'rb') as f:
             file_bytes = f.read()
 
         if not file_bytes:
             return None, None
 
         clean_password = (site.application_password or '').replace(' ', '')
-        filename = os.path.basename(thumbnail_path) or 'portada.jpg'
+        filename = os.path.basename(media_path) or 'portada.jpg'
         headers = {
             'Content-Disposition': f'attachment; filename="{filename}"',
             'Content-Type': 'image/jpeg',
@@ -240,6 +374,7 @@ def publish_article_to_wordpress(
     thumbnail_path: str = None,
     direct_video_url: str = None,
     username: str = None,
+    category: str = None,
 ) -> dict:
     """
     Publishes an article to one of the active WordPress sites in the pool.
@@ -287,6 +422,10 @@ def publish_article_to_wordpress(
             payload['tags'] = tags
         if media_id:
             payload['featured_media'] = media_id
+        if category:
+            cat_id = get_or_create_wordpress_category(site, category)
+            if cat_id:
+                payload['categories'] = [cat_id]
 
         try:
             response = requests.post(
@@ -325,6 +464,8 @@ def publish_article_to_wordpress(
                     'site_id': site.id,
                     'site_name': site.name,
                     'site_url': site.site_url,
+                    'category': category,
+                    'category_id': payload.get('categories', [None])[0] if payload.get('categories') else None,
                 }
             else:
                 error_detail = f"HTTP {response.status_code}"

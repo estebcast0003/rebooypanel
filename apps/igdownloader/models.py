@@ -77,6 +77,13 @@ class InstagramDownload(models.Model):
     )
     wp_article_title = models.CharField(max_length=255, blank=True, null=True, help_text="Título del artículo en WordPress")
     wp_article_content = models.TextField(blank=True, null=True, help_text="Contenido HTML del artículo en WordPress")
+    wp_category = models.CharField(
+        max_length=100,
+        default='Entretenimiento',
+        blank=True,
+        null=True,
+        help_text="Categoría temática del artículo en WordPress (Dramas, Comedia, Entretenimiento)"
+    )
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

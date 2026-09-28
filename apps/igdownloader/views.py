@@ -63,6 +63,38 @@ def process_ajax(request):
 
     url = clean_instagram_url(raw_url)
 
+    # Detección de duplicados para evitar procesamiento redundante
+    existing = InstagramDownload.objects.filter(
+        user=request.user,
+        instagram_url=url,
+        status='completed'
+    ).first()
+    if not existing and request.user.role == 'superadmin':
+        existing = InstagramDownload.objects.filter(
+            instagram_url=url,
+            status='completed'
+        ).first()
+
+    if existing:
+        return JsonResponse({
+            'status': 'duplicate',
+            'error': 'duplicate',
+            'message': f'Este Reel ya fue descargado previamente (@{existing.uploader}).',
+            'existing_item': {
+                'id': existing.id,
+                'title': existing.title or 'Reel de Instagram',
+                'uploader': existing.uploader or 'instagram',
+                'instagram_url': existing.instagram_url,
+                'created_at': existing.created_at.strftime("%d/%m/%Y %H:%M"),
+                'thumbnail_url': existing.thumbnail.url if existing.thumbnail else '',
+                'duration_seconds': existing.duration_seconds,
+                'like_count': existing.like_count,
+                'comment_count': existing.comment_count,
+                'formatted_likes': existing.formatted_likes or '0',
+                'formatted_comments': existing.formatted_comments or '0',
+            }
+        }, status=409)
+
     item = InstagramDownload.objects.create(
         user=request.user,
         instagram_url=url,
@@ -178,6 +210,7 @@ def status_ajax(request, pk):
         'wp_post_url': item.wp_post_url or '',
         'wp_article_title': item.wp_article_title or '',
         'wp_site_name': wp_site_name,
+        'wp_category': item.wp_category or 'Entretenimiento',
     })
 
 
@@ -432,6 +465,7 @@ def generate_facebook_copy_ajax(request, pk):
             'wp_post_url': result.get('wp_post_url') or item.wp_post_url or '',
             'wp_article_title': result.get('wp_article_title') or item.wp_article_title or '',
             'wp_site_name': wp_site_name or '',
+            'wp_category': result.get('wp_category') or item.wp_category or 'Entretenimiento',
         })
     except Exception as e:
         return JsonResponse({

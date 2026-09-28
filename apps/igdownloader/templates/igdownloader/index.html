@@ -8,7 +8,7 @@
 {% endblock %}
 
 {% block content %}
-<div class="max-w-6xl mx-auto flex flex-col gap-8 pb-12">
+<div class="flex flex-col gap-6 pb-12 w-full">
 
     <!-- ═════════ 1. FORMULARIO DE DESCARGA ═════════ -->
     <div class="card bg-base-100 shadow-sm border border-base-300 rounded-2xl p-6 lg:p-8">
@@ -543,6 +543,7 @@
                                 <i data-lucide="globe" class="w-3.5 h-3.5 text-primary"></i>
                                 <span class="text-[11px] font-bold uppercase tracking-wider text-base-content/60">Enlace para el 1er Comentario (Artículo WordPress)</span>
                                 <span id="fbWpSiteBadge" class="badge badge-primary badge-xs text-primary-content font-bold"></span>
+                                <span id="fbWpCategoryBadge" class="badge badge-warning badge-xs font-bold hidden"></span>
                             </div>
                             <div id="fbWpHeaderActions" class="flex items-center gap-1.5">
                                 <a id="fbWpVisitBtn" href="#" target="_blank" rel="noopener noreferrer" class="btn btn-ghost btn-xs gap-1 border border-base-300 rounded-lg text-xs">
@@ -618,6 +619,48 @@
     </div>
 </div>
 
+<!-- ═════════ 5. MODAL: ALERTA DE REEL DUPLICADO ═════════ -->
+<div id="duplicateReelModal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-md hidden items-center justify-center p-4">
+    <div class="card bg-base-100 shadow-2xl border border-warning/40 w-full max-w-md p-6 rounded-2xl">
+        <div class="flex items-center gap-3 mb-3">
+            <div class="w-11 h-11 rounded-2xl bg-warning/10 text-warning border border-warning/20 flex items-center justify-center shrink-0 shadow-2xs">
+                <i data-lucide="copy" class="w-5 h-5"></i>
+            </div>
+            <div>
+                <h3 class="text-base font-bold text-base-content m-0">Reel Ya Descargado</h3>
+                <span class="text-xs text-base-content/60">Petición rechazada para evitar duplicidad</span>
+            </div>
+        </div>
+
+        <p class="text-xs text-base-content/75 leading-relaxed mb-4">
+            Este enlace de Instagram ya fue procesado y se encuentra registrado en tu historial. Para no consumir recursos ni generar copias redundantes, no se volverá a descargar.
+        </p>
+
+        <!-- Preview del Reel Existente -->
+        <div class="bg-base-200/50 border border-base-300 rounded-xl p-3.5 mb-5 flex gap-3.5 items-center">
+            <div id="dupThumbBox" class="w-16 h-20 rounded-lg bg-base-300 overflow-hidden shrink-0 flex items-center justify-center">
+                <img id="dupReelThumb" src="" alt="Thumbnail" class="w-full h-full object-cover hidden">
+                <i data-lucide="film" id="dupReelFallbackIcon" class="w-6 h-6 text-base-content/30"></i>
+            </div>
+            <div class="flex-1 min-w-0">
+                <div class="text-xs font-bold text-base-content truncate" id="dupReelTitle">Reel de Instagram</div>
+                <div class="text-[11px] text-primary font-mono font-semibold" id="dupReelUploader">@instagram</div>
+                <div class="text-[11px] text-base-content/50 mt-1" id="dupReelDate">--</div>
+            </div>
+        </div>
+
+        <div class="flex gap-2 justify-end">
+            <button type="button" class="btn btn-ghost btn-sm rounded-xl border border-base-300 text-xs font-semibold" onclick="closeDuplicateReelModal()">
+                Entendido
+            </button>
+            <button type="button" id="btnViewExistingReel" class="btn btn-primary btn-sm rounded-xl text-xs font-semibold gap-1.5 text-primary-content shadow-xs">
+                <i data-lucide="eye" class="w-3.5 h-3.5"></i>
+                Ver en Historial
+            </button>
+        </div>
+    </div>
+</div>
+
 <!-- Toast Container Flotante -->
 <div id="toastContainer" class="toast toast-bottom toast-end z-50 pointer-events-none p-4"></div>
 {% endblock %}
@@ -659,6 +702,12 @@ document.getElementById('igDownloadForm').addEventListener('submit', async funct
         });
 
         const data = await response.json();
+
+        if (response.status === 409 || data.status === 'duplicate' || data.error === 'duplicate') {
+            resetForm();
+            openDuplicateReelModal(data.existing_item);
+            return;
+        }
 
         if (response.ok && (data.success || data.id)) {
             progBar.style.width = '100%';
@@ -914,6 +963,20 @@ function updateFbSection(item) {
                 wpBadge.innerText = item.wp_site_name || 'WordPress';
                 wpBadge.classList.remove('hidden');
             }
+            const wpCategoryBadge = document.getElementById('fbWpCategoryBadge');
+            if (wpCategoryBadge && item.wp_category) {
+                wpCategoryBadge.innerText = item.wp_category;
+                wpCategoryBadge.classList.remove('hidden');
+                if (item.wp_category === 'Dramas') {
+                    wpCategoryBadge.className = 'badge badge-warning badge-xs font-bold';
+                } else if (item.wp_category === 'Comedia') {
+                    wpCategoryBadge.className = 'badge badge-primary badge-xs font-bold text-primary-content';
+                } else {
+                    wpCategoryBadge.className = 'badge badge-neutral badge-xs font-bold';
+                }
+            } else if (wpCategoryBadge) {
+                wpCategoryBadge.classList.add('hidden');
+            }
             if (wpVisit) {
                 wpVisit.href = item.wp_post_url;
                 wpVisit.classList.remove('hidden');
@@ -1018,7 +1081,8 @@ async function triggerFacebookCopy(id, isRegenerate = false) {
                     fb_hashtags_source: data.hashtags_source,
                     wp_post_url: data.wp_post_url,
                     wp_article_title: data.wp_article_title,
-                    wp_site_name: data.wp_site_name
+                    wp_site_name: data.wp_site_name,
+                    wp_category: data.wp_category,
                 });
             }
 
@@ -1146,6 +1210,52 @@ function closeDeleteModal() {
     }
 }
 
+function openDuplicateReelModal(item) {
+    if (!item) return;
+    
+    document.getElementById('dupReelTitle').innerText = item.title || 'Reel de Instagram';
+    document.getElementById('dupReelUploader').innerText = item.uploader ? `@${item.uploader}` : '@instagram';
+    document.getElementById('dupReelDate').innerText = `Descargado: ${item.created_at || 'Previamente'}`;
+    
+    const thumbImg = document.getElementById('dupReelThumb');
+    const fallbackIcon = document.getElementById('dupReelFallbackIcon');
+    if (item.thumbnail_url) {
+        thumbImg.src = item.thumbnail_url;
+        thumbImg.classList.remove('hidden');
+        if (fallbackIcon) fallbackIcon.classList.add('hidden');
+    } else {
+        thumbImg.classList.add('hidden');
+        if (fallbackIcon) fallbackIcon.classList.remove('hidden');
+    }
+    
+    const btnView = document.getElementById('btnViewExistingReel');
+    if (btnView) {
+        btnView.onclick = () => {
+            closeDuplicateReelModal();
+            openIgModal(item.id);
+        };
+    }
+    
+    const modal = document.getElementById('duplicateReelModal');
+    if (modal) {
+        modal.style.display = 'flex';
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        document.body.style.overflow = 'hidden';
+        if (window.lucide) lucide.createIcons();
+    }
+}
+
+function closeDuplicateReelModal() {
+    const modal = document.getElementById('duplicateReelModal');
+    if (modal) {
+        modal.style.display = 'none';
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+        document.body.style.overflow = 'auto';
+    }
+}
+
 async function executeDeleteIgItem() {
     if (!itemToDeleteId) return;
     const btn = document.getElementById('btnConfirmDeleteIg');
@@ -1233,6 +1343,7 @@ window.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
         closeIgModal();
         closeDeleteModal();
+        closeDuplicateReelModal();
     }
 });
 document.getElementById('igModal')?.addEventListener('click', (e) => {
@@ -1240,6 +1351,9 @@ document.getElementById('igModal')?.addEventListener('click', (e) => {
 });
 document.getElementById('deleteModal')?.addEventListener('click', (e) => {
     if (e.target.id === 'deleteModal') closeDeleteModal();
+});
+document.getElementById('duplicateReelModal')?.addEventListener('click', (e) => {
+    if (e.target.id === 'duplicateReelModal') closeDuplicateReelModal();
 });
 </script>
 {% endblock %}

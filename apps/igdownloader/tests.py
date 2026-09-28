@@ -132,6 +132,7 @@ class FacebookCopyServiceTests(TestCase):
             thumbnail_path=None,
             direct_video_url="https://video.example.com/direct.mp4",
             username=self.user.username,
+            category="Entretenimiento",
         )
 
     @patch("igdownloader.services.facebook_copy_service.get_or_refresh_direct_url", return_value="https://video.example.com/direct.mp4")
@@ -236,6 +237,7 @@ class FacebookCopyServiceTests(TestCase):
             thumbnail_path=self.download.thumbnail.path,
             direct_video_url="https://video.example.com/direct.mp4",
             username=self.user.username,
+            category="Entretenimiento",
         )
 
     def test_facebook_post_copy_schema_title_no_emojis(self):
@@ -298,6 +300,24 @@ class InstagramDownloaderViewsTests(TestCase):
         self.assertEqual(response.status_code, 400)
         data = response.json()
         self.assertIn("error", data)
+
+    def test_process_ajax_duplicate_url(self):
+        self.client.login(username="allowed_ig_user", password="password123")
+        existing_url = "https://www.instagram.com/reel/C_EXISTING_123/"
+        InstagramDownload.objects.create(
+            user=self.user,
+            instagram_url=existing_url,
+            status="completed",
+            title="Video Ya Descargado",
+            uploader="creator_test"
+        )
+        response = self.client.post(reverse("igdownloader:process_ajax"), {"instagram_url": existing_url})
+        self.assertEqual(response.status_code, 409)
+        data = response.json()
+        self.assertEqual(data.get("status"), "duplicate")
+        self.assertEqual(data.get("error"), "duplicate")
+        self.assertIn("existing_item", data)
+        self.assertEqual(data["existing_item"]["title"], "Video Ya Descargado")
 
     def test_status_ajax_not_found(self):
         self.client.login(username="allowed_ig_user", password="password123")

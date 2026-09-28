@@ -674,6 +674,29 @@ class WordPressServiceTests(TestCase):
         call_args, call_kwargs = mock_post.call_args
         self.assertEqual(call_kwargs['json']['tags'], [12, 34])
 
+    @patch("wordpress_manager.services.wordpress_service.requests.get")
+    def test_get_or_create_wordpress_category_existing(self, mock_get):
+        from wordpress_manager.services.wordpress_service import get_or_create_wordpress_category
+        mock_get.return_value = MagicMock(
+            status_code=200,
+            json=lambda: [
+                {"id": 7, "name": "Dramas", "slug": "dramas"},
+                {"id": 8, "name": "Comedia", "slug": "comedia"},
+            ]
+        )
+        cat_id = get_or_create_wordpress_category(self.site1, "Dramas")
+        self.assertEqual(cat_id, 7)
+
+    @patch("wordpress_manager.services.wordpress_service.requests.post")
+    @patch("wordpress_manager.services.wordpress_service.requests.get")
+    def test_get_or_create_wordpress_category_new(self, mock_get, mock_post):
+        from wordpress_manager.services.wordpress_service import get_or_create_wordpress_category
+        mock_get.return_value = MagicMock(status_code=200, json=lambda: [])
+        mock_post.return_value = MagicMock(status_code=201, json=lambda: {"id": 9, "name": "Entretenimiento", "slug": "entretenimiento"})
+
+        cat_id = get_or_create_wordpress_category(self.site1, "Entretenimiento")
+        self.assertEqual(cat_id, 9)
+
     @patch("wordpress_manager.services.wordpress_service.random.shuffle")
     @patch("wordpress_manager.services.wordpress_service.requests.post")
     def test_publish_article_to_wordpress_failover_success(self, mock_post, mock_shuffle):
@@ -899,6 +922,29 @@ class WordPressServiceTests(TestCase):
         )
         self.assertTrue(result_no_p.startswith('<div style="text-align: center;'))
         self.assertIn(article_no_p, result_no_p)
+
+    def test_generate_cinematic_cover_16_9(self):
+        from PIL import Image
+        from wordpress_manager.services.wordpress_service import generate_cinematic_cover_16_9
+
+        with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as f:
+            temp_in = f.name
+            img = Image.new("RGB", (360, 640), color=(100, 150, 200))
+            img.save(temp_in, "JPEG")
+
+        out_path = None
+        try:
+            out_path = generate_cinematic_cover_16_9(temp_in)
+            self.assertTrue(os.path.exists(out_path))
+            self.assertIn("_cover_16_9.jpg", out_path)
+            with Image.open(out_path) as out_img:
+                self.assertEqual(out_img.size, (1280, 720))
+                self.assertAlmostEqual(out_img.width / out_img.height, 16 / 9, places=2)
+        finally:
+            if os.path.exists(temp_in):
+                os.remove(temp_in)
+            if out_path and os.path.exists(out_path):
+                os.remove(out_path)
 
     @patch("wordpress_manager.services.wordpress_service.requests.post")
     def test_upload_featured_media_to_wordpress_success(self, mock_post):

@@ -29,6 +29,10 @@ class FacebookPostCopy(BaseModel):
     title: str = Field(
         description="Título magnético, SEO y profesional para el artículo de WordPress. ESTRICTAMENTE SIN EMOJIS (0 emojis) para evitar slugs corruptos en las URLs."
     )
+    category: str = Field(
+        default="Entretenimiento",
+        description="Clasificación temática del video. DEBES elegir obligatoriamente una de estas tres opciones: 'Dramas' (para novelitas, conflictos o historias emotivas), 'Comedia' (para humor, bromas o parodias), o 'Entretenimiento' (para curiosidades, talentos, retos o cultura pop general)."
+    )
     description: str = Field(
         description="Copy para redes sociales (Facebook): primer párrafo descriptivo con gancho contundente basado en el video, desarrollo breve y llamado a la acción."
     )
@@ -131,6 +135,7 @@ def analyze_video_for_facebook(record, force_regenerate: bool = False) -> dict:
             "wp_post_url": record.wp_post_url,
             "wp_article_title": record.wp_article_title,
             "wp_site_name": wp_site_name,
+            "wp_category": getattr(record, "wp_category", "Entretenimiento") or "Entretenimiento",
             "generated_at": record.fb_generated_at.strftime("%d %b %Y, %H:%M")
             if record.fb_generated_at
             else "",
@@ -205,6 +210,11 @@ def analyze_video_for_facebook(record, force_regenerate: bool = False) -> dict:
             "4. Generación del Artículo Web (article_content):\n"
             "   - Escribe un artículo completo en formato HTML enriquecido utilizando etiquetas semánticas (<p>, <h2>, <ul>, <li>, <strong>) desarrollando el tema del video con introducción, lecciones clave y conclusión.\n"
             "   - No incluyas etiquetas <html>, <head> o <body> ni <h1> (el título se gestiona de forma independiente).\n"
+            "5. Clasificación Temática (category):\n"
+            "   - Selecciona exactamente una de las siguientes tres categorías temáticas según la esencia del video:\n"
+            "     * 'Dramas': Si el video presenta dramatizaciones, novelitas, conflictos de pareja/familiares, relatos de superación o intriga.\n"
+            "     * 'Comedia': Si el video es humorístico, parodia, bromas, sketches cómicos o situaciones graciosas.\n"
+            "     * 'Entretenimiento': Para momentos curiosos, datos sorprendentes, retos virales, talentos o cultura pop.\n"
             f"{hashtag_instruction}"
         )
 
@@ -256,6 +266,30 @@ def analyze_video_for_facebook(record, force_regenerate: bool = False) -> dict:
             final_hashtags = parsed_data.hashtags.strip()
             hashtags_source = "ai"
 
+        # Normalizar y clasificar categoría del video (Dramas, Comedia, Entretenimiento)
+        valid_categories = {"Dramas", "Comedia", "Entretenimiento"}
+        raw_cat = (getattr(parsed_data, "category", "") or "").strip()
+        full_text_signal = f"{parsed_data.title} {parsed_data.description} {raw_cat}".lower()
+
+        drama_keywords = [
+            "drama", "novela", "frutinovel", "traici", "venganza", "castigo", "misterio",
+            "secreto", "conmovedor", "triste", "engaño", "trampa", "llanto", "lagrima",
+            "celos", "infidel", "conflicto", "herencia", "justicia", "crimen", "rescate"
+        ]
+        comedy_keywords = [
+            "comedia", "humor", "divertid", "risa", "chiste", "gracios", "broma", "parodia",
+            "sketch", "memes", "carcajada", "graciosa", "absurdo"
+        ]
+
+        if any(k in full_text_signal for k in drama_keywords):
+            assigned_category = "Dramas"
+        elif any(k in full_text_signal for k in comedy_keywords):
+            assigned_category = "Comedia"
+        elif raw_cat in valid_categories:
+            assigned_category = raw_cat
+        else:
+            assigned_category = "Entretenimiento"
+
         # Guardar resultado inicial en base de datos
         record.fb_title = parsed_data.title.strip()
         record.fb_description = parsed_data.description.strip()
@@ -266,6 +300,7 @@ def analyze_video_for_facebook(record, force_regenerate: bool = False) -> dict:
         record.fb_generated_at = timezone.now()
         record.wp_article_title = parsed_data.title.strip()
         record.wp_article_content = parsed_data.article_content.strip()
+        record.wp_category = assigned_category
 
         # Publicar artículo en WordPress
         wp_res = None
@@ -287,6 +322,7 @@ def analyze_video_for_facebook(record, force_regenerate: bool = False) -> dict:
                 thumbnail_path=thumb_path,
                 direct_video_url=record.direct_video_url,
                 username=username,
+                category=assigned_category,
             )
             if wp_res:
                 record.wp_post_url = wp_res.get("post_url")
@@ -346,6 +382,7 @@ def analyze_video_for_facebook(record, force_regenerate: bool = False) -> dict:
             "wp_post_url": record.wp_post_url,
             "wp_article_title": record.wp_article_title,
             "wp_site_name": wp_site_name,
+            "wp_category": record.wp_category,
             "generated_at": record.fb_generated_at.strftime("%d %b %Y, %H:%M"),
             "from_cache": False,
         }
