@@ -1,6 +1,8 @@
 import json
+from datetime import timedelta
 from unittest.mock import patch, MagicMock
 
+from django.utils import timezone
 from django.test import TestCase, Client
 from django.urls import reverse
 from accounts.models import CustomUser
@@ -400,4 +402,109 @@ class InstagramDownloaderViewsTests(TestCase):
         self.assertIn('wp_site_name', content)
         self.assertIn('Sin Dominio WP', content)
         self.assertIn('¡Copy generado y artículo publicado en WordPress!', content)
+
+    def test_index_only_shows_last_24_hours(self):
+        self.client.login(username="allowed_ig_user", password="password123")
+        
+        # Recent download (2 hours ago)
+        recent_download = InstagramDownload.objects.create(
+            user=self.user,
+            instagram_url="https://www.instagram.com/reel/recent123/",
+            title="Recent Reel"
+        )
+        # Old download (30 hours ago)
+        old_download = InstagramDownload.objects.create(
+            user=self.user,
+            instagram_url="https://www.instagram.com/reel/old123/",
+            title="Old Reel"
+        )
+        InstagramDownload.objects.filter(id=old_download.id).update(
+            created_at=timezone.now() - timedelta(hours=30)
+        )
+
+        response = self.client.get(reverse("igdownloader:index"))
+        self.assertEqual(response.status_code, 200)
+
+        my_history_ids = list(response.context['my_history'].values_list('id', flat=True))
+        self.assertIn(recent_download.id, my_history_ids)
+        self.assertNotIn(old_download.id, my_history_ids)
+        self.assertIn('Últimas 24 hs', response.content.decode('utf-8'))
+
+
+class InstagramDownloadCleanupTests(TestCase):
+    """
+    Unit tests for 24-hour purge service and management command.
+    """
+
+    def setUp(self):
+        self.user = CustomUser.objects.create_user(
+            username="cleanup_user", password="password123", can_view_ig_downloader=True
+        )
+
+    def test_purge_expired_downloads_deletes_records_and_files(self):
+        import os
+        from django.conf import settings
+        from igdownloader.services.cleanup_service import purge_expired_downloads
+
+        # Crear archivo físico de prueba para miniatura vieja
+        thumb_dir = os.path.join(settings.MEDIA_ROOT, 'ig_thumbnails')
+        os.makedirs(thumb_dir, exist_ok=True)
+        old_thumb_path = os.path.join(thumb_dir, 'test_old_thumb.jpg')
+        recent_thumb_path = os.path.join(thumb_dir, 'test_recent_thumb.jpg')
+
+        with open(old_thumb_path, 'wb') as f:
+            f.write(b'dummy_old_image_bytes')
+        with open(recent_thumb_path, 'wb') as f:
+            f.write(b'dummy_recent_image_bytes')
+
+        old_item = InstagramDownload.objects.create(
+            user=self.user,
+            instagram_url="https://www.instagram.com/reel/old_purge/",
+            thumbnail='ig_thumbnails/test_old_thumb.jpg'
+        )
+        InstagramDownload.objects.filter(id=old_item.id).update(
+            created_at=timezone.now() - timedelta(hours=28)
+        )
+
+        recent_item = InstagramDownload.objects.create(
+            user=self.user,
+            instagram_url="https://www.instagram.com/reel/recent_purge/",
+            thumbnail='ig_thumbnails/test_recent_thumb.jpg'
+        )
+
+        result = purge_expired_downloads(hours=24)
+        self.assertGreaterEqual(result['records_deleted'], 1)
+        self.assertGreaterEqual(result['files_deleted'], 1)
+
+        # Verificar que el registro viejo no existe y el archivo fue borrado
+        self.assertFalse(InstagramDownload.objects.filter(id=old_item.id).exists())
+        self.assertFalse(os.path.exists(old_thumb_path))
+
+        # Verificar que el registro reciente sigue intacto
+        self.assertTrue(InstagramDownload.objects.filter(id=recent_item.id).exists())
+        self.assertTrue(os.path.exists(recent_thumb_path))
+
+        # Limpieza del archivo reciente
+        if os.path.exists(recent_thumb_path):
+            os.remove(recent_thumb_path)
+
+    def test_management_command_purge(self):
+        from django.core.management import call_command
+        from io import StringIO
+
+        old_item = InstagramDownload.objects.create(
+            user=self.user,
+            instagram_url="https://www.instagram.com/reel/cmd_old/"
+        )
+        InstagramDownload.objects.filter(id=old_item.id).update(
+            created_at=timezone.now() - timedelta(hours=26)
+        )
+
+        out = StringIO()
+        call_command('purge_expired_ig_downloads', '--hours', '24', stdout=out)
+        output = out.getvalue()
+
+        self.assertIn('Purga exitosa', output)
+        self.assertFalse(InstagramDownload.objects.filter(id=old_item.id).exists())
+
 

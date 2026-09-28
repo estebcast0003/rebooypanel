@@ -1,5 +1,7 @@
 import os
 import requests
+from datetime import timedelta
+from django.utils import timezone
 from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse, StreamingHttpResponse, Http404, HttpResponse
 from django.views.decorators.http import require_POST
@@ -7,6 +9,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.conf import settings
 from .models import InstagramDownload
+from .services.cleanup_service import purge_expired_downloads_throttled
 from .services.instagram_service import (
     clean_instagram_url,
     extract_instagram_data,
@@ -25,24 +28,30 @@ def index(request):
     if not can_access_ig_downloader(request.user):
         raise PermissionDenied("No tenés permiso para acceder al Descargador de Instagram.")
 
-    my_history = InstagramDownload.objects.filter(user=request.user).order_by('-created_at')
+    # Ejecutar auto-purga ligera en segundo plano (con throttle cada 15 min)
+    purge_expired_downloads_throttled(hours=24, interval_minutes=15)
 
-    # Auto-asociar miniaturas si ya existen en disco local sin llamadas externas bloqueantes
-    for item in my_history[:10]:
-        expected_filename = f'thumb_{item.id}.jpg'
-        full_disk_path = os.path.join(settings.MEDIA_ROOT, 'ig_thumbnails', expected_filename)
-        if os.path.exists(full_disk_path):
-            if not item.thumbnail or item.thumbnail.name != f'ig_thumbnails/{expected_filename}':
-                item.thumbnail = f'ig_thumbnails/{expected_filename}'
-                item.save(update_fields=['thumbnail'])
+    cutoff_24h = timezone.now() - timedelta(hours=24)
 
-    all_history = InstagramDownload.objects.all().select_related('user').order_by('-created_at') if request.user.role == 'superadmin' else None
+    # Ventana estricta de 24 horas + optimización ORM con defer de campos pesados
+    my_history = InstagramDownload.objects.filter(
+        user=request.user,
+        created_at__gte=cutoff_24h
+    ).defer(
+        'wp_article_content', 'original_caption', 'error_message'
+    ).order_by('-created_at')
+
+    all_history = InstagramDownload.objects.filter(
+        created_at__gte=cutoff_24h
+    ).select_related('user').defer(
+        'wp_article_content', 'original_caption', 'error_message'
+    ).order_by('-created_at') if request.user.role == 'superadmin' else None
 
     context = {
         'my_history': my_history,
         'my_history_count': my_history.count(),
         'all_history': all_history,
-        'all_history_count': all_history.count() if all_history else 0,
+        'all_history_count': all_history.count() if all_history is not None else 0,
         'active_tab': 'igdownloader',
     }
     return render(request, 'igdownloader/index.html', context)
@@ -255,6 +264,14 @@ def delete_ajax(request, pk):
     item = get_object_or_404(InstagramDownload, pk=pk)
     if request.user.role != 'superadmin' and item.user != request.user:
         raise PermissionDenied()
+
+    # Desvincular referencias huérfanas antes de borrar
+    try:
+        from django.db import connection
+        with connection.cursor() as cursor:
+            cursor.execute("UPDATE shortener_shortlink SET ig_download_id = NULL WHERE ig_download_id = %s", [item.id])
+    except Exception:
+        pass
 
     if item.thumbnail and os.path.exists(item.thumbnail.path):
         try:

@@ -81,6 +81,7 @@
                 <h2 class="text-xl font-bold tracking-tight text-base-content m-0">
                     Historial de Descargas
                 </h2>
+                <span class="badge badge-neutral badge-sm font-mono text-[10px] opacity-75">Últimas 24 hs</span>
             </div>
 
             {% if user.role == 'superadmin' %}
@@ -127,7 +128,7 @@
                             <!-- Miniatura del Reel: A la izquierda en móvil (96x96), completa en desktop -->
                             <div class="col-start-1 row-start-1 row-span-3 w-24 h-24 sm:w-full sm:h-40 rounded-xl bg-base-200 border border-base-300 overflow-hidden relative shrink-0 flex items-center justify-center sm:mb-3">
                                 {% if item.thumbnail %}
-                                    <img src="{{ item.thumbnail.url }}" alt="{{ item.title }}" class="w-full h-full object-cover" onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.classList.remove('hidden');">
+                                    <img src="{{ item.thumbnail.url }}" alt="{{ item.title }}" loading="lazy" decoding="async" class="w-full h-full object-cover" onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.classList.remove('hidden');">
                                     <div class="hidden w-full h-full items-center justify-center">
                                         <i data-lucide="film" class="w-8 h-8 sm:w-9 sm:h-9 text-base-content/30"></i>
                                     </div>
@@ -239,7 +240,7 @@
                 {% empty %}
                 <div id="noHistoryMsg" class="card bg-base-100 border border-base-300 rounded-2xl col-span-full text-center p-12 text-base-content/50">
                     <i data-lucide="film" class="w-10 h-10 mx-auto mb-3 opacity-30 text-base-content"></i>
-                    <p class="text-sm font-semibold">Aún no has descargado ningún reel. ¡Pega un enlace arriba para comenzar!</p>
+                    <p class="text-sm font-semibold">No hay descargas en las últimas 24 horas. ¡Pega un enlace arriba para comenzar!</p>
                 </div>
                 {% endfor %}
             </div>
@@ -278,7 +279,7 @@
                             <!-- Miniatura del Reel: A la izquierda en móvil (96x96), completa en desktop -->
                             <div class="col-start-1 row-start-1 row-span-3 w-24 h-24 sm:w-full sm:h-40 rounded-xl bg-base-200 border border-base-300 overflow-hidden relative shrink-0 flex items-center justify-center sm:mb-3">
                                 {% if item.thumbnail %}
-                                    <img src="{{ item.thumbnail.url }}" alt="{{ item.title }}" class="w-full h-full object-cover" onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.classList.remove('hidden');">
+                                    <img src="{{ item.thumbnail.url }}" alt="{{ item.title }}" loading="lazy" decoding="async" class="w-full h-full object-cover" onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.classList.remove('hidden');">
                                     <div class="hidden w-full h-full items-center justify-center">
                                         <i data-lucide="film" class="w-8 h-8 sm:w-9 sm:h-9 text-base-content/30"></i>
                                     </div>
@@ -387,7 +388,7 @@
                 {% empty %}
                 <div class="card bg-base-100 border border-base-300 rounded-2xl col-span-full text-center p-12 text-base-content/50">
                     <i data-lucide="users" class="w-10 h-10 mx-auto mb-3 opacity-30 text-base-content"></i>
-                    <p class="text-sm font-semibold">No hay descargas de otros usuarios aún.</p>
+                    <p class="text-sm font-semibold">No hay descargas de otros usuarios en las últimas 24 horas.</p>
                 </div>
                 {% endfor %}
             </div>
@@ -852,7 +853,7 @@ function insertNewHistoryItem(item) {
 
     const thumbHtml = item.thumbnail_url
         ? `<div class="col-start-1 row-start-1 row-span-3 w-24 h-24 sm:w-full sm:h-40 rounded-xl bg-base-200 border border-base-300 overflow-hidden relative shrink-0 flex items-center justify-center sm:mb-3">
-               <img src="${item.thumbnail_url}" alt="${item.title || 'Reel'}" class="w-full h-full object-cover">
+               <img src="${item.thumbnail_url}" alt="${item.title || 'Reel'}" loading="lazy" decoding="async" class="w-full h-full object-cover">
                ${durationBadge}
            </div>`
         : `<div class="col-start-1 row-start-1 row-span-3 w-24 h-24 sm:w-full sm:h-40 rounded-xl bg-base-200 border border-base-300 overflow-hidden relative shrink-0 flex items-center justify-center sm:mb-3">

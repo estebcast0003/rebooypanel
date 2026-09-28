@@ -85,13 +85,17 @@ class InstagramDownload(models.Model):
         help_text="Categoría temática del artículo en WordPress (Dramas, Comedia, Entretenimiento)"
     )
 
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         ordering = ['-created_at']
         verbose_name = 'Instagram Download'
         verbose_name_plural = 'Instagram Downloads'
+        indexes = [
+            models.Index(fields=['user', '-created_at'], name='ig_user_created_idx'),
+            models.Index(fields=['-created_at'], name='ig_created_idx'),
+        ]
 
     def __str__(self):
         return f"IG #{self.id} (@{self.uploader or 'desconocido'}) - {self.get_status_display()}"
