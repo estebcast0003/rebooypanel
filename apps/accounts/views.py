@@ -1,11 +1,14 @@
 import json
+from django.contrib import messages
+from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.decorators import login_required
 from django.contrib.sessions.models import Session
 from django.db.models import Q
 from django.http import JsonResponse
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
+from .forms import PasswordChangeCustomForm
 from .models import UserSessionLog
 
 def _cleanup_all_expired_sessions():
@@ -153,3 +156,45 @@ def revoke_other_sessions_api_view(request):
         'message': f'Se cerraron {len(other_keys)} sesión(es) en otros dispositivos.',
         'revoked_count': len(other_keys)
     })
+
+
+@login_required
+def change_password_view(request):
+    if request.method == 'POST':
+        form = PasswordChangeCustomForm(user=request.user, data=request.POST)
+        if form.is_valid():
+            user = form.save()
+            # Mantiene activa la sesión actual tras cambiar contraseña
+            update_session_auth_hash(request, user)
+
+            revoked_count = 0
+            if form.cleaned_data.get('revoke_other_sessions'):
+                current_key = request.session.session_key
+                other_logs = UserSessionLog.objects.filter(user=request.user)
+                if current_key:
+                    other_logs = other_logs.exclude(session_key=current_key)
+                other_keys = list(other_logs.values_list('session_key', flat=True))
+                if other_keys:
+                    Session.objects.filter(session_key__in=other_keys).delete()
+                    other_logs.delete()
+                    revoked_count = len(other_keys)
+
+            if revoked_count > 0:
+                messages.success(
+                    request,
+                    f'¡Contraseña actualizada exitosamente! Se cerraron {revoked_count} sesión(es) en otros dispositivos.'
+                )
+            else:
+                messages.success(request, '¡Tu contraseña ha sido actualizada exitosamente!')
+
+            return redirect('change_password')
+        else:
+            messages.error(request, 'Por favor corregí los errores indicados abajo.')
+    else:
+        form = PasswordChangeCustomForm(user=request.user)
+
+    return render(request, 'accounts/change_password.html', {
+        'form': form,
+        'active_tab': 'change_password',
+    })
+

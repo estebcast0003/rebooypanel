@@ -1,3 +1,5 @@
+from datetime import timedelta
+from django.utils import timezone
 from django.test import TestCase, Client
 from django.urls import reverse
 from accounts.models import CustomUser
@@ -147,3 +149,114 @@ class AccountsAuthViewsTests(TestCase):
         self.client.login(username="testuser", password="password123")
         response = self.client.get(reverse("security_sessions"))
         self.assertEqual(response.status_code, 200)
+
+
+class UserPasswordChangeTests(TestCase):
+    """
+    Unit tests for password change functionality, validation and session handling.
+    """
+
+    def setUp(self):
+        self.client = Client()
+        self.user = CustomUser.objects.create_user(
+            username="pwd_user",
+            password="oldpassword123"
+        )
+
+    def test_change_password_requires_login(self):
+        response = self.client.get(reverse("change_password"))
+        self.assertEqual(response.status_code, 302)
+
+    def test_change_password_page_loads_for_authenticated_user(self):
+        self.client.login(username="pwd_user", password="oldpassword123")
+        response = self.client.get(reverse("change_password"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Cambiar Contraseña")
+        self.assertContains(response, "id_old_password")
+        self.assertContains(response, "id_new_password1")
+        self.assertContains(response, "id_new_password2")
+
+    def test_change_password_success_and_keeps_session_active(self):
+        self.client.login(username="pwd_user", password="oldpassword123")
+        post_data = {
+            "old_password": "oldpassword123",
+            "new_password1": "NewSecurePass!456",
+            "new_password2": "NewSecurePass!456",
+            "revoke_other_sessions": "on",
+        }
+        response = self.client.post(reverse("change_password"), post_data, follow=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "¡Tu contraseña ha sido actualizada exitosamente!")
+
+        # Verify password changed
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password("NewSecurePass!456"))
+        self.assertFalse(self.user.check_password("oldpassword123"))
+
+        # Verify current session is still authenticated
+        dashboard_response = self.client.get(reverse("dashboard"))
+        self.assertEqual(dashboard_response.status_code, 200)
+
+    def test_change_password_invalid_old_password(self):
+        self.client.login(username="pwd_user", password="oldpassword123")
+        post_data = {
+            "old_password": "wrongpassword999",
+            "new_password1": "NewSecurePass!456",
+            "new_password2": "NewSecurePass!456",
+        }
+        response = self.client.post(reverse("change_password"), post_data)
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.context["form"].is_valid())
+        self.assertIn("old_password", response.context["form"].errors)
+
+        # Password should remain unchanged
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password("oldpassword123"))
+
+    def test_change_password_mismatched_new_passwords(self):
+        self.client.login(username="pwd_user", password="oldpassword123")
+        post_data = {
+            "old_password": "oldpassword123",
+            "new_password1": "NewSecurePass!456",
+            "new_password2": "DifferentPass!789",
+        }
+        response = self.client.post(reverse("change_password"), post_data)
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.context["form"].is_valid())
+        self.assertIn("new_password2", response.context["form"].errors)
+
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password("oldpassword123"))
+
+    def test_change_password_revokes_other_sessions_when_checked(self):
+        from django.contrib.sessions.models import Session
+        from accounts.models import UserSessionLog
+
+        self.client.login(username="pwd_user", password="oldpassword123")
+        session_key = self.client.session.session_key
+
+        # Create another session log and session for the same user
+        other_key = "other_device_session_key_9999"
+        Session.objects.create(session_key=other_key, expire_date=timezone.now() + timedelta(days=30))
+        UserSessionLog.objects.create(
+            user=self.user,
+            session_key=other_key,
+            device_info="iPhone 15",
+            browser_info="Mobile Safari"
+        )
+        self.assertTrue(UserSessionLog.objects.filter(session_key=other_key).exists())
+
+        post_data = {
+            "old_password": "oldpassword123",
+            "new_password1": "NewSecurePass!456",
+            "new_password2": "NewSecurePass!456",
+            "revoke_other_sessions": "on",
+        }
+        response = self.client.post(reverse("change_password"), post_data, follow=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Se cerraron 1 sesión(es) en otros dispositivos")
+
+        # Other session must be deleted
+        self.assertFalse(UserSessionLog.objects.filter(session_key=other_key).exists())
+        self.assertFalse(Session.objects.filter(session_key=other_key).exists())
+

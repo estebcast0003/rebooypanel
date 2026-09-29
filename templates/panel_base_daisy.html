@@ -192,6 +192,12 @@
                             <span class="badge badge-primary badge-md font-bold mt-0.5 px-2.5">{{ user.get_role_display }}</span>
                         </li>
                         <div class="divider my-1"></div>
+                        <li>
+                            <a href="{% url 'change_password' %}" class="{% if request.path == '/seguridad/cambiar-password/' %}active font-semibold{% endif %}">
+                                <i data-lucide="key-round" class="w-4 h-4 text-warning"></i>
+                                Cambiar Contraseña
+                            </a>
+                        </li>
                         {% if user.role == 'superadmin' %}
                         <li>
                             <a href="{% url 'security_sessions' %}">

@@ -2,6 +2,7 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
+    path('cambiar-password/', views.change_password_view, name='change_password'),
     path('sesiones/', views.security_sessions_page_view, name='security_sessions'),
     path('api/sesiones/', views.sessions_list_api_view, name='sessions_list_api'),
     path('api/sesiones/<str:session_key>/revoke/', views.revoke_session_api_view, name='revoke_session_api'),
