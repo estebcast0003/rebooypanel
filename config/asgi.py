@@ -1,5 +1,4 @@
-"""
-ASGI config for config project.
+"""ASGI config for config project.
 
 It exposes the ASGI callable as a module-level variable named ``application``.
 
@@ -16,6 +15,6 @@ sys.path.insert(0, str(BASE_DIR / 'apps'))
 
 from django.core.asgi import get_asgi_application
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.django.production')
 
 application = get_asgi_application()

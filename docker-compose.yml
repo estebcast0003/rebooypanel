@@ -5,6 +5,7 @@ services:
     ports:
       - "8000:8000"
     environment:
+      - DJANGO_SETTINGS_MODULE=config.django.production
       - DEBUG=False
       - ALLOWED_HOSTS=*
       - SQLITE_PATH=/app/data/db.sqlite3

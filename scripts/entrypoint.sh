@@ -6,7 +6,7 @@ python - << 'EOF'
 import os, sys, time
 import django
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.django.production')
 django.setup()
 
 from django.db import connections

@@ -1,3 +1,5 @@
+"""Celery background worker configuration."""
+
 import os
 import sys
 from pathlib import Path
@@ -7,7 +9,7 @@ sys.path.insert(0, str(BASE_DIR / 'apps'))
 
 try:
     from celery import Celery
-    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.django.development')
     app = Celery('rebooypanel')
     app.config_from_object('django.conf:settings', namespace='CELERY')
     app.autodiscover_tasks()
