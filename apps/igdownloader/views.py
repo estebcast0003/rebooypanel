@@ -1,15 +1,20 @@
 import os
+import json
+import hashlib
 import requests
 from datetime import timedelta
 from django.utils import timezone
 from django.shortcuts import render, get_object_or_404
-from django.http import JsonResponse, StreamingHttpResponse, Http404, HttpResponse
+from django.http import JsonResponse, StreamingHttpResponse, Http404, HttpResponse, HttpResponseRedirect
+from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.conf import settings
-from .models import InstagramDownload
+from accounts.models import CustomUser
+from .models import InstagramDownload, PostTrackingLink, LiveReaderSession
 from .services.cleanup_service import purge_expired_downloads_throttled
+from .services.telemetry_service import parse_client_device_and_software, resolve_ip_location
 from .services.instagram_service import (
     clean_instagram_url,
     extract_instagram_data,
@@ -193,6 +198,26 @@ def status_ajax(request, pk):
         except Exception:
             wp_site_name = ''
 
+    tracking_url = ''
+    total_clicks = 0
+    unique_clicks = 0
+    if item.wp_post_url:
+        try:
+            t_link = getattr(item, 'tracking_link', None)
+            if not t_link:
+                t_link, _ = PostTrackingLink.objects.get_or_create(
+                    download=item,
+                    defaults={'user': item.user, 'destination_url': item.wp_post_url}
+                )
+            elif t_link.destination_url != item.wp_post_url:
+                t_link.destination_url = item.wp_post_url
+                t_link.save(update_fields=['destination_url'])
+            tracking_url = f"/r/{t_link.slug}/"
+            total_clicks = t_link.total_clicks
+            unique_clicks = t_link.unique_clicks
+        except Exception:
+            pass
+
     return JsonResponse({
         'id': item.id,
         'title': item.title or 'Reel de Instagram',
@@ -217,6 +242,9 @@ def status_ajax(request, pk):
         'original_hashtags': item.original_hashtags or '',
         'fb_generated_at': item.fb_generated_at.strftime('%d %b %Y, %H:%M') if item.fb_generated_at else '',
         'wp_post_url': item.wp_post_url or '',
+        'wp_tracking_url': tracking_url,
+        'wp_total_clicks': total_clicks,
+        'wp_unique_clicks': unique_clicks,
         'wp_article_title': item.wp_article_title or '',
         'wp_site_name': wp_site_name,
         'wp_category': item.wp_category or 'Entretenimiento',
@@ -459,9 +487,20 @@ def generate_facebook_copy_ajax(request, pk):
 
     force_regenerate = request.POST.get('regenerate') == 'true'
 
+    panel_url = getattr(settings, 'PANEL_PUBLIC_URL', '')
+    if not panel_url:
+        try:
+            panel_url = request.build_absolute_uri('/')[:-1]
+        except Exception:
+            panel_url = ''
+
     try:
         from .services.facebook_copy_service import analyze_video_for_facebook
-        result = analyze_video_for_facebook(item, force_regenerate=force_regenerate)
+        result = analyze_video_for_facebook(
+            item,
+            force_regenerate=force_regenerate,
+            panel_url=panel_url
+        )
         wp_site_name = result.get('wp_site_name')
         if not wp_site_name and item.wp_site_id:
             try:
@@ -480,6 +519,9 @@ def generate_facebook_copy_ajax(request, pk):
             'from_cache': result.get('from_cache', False),
             'fb_status': item.fb_status,
             'wp_post_url': result.get('wp_post_url') or item.wp_post_url or '',
+            'wp_tracking_url': result.get('tracking_url') or '',
+            'wp_total_clicks': result.get('total_clicks', 0),
+            'wp_unique_clicks': result.get('unique_clicks', 0),
             'wp_article_title': result.get('wp_article_title') or item.wp_article_title or '',
             'wp_site_name': wp_site_name or '',
             'wp_category': result.get('wp_category') or item.wp_category or 'Entretenimiento',
@@ -490,3 +532,283 @@ def generate_facebook_copy_ajax(request, pk):
             'error': f"Error al generar copy para Facebook: {str(e)}",
             'fb_status': item.fb_status,
         }, status=400)
+
+
+def tracking_redirect_view(request, slug):
+    """
+    Pasarela de redirección ultrarrápida (302) que registra visitas al enlace de WordPress.
+    Inmune a cachés de WordPress y registra analíticas en tiempo real.
+    """
+    clean_slug = (slug or '').strip()
+    link = PostTrackingLink.objects.filter(slug=clean_slug).select_related('user').first()
+    if not link:
+        raise Http404("El enlace solicitado no existe o no está disponible.")
+
+    # Extraer metadatos del cliente
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        ip = x_forwarded_for.split(',')[0].strip()
+    else:
+        ip = request.META.get('REMOTE_ADDR', '')
+
+    ip_hash = hashlib.sha256(ip.encode('utf-8')).hexdigest() if ip else ''
+    user_agent = request.META.get('HTTP_USER_AGENT', '')
+    referer = request.META.get('HTTP_REFERER', '')
+
+    ua_lower = user_agent.lower()
+    is_mobile = any(m in ua_lower for m in ['mobile', 'android', 'iphone', 'ipad', 'phone'])
+
+    try:
+        link.record_click(
+            ip_hash=ip_hash,
+            referer=referer,
+            user_agent=user_agent,
+            is_mobile=is_mobile
+        )
+    except Exception:
+        # Falla abierta: si hay un error de escritura momentáneo, el visitante no se queda varado
+        pass
+
+    return HttpResponseRedirect(link.destination_url)
+
+
+@csrf_exempt
+def telemetry_view(request):
+    """
+    Endpoint de telemetría ultraliviano (HTTP 204 No Content).
+    Exento de CSRF y sesiones para procesar picos masivos de tráfico (>1.500 req/seg)
+    con latencia menor a 2ms sin ralentizar el panel administrativo.
+    Registra vistas de artículos, presencia en vivo (heartbeat) y sesiones de lectores.
+    """
+    if request.method == 'OPTIONS':
+        # Respuesta inmediata a preflight CORS
+        response = HttpResponse(status=204)
+        response['Access-Control-Allow-Origin'] = '*'
+        response['Access-Control-Allow-Methods'] = 'POST, GET, OPTIONS'
+        response['Access-Control-Allow-Headers'] = 'Content-Type'
+        return response
+
+    try:
+        username = ''
+        download_id = None
+        session_id = ''
+        post_title = ''
+        post_path = ''
+        post_url = ''
+        utm_source = ''
+        utm_medium = ''
+        is_heartbeat = False
+        referer = request.META.get('HTTP_REFERER', '')
+        user_agent = request.META.get('HTTP_USER_AGENT', '')
+
+        if request.method == 'POST':
+            raw_body = request.body
+            if raw_body:
+                try:
+                    data = json.loads(raw_body.decode('utf-8'))
+                    username = data.get('u') or data.get('user') or ''
+                    download_id = data.get('did') or data.get('download_id')
+                    session_id = (data.get('sid') or '').strip()
+                    post_title = (data.get('t') or data.get('title') or '').strip()
+                    post_path = (data.get('path') or '').strip()
+                    post_url = (data.get('url') or '').strip()
+                    utm_source = (data.get('src') or '').strip()
+                    utm_medium = (data.get('med') or '').strip()
+                    is_heartbeat = bool(data.get('hb'))
+                    if not referer:
+                        referer = data.get('ref') or ''
+                except Exception:
+                    pass
+        else:
+            username = request.GET.get('u') or request.GET.get('user') or request.GET.get('utm_campaign') or ''
+            download_id = request.GET.get('did') or request.GET.get('download_id')
+            session_id = (request.GET.get('sid') or '').strip()
+            post_title = (request.GET.get('t') or '').strip()
+            post_path = (request.GET.get('path') or '').strip()
+            post_url = (request.GET.get('url') or '').strip()
+            utm_source = (request.GET.get('src') or '').strip()
+            utm_medium = (request.GET.get('med') or '').strip()
+            is_heartbeat = request.GET.get('hb') in ('1', 'true', 'True')
+
+        # Extraer IP anónima hasheada
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        if x_forwarded_for:
+            ip = x_forwarded_for.split(',')[0].strip()
+        else:
+            ip = request.META.get('REMOTE_ADDR', '')
+        ip_hash = hashlib.sha256(ip.encode('utf-8')).hexdigest() if ip else ''
+
+        ua_lower = user_agent.lower()
+        is_mobile = any(m in ua_lower for m in ['mobile', 'android', 'iphone', 'ipad', 'phone'])
+
+        # Decodificar software y ubicación para LiveReaderSession
+        tech_info = parse_client_device_and_software(user_agent)
+        geo_info = resolve_ip_location(request, ip)
+
+        # Localizar el enlace de seguimiento y descarga
+        link = None
+        dl = None
+        target_user = None
+
+        if download_id:
+            try:
+                dl = InstagramDownload.objects.filter(id=int(download_id)).select_related('user').first()
+                if dl:
+                    target_user = dl.user
+                    link = PostTrackingLink.objects.filter(download=dl).first()
+            except (ValueError, TypeError):
+                dl = None
+
+        if not target_user and username:
+            clean_username = username.strip()
+            target_user = CustomUser.objects.filter(username=clean_username).first()
+
+        if not link and target_user:
+            link = PostTrackingLink.objects.filter(user=target_user).order_by('-created_at').first()
+            if not dl and link:
+                dl = link.download
+
+        # 1. Si es la vista inicial (no heartbeat), actualizar contadores agregados del post
+        if not is_heartbeat:
+            if link:
+                link.record_click(
+                    ip_hash=ip_hash,
+                    referer=referer,
+                    user_agent=user_agent,
+                    is_mobile=is_mobile
+                )
+            elif dl and target_user:
+                link, _ = PostTrackingLink.objects.get_or_create(
+                    download=dl,
+                    defaults={'user': target_user, 'destination_url': dl.wp_post_url}
+                )
+                link.record_click(
+                    ip_hash=ip_hash,
+                    referer=referer,
+                    user_agent=user_agent,
+                    is_mobile=is_mobile
+                )
+
+        # 2. Registrar o actualizar sesión de presencia en vivo (LiveReaderSession)
+        if target_user:
+            if not session_id:
+                session_id = f"{ip_hash[:16]}_{target_user.username}"[:64]
+
+            final_title = post_title or (dl.wp_article_title if dl else '') or ''
+            final_path = post_path or (dl.wp_post_url if dl else '') or ''
+            final_url = post_url or (dl.wp_post_url if dl else '') or ''
+
+            live_session, created = LiveReaderSession.objects.update_or_create(
+                session_id=session_id,
+                defaults={
+                    'user': target_user,
+                    'download': dl,
+                    'ip_hash': ip_hash,
+                    'post_title': final_title[:255],
+                    'post_path': final_path[:255],
+                    'post_url': final_url[:500],
+                    'country_code': geo_info.get('country_code', '')[:6],
+                    'country_name': geo_info.get('country_name', '')[:100],
+                    'city_name': geo_info.get('city_name', '')[:120],
+                    'device_type': tech_info.get('device_type', 'mobile')[:20],
+                    'os_name': tech_info.get('os_name', 'android')[:30],
+                    'browser_name': tech_info.get('browser_name', 'facebook')[:40],
+                    'utm_source': utm_source[:100],
+                    'utm_campaign': target_user.username[:100],
+                    'utm_medium': utm_medium[:100],
+                }
+            )
+            if not created:
+                live_session.save(update_fields=[
+                    'last_ping_at', 'post_title', 'post_path', 'post_url', 'utm_source', 'utm_medium'
+                ])
+
+    except Exception:
+        # Falla abierta garantizada: jamás retornar 500 ni interrumpir al navegador
+        pass
+
+    response = HttpResponse(status=204)
+    response['Access-Control-Allow-Origin'] = '*'
+    return response
+
+
+@login_required
+def live_readers_api_view(request):
+    """
+    Endpoint JSON para el Tab 'Lectores en Vivo' (estilo whos.amung.us Readers).
+    Devuelve la cantidad de lectores activos en tiempo real (últimos 60s)
+    y el stream de los últimos visitantes con geolocalización e iconos tecnológicos.
+    """
+    user_id = request.GET.get('user_id')
+    username = request.GET.get('u', '').strip()
+
+    target_user = None
+    if user_id:
+        try:
+            target_user = CustomUser.objects.filter(id=int(user_id)).first()
+        except (ValueError, TypeError):
+            target_user = None
+    elif username:
+        target_user = CustomUser.objects.filter(username=username).first()
+    else:
+        target_user = request.user
+
+    if not target_user:
+        return JsonResponse({'status': 'error', 'message': 'Usuario no encontrado.'}, status=404)
+
+    # Permisos: superadmin puede ver cualquier usuario; usuarios comunes sólo sus propios lectores
+    if request.user.role != 'superadmin' and target_user != request.user:
+        raise PermissionDenied("No tenés permiso para ver los lectores de este usuario.")
+
+    now = timezone.now()
+    active_cutoff = now - timedelta(seconds=60)
+    feed_cutoff = now - timedelta(minutes=30)
+
+    # 1. Total de lectores activos en este segundo exacto (heartbeat <= 60s)
+    active_readers = LiveReaderSession.objects.filter(
+        user=target_user,
+        last_ping_at__gte=active_cutoff
+    ).count()
+
+    # 2. Feed cronológico de lectores en tiempo real (hasta 60 registros recientes)
+    recent_sessions = LiveReaderSession.objects.filter(
+        user=target_user,
+        last_ping_at__gte=feed_cutoff
+    ).select_related('download', 'download__wp_site').order_by('-last_ping_at')[:60]
+
+    readers_list = []
+    for s in recent_sessions:
+        readers_list.append({
+            'id': s.id,
+            'session_id': s.session_id,
+            'time_ago': s.time_ago_display,
+            'is_online': s.is_online,
+            'post_title': s.post_title or s.post_path or 'Artículo en WordPress',
+            'post_path': s.post_path,
+            'post_url': s.post_url,
+            'wp_category': getattr(s.download, 'wp_category', '') if s.download else '',
+            'site_name': s.download.wp_site.name if (s.download and s.download.wp_site) else '',
+            'country_code': s.country_code,
+            'country_name': s.country_name or 'Ubicación Desconocida',
+            'city_name': s.city_name,
+            'flag_emoji': s.flag_emoji,
+            'device_type': s.device_type,
+            'os_name': s.os_name,
+            'browser_name': s.browser_name,
+            'utm_source': s.utm_source,
+        })
+
+    # Limpieza pasiva throttled de sesiones viejas (> 2 horas)
+    try:
+        LiveReaderSession.objects.filter(last_ping_at__lt=now - timedelta(hours=2)).delete()
+    except Exception:
+        pass
+
+    return JsonResponse({
+        'status': 'ok',
+        'active_readers': active_readers,
+        'total_in_feed': len(readers_list),
+        'readers': readers_list,
+        'user': target_user.username,
+        'server_time': now.strftime('%H:%M:%S'),
+    })

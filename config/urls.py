@@ -22,6 +22,7 @@ from django.conf.urls.static import static
 from django.views.static import serve
 from django.views.generic import RedirectView
 from core import views as core_views
+from igdownloader.views import tracking_redirect_view, telemetry_view, live_readers_api_view
 
 urlpatterns = [
     # Favicon
@@ -60,6 +61,14 @@ urlpatterns = [
 
     # Default Admin
     path('admin/', admin.site.urls),
+
+    # Telemetría de Visitas en WordPress (Beacon / Pixel / Live Readers)
+    path('api/telemetry/view/', telemetry_view, name='telemetry_view'),
+    path('api/telemetry/ping/', telemetry_view, name='telemetry_ping'),
+    path('api/telemetry/live-readers/', live_readers_api_view, name='live_readers_api'),
+
+    # Redirección y Tracking de Enlaces de WordPress
+    path('r/<str:slug>/', tracking_redirect_view, name='track_redirect'),
 
     # Servir media files (incluyendo producción en Dokploy sin Nginx dedicado)
     re_path(r'^media/(?P<path>.*)$', serve, {'document_root': settings.MEDIA_ROOT}),

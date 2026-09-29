@@ -491,12 +491,12 @@
 
             <!-- Botones Secundarios del Video (Instagram Link / Copiar Enlace) -->
             <div class="grid grid-cols-2 gap-2">
-                <a id="modalIgLink" href="#" target="_blank" rel="noopener noreferrer" class="btn btn-ghost btn-sm rounded-xl border border-base-300 text-xs gap-1.5 h-9 text-base-content/75 truncate" onclick="event.stopPropagation();">
-                    <i data-lucide="external-link" class="w-3.5 h-3.5 shrink-0"></i>
+                <a id="modalIgLink" href="#" target="_blank" rel="noopener noreferrer" class="btn btn-ghost h-9 min-h-9 sm:h-10 sm:min-h-10 rounded-xl border border-base-300 text-xs font-semibold gap-1.5 text-base-content/80 inline-flex items-center justify-center whitespace-nowrap px-3" onclick="event.stopPropagation();">
+                    <i data-lucide="external-link" class="w-3.5 h-3.5 shrink-0 text-primary"></i>
                     <span class="truncate">Ver en Instagram</span>
                 </a>
-                <button type="button" class="btn btn-ghost btn-sm rounded-xl border border-base-300 text-xs gap-1.5 h-9 text-base-content/75 truncate" onclick="copyModalUrl()">
-                    <i data-lucide="copy" class="w-3.5 h-3.5 shrink-0"></i>
+                <button type="button" class="btn btn-ghost h-9 min-h-9 sm:h-10 sm:min-h-10 rounded-xl border border-base-300 text-xs font-semibold gap-1.5 text-base-content/80 inline-flex items-center justify-center whitespace-nowrap px-3" onclick="copyModalUrl()">
+                    <i data-lucide="copy" class="w-3.5 h-3.5 shrink-0 text-warning"></i>
                     <span id="copyBtnText" class="truncate">Copiar Enlace</span>
                 </button>
             </div>
@@ -514,8 +514,8 @@
                     </div>
                     <div class="flex items-center gap-2">
                         <span id="fbSectionBadge" class="badge badge-neutral badge-sm sm:badge-md font-bold text-xs px-2.5">Sin generar</span>
-                        <button type="button" id="fbRegenerateBtn" class="btn btn-ghost btn-xs gap-1 border border-base-300 rounded-lg text-xs hidden" onclick="triggerFacebookCopy(currentModalId, true)" title="Volver a generar copy con IA">
-                            <i data-lucide="refresh-cw" class="w-3 h-3"></i>
+                        <button type="button" id="fbRegenerateBtn" class="btn btn-ghost btn-xs h-7 min-h-7 px-2.5 gap-1.5 border border-base-300 rounded-lg text-xs font-semibold hidden inline-flex items-center" onclick="triggerFacebookCopy(currentModalId, true)" title="Volver a generar copy con IA">
+                            <i data-lucide="refresh-cw" class="w-3 h-3 shrink-0"></i>
                             <span>Regenerar</span>
                         </button>
                     </div>
@@ -549,14 +549,14 @@
                 <div id="fbStateCompleted" class="hidden flex-col gap-2.5">
                     
                     <!-- Barra de Copiado Rápido Superior -->
-                    <div class="grid grid-cols-2 gap-2 p-2 rounded-xl bg-base-200/40 border border-base-300">
-                        <button type="button" id="copySocialOnlyBtn" class="btn btn-ghost btn-xs sm:btn-sm rounded-lg border border-base-300 text-xs gap-1.5 text-base-content/80 font-semibold" onclick="copySocialOnly(this)">
+                    <div class="grid grid-cols-2 gap-2 p-1.5 sm:p-2 rounded-xl bg-base-200/50 border border-base-300">
+                        <button type="button" id="copySocialOnlyBtn" class="btn btn-ghost h-9 min-h-9 rounded-lg border border-base-300 text-xs gap-1.5 text-base-content/85 font-semibold bg-base-100 hover:border-primary hover:text-primary transition-all flex flex-row items-center justify-center whitespace-nowrap px-3" onclick="copySocialOnly(this)">
                             <i data-lucide="copy" class="w-3.5 h-3.5 text-warning shrink-0"></i>
-                            <span class="truncate">Copiar Copy para Red Social</span>
+                            <span>Copiar Copy</span>
                         </button>
-                        <button type="button" id="copyWpLinkOnlyBtn" class="btn btn-ghost btn-xs sm:btn-sm rounded-lg border border-base-300 text-xs gap-1.5 text-base-content/80 font-semibold" onclick="copyWpLinkOnly(this)">
+                        <button type="button" id="copyWpLinkOnlyBtn" class="btn btn-ghost h-9 min-h-9 rounded-lg border border-base-300 text-xs gap-1.5 text-base-content/85 font-semibold bg-base-100 hover:border-primary hover:text-primary transition-all flex flex-row items-center justify-center whitespace-nowrap px-3" onclick="copyWpLinkOnly(this)">
                             <i data-lucide="link" class="w-3.5 h-3.5 text-primary shrink-0"></i>
-                            <span class="truncate">Copiar Link para Comentario</span>
+                            <span>Copiar Enlace</span>
                         </button>
                     </div>
 
@@ -567,12 +567,12 @@
                                 <i data-lucide="type" class="w-3.5 h-3.5 text-warning shrink-0"></i>
                                 <span>Título sugerido</span>
                             </span>
-                            <div class="flex items-center gap-2">
-                                <button type="button" class="btn btn-ghost btn-xs gap-1 border border-base-300 rounded-lg text-xs h-6 px-2" onclick="event.stopPropagation(); copyFbElement('fbTitleText', this);">
+                            <div class="flex items-center gap-1.5 shrink-0">
+                                <button type="button" class="btn btn-ghost btn-xs h-7 min-h-7 px-2.5 gap-1 border border-base-300 rounded-lg text-xs font-semibold shrink-0 inline-flex items-center" onclick="event.stopPropagation(); copyFbElement('fbTitleText', this);">
                                     <i data-lucide="copy" class="w-3 h-3"></i>
                                     <span>Copiar</span>
                                 </button>
-                                <i data-lucide="chevron-down" class="w-4 h-4 text-base-content/50 transition-transform duration-200 group-open:rotate-180 shrink-0"></i>
+                                <i data-lucide="chevron-down" class="w-4 h-4 text-base-content/50 transition-transform duration-200 group-open:rotate-180 shrink-0 ml-0.5"></i>
                             </div>
                         </summary>
                         <div class="p-3 pt-0 border-t border-base-300/40 mt-1">
@@ -587,12 +587,12 @@
                                 <i data-lucide="file-text" class="w-3.5 h-3.5 text-warning shrink-0"></i>
                                 <span>Descripción (Hook + CTA)</span>
                             </span>
-                            <div class="flex items-center gap-2">
-                                <button type="button" class="btn btn-ghost btn-xs gap-1 border border-base-300 rounded-lg text-xs h-6 px-2" onclick="event.stopPropagation(); copyFbElement('fbDescText', this);">
+                            <div class="flex items-center gap-1.5 shrink-0">
+                                <button type="button" class="btn btn-ghost btn-xs h-7 min-h-7 px-2.5 gap-1 border border-base-300 rounded-lg text-xs font-semibold shrink-0 inline-flex items-center" onclick="event.stopPropagation(); copyFbElement('fbDescText', this);">
                                     <i data-lucide="copy" class="w-3 h-3"></i>
                                     <span>Copiar</span>
                                 </button>
-                                <i data-lucide="chevron-down" class="w-4 h-4 text-base-content/50 transition-transform duration-200 group-open:rotate-180 shrink-0"></i>
+                                <i data-lucide="chevron-down" class="w-4 h-4 text-base-content/50 transition-transform duration-200 group-open:rotate-180 shrink-0 ml-0.5"></i>
                             </div>
                         </summary>
                         <div class="p-3 pt-0 border-t border-base-300/40 mt-1">
@@ -608,14 +608,14 @@
                                     <i data-lucide="hash" class="w-3.5 h-3.5 text-warning shrink-0"></i>
                                     <span>Hashtags</span>
                                 </span>
-                                <span id="fbHashtagsSourceBadge" class="badge badge-success text-white badge-xs font-mono">Originales</span>
+                                <span id="fbHashtagsSourceBadge" class="badge badge-success text-white badge-xs font-mono font-bold">Originales</span>
                             </div>
-                            <div class="flex items-center gap-2">
-                                <button type="button" class="btn btn-ghost btn-xs gap-1 border border-base-300 rounded-lg text-xs h-6 px-2" onclick="event.stopPropagation(); copyFbElement('fbHashtagsText', this);">
+                            <div class="flex items-center gap-1.5 shrink-0">
+                                <button type="button" class="btn btn-ghost btn-xs h-7 min-h-7 px-2.5 gap-1 border border-base-300 rounded-lg text-xs font-semibold shrink-0 inline-flex items-center" onclick="event.stopPropagation(); copyFbElement('fbHashtagsText', this);">
                                     <i data-lucide="copy" class="w-3 h-3"></i>
                                     <span>Copiar</span>
                                 </button>
-                                <i data-lucide="chevron-down" class="w-4 h-4 text-base-content/50 transition-transform duration-200 group-open:rotate-180 shrink-0"></i>
+                                <i data-lucide="chevron-down" class="w-4 h-4 text-base-content/50 transition-transform duration-200 group-open:rotate-180 shrink-0 ml-0.5"></i>
                             </div>
                         </summary>
                         <div class="p-3 pt-0 border-t border-base-300/40 mt-1">
@@ -626,24 +626,24 @@
                     <!-- Acordeón D: Enlace Artículo WordPress -->
                     <details open id="fbWpCard" class="group bg-base-200/40 border border-base-300 rounded-xl overflow-hidden transition-all">
                         <summary class="flex justify-between items-center p-3 cursor-pointer list-none select-none text-[11px] font-bold uppercase tracking-wider text-base-content/70 hover:text-base-content hover:bg-base-200/60 transition-colors">
-                            <div class="flex items-center gap-2 truncate pr-2">
+                            <div class="flex items-center gap-2 min-w-0 pr-2 truncate">
                                 <i data-lucide="globe" class="w-3.5 h-3.5 text-primary shrink-0"></i>
-                                <span class="truncate">Enlace para el 1er Comentario (Artículo WordPress)</span>
+                                <span class="truncate">Artículo WordPress</span>
                                 <span id="fbWpSiteBadge" class="badge badge-primary badge-xs text-primary-content font-bold shrink-0"></span>
                                 <span id="fbWpCategoryBadge" class="badge badge-warning badge-xs font-bold hidden shrink-0"></span>
                             </div>
-                            <div class="flex items-center gap-1.5 shrink-0">
-                                <div id="fbWpHeaderActions" class="flex items-center gap-1">
-                                    <a id="fbWpVisitBtn" href="#" target="_blank" rel="noopener noreferrer" class="btn btn-ghost btn-xs gap-1 border border-base-300 rounded-lg text-xs h-6 px-2" onclick="event.stopPropagation();">
+                            <div class="flex items-center gap-1.5 shrink-0 ml-auto">
+                                <div id="fbWpHeaderActions" class="flex items-center gap-1.5">
+                                    <a id="fbWpVisitBtn" href="#" target="_blank" rel="noopener noreferrer" class="btn btn-ghost btn-xs h-7 min-h-7 px-2.5 gap-1 border border-base-300 rounded-lg text-xs font-semibold shrink-0 inline-flex items-center" onclick="event.stopPropagation();">
                                         <i data-lucide="external-link" class="w-3 h-3"></i>
-                                        <span class="hidden sm:inline">Ver</span>
+                                        <span>Ver</span>
                                     </a>
-                                    <button type="button" id="fbWpCopyBtn" class="btn btn-ghost btn-xs gap-1 border border-base-300 rounded-lg text-xs h-6 px-2" onclick="event.stopPropagation(); copyFbElement('fbWpLinkText', this);">
+                                    <button type="button" id="fbWpCopyBtn" class="btn btn-ghost btn-xs h-7 min-h-7 px-2.5 gap-1 border border-base-300 rounded-lg text-xs font-semibold shrink-0 inline-flex items-center" onclick="event.stopPropagation(); copyFbElement('fbWpLinkText', this);">
                                         <i data-lucide="copy" class="w-3 h-3"></i>
                                         <span>Copiar</span>
                                     </button>
                                 </div>
-                                <i data-lucide="chevron-down" class="w-4 h-4 text-base-content/50 transition-transform duration-200 group-open:rotate-180 shrink-0"></i>
+                                <i data-lucide="chevron-down" class="w-4 h-4 text-base-content/50 transition-transform duration-200 group-open:rotate-180 shrink-0 ml-0.5"></i>
                             </div>
                         </summary>
                         <div class="p-3 pt-0 border-t border-base-300/40 mt-1">
@@ -661,24 +661,21 @@
         </div>
 
         <!-- Footer Fijo / Sticky Action Bar (Siempre visible sin necesidad de scroll) -->
-        <div class="p-2.5 sm:p-4 lg:px-6 border-t border-base-300 flex items-center justify-between gap-2 bg-base-200/60 backdrop-blur-sm shrink-0">
+        <div class="p-3 sm:p-4 lg:px-6 border-t border-base-300 flex items-center justify-between gap-3 bg-base-200/60 backdrop-blur-sm shrink-0">
             <!-- Acción 1: Descargar Video -->
-            <a id="modalDownloadBtn" href="#" class="btn btn-primary btn-sm flex-1 rounded-xl gap-2 text-xs font-semibold shadow-xs text-primary-content truncate">
+            <a id="modalDownloadBtn" href="#" class="btn btn-primary h-11 min-h-11 flex-1 rounded-xl gap-2 text-xs sm:text-sm font-semibold shadow-xs text-primary-content flex flex-row items-center justify-center whitespace-nowrap px-4">
                 <i data-lucide="download" class="w-4 h-4 shrink-0"></i>
-                <span class="truncate">Descargar Video</span>
+                <span>Descargar Video</span>
             </a>
 
-            <!-- Acción 2: Copiar Todo el Pack (Visible cuando el copy está listo) -->
-            <button type="button" id="copyAllFbBtn" class="btn btn-warning btn-sm flex-1 rounded-xl gap-2 text-xs font-bold shadow-xs text-warning-content truncate hidden" onclick="copyAllFbContent(this)" title="Copiar título, descripción, hashtags y enlace para el primer comentario">
+            <!-- Acción 2: Copiar Todo (Visible cuando el copy está listo) -->
+            <button type="button" id="copyAllFbBtn" class="btn btn-warning h-11 min-h-11 flex-1 rounded-xl gap-2 text-xs sm:text-sm font-bold shadow-xs text-warning-content flex flex-row items-center justify-center whitespace-nowrap px-4 hidden" onclick="copyAllFbContent(this)" title="Copiar todo el contenido y enlace">
                 <i data-lucide="clipboard-check" class="w-4 h-4 shrink-0"></i>
-                <span class="truncate">
-                    <span class="sm:hidden">Copiar Todo</span>
-                    <span class="hidden sm:inline">Copiar Todo (Copy Social + Link Comentario)</span>
-                </span>
+                <span>Copiar Todo</span>
             </button>
 
             <!-- Acción 3: Cerrar modal -->
-            <button type="button" class="btn btn-ghost btn-sm text-xs rounded-xl border border-base-300 px-3.5 shrink-0" onclick="closeIgModal()">
+            <button type="button" class="btn btn-ghost h-11 min-h-11 text-xs sm:text-sm font-semibold rounded-xl border border-base-300 px-5 shrink-0 hover:bg-base-200" onclick="closeIgModal()">
                 Cerrar
             </button>
         </div>
@@ -1223,6 +1220,9 @@ async function triggerFacebookCopy(id, isRegenerate = false) {
                     fb_hashtags: data.hashtags,
                     fb_hashtags_source: data.hashtags_source,
                     wp_post_url: data.wp_post_url,
+                    wp_tracking_url: data.wp_tracking_url,
+                    wp_total_clicks: data.wp_total_clicks || 0,
+                    wp_unique_clicks: data.wp_unique_clicks || 0,
                     wp_article_title: data.wp_article_title,
                     wp_site_name: data.wp_site_name,
                     wp_category: data.wp_category,
@@ -1300,7 +1300,7 @@ function copyAllFbContent(btn) {
 
     navigator.clipboard.writeText(bundle).then(() => {
         const orig = btn.innerHTML;
-        btn.innerHTML = `<i data-lucide="check" class="w-4 h-4 text-white"></i> <span>¡Pack Completo Copiado!</span>`;
+        btn.innerHTML = `<i data-lucide="check" class="w-4 h-4 text-white"></i> <span>¡Copiado!</span>`;
         if (window.lucide) lucide.createIcons();
         setTimeout(() => { btn.innerHTML = orig; if (window.lucide) lucide.createIcons(); }, 2000);
     });

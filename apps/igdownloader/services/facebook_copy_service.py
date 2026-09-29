@@ -113,7 +113,7 @@ def download_temp_video(record) -> str:
     return temp_path
 
 
-def analyze_video_for_facebook(record, force_regenerate: bool = False) -> dict:
+def analyze_video_for_facebook(record, force_regenerate: bool = False, panel_url: str = None) -> dict:
     """
     Analiza el video con la API Proxy de Gemini enviándolo en memoria como bytes,
     genera el copy de estratega para Facebook, guarda el resultado y limpia archivos temporales.
@@ -126,6 +126,22 @@ def analyze_video_for_facebook(record, force_regenerate: bool = False) -> dict:
             except Exception:
                 wp_site_name = None
 
+        t_link = None
+        if record.wp_post_url:
+            try:
+                from ..models import PostTrackingLink
+                t_link = getattr(record, 'tracking_link', None)
+                if not t_link:
+                    t_link, _ = PostTrackingLink.objects.get_or_create(
+                        download=record,
+                        defaults={'user': record.user, 'destination_url': record.wp_post_url}
+                    )
+                elif t_link.destination_url != record.wp_post_url:
+                    t_link.destination_url = record.wp_post_url
+                    t_link.save(update_fields=['destination_url'])
+            except Exception as e:
+                logger.warning("[FacebookCopy] Error asegurando tracking_link para #%s: %s", record.id, e)
+
         return {
             "success": True,
             "title": record.fb_title,
@@ -133,6 +149,10 @@ def analyze_video_for_facebook(record, force_regenerate: bool = False) -> dict:
             "hashtags": record.fb_hashtags,
             "hashtags_source": record.fb_hashtags_source,
             "wp_post_url": record.wp_post_url,
+            "tracking_url": f"/r/{t_link.slug}/" if t_link else "",
+            "tracking_slug": t_link.slug if t_link else "",
+            "total_clicks": t_link.total_clicks if t_link else 0,
+            "unique_clicks": t_link.unique_clicks if t_link else 0,
             "wp_article_title": record.wp_article_title,
             "wp_site_name": wp_site_name,
             "wp_category": getattr(record, "wp_category", "Entretenimiento") or "Entretenimiento",
@@ -323,6 +343,8 @@ def analyze_video_for_facebook(record, force_regenerate: bool = False) -> dict:
                 direct_video_url=record.direct_video_url,
                 username=username,
                 category=assigned_category,
+                download_id=record.id,
+                panel_url=panel_url,
             )
             if wp_res:
                 record.wp_post_url = wp_res.get("post_url")
@@ -373,6 +395,22 @@ def analyze_video_for_facebook(record, force_regenerate: bool = False) -> dict:
             except Exception:
                 wp_site_name = None
 
+        t_link = None
+        if record.wp_post_url:
+            try:
+                from ..models import PostTrackingLink
+                t_link = getattr(record, 'tracking_link', None)
+                if not t_link:
+                    t_link, _ = PostTrackingLink.objects.get_or_create(
+                        download=record,
+                        defaults={'user': record.user, 'destination_url': record.wp_post_url}
+                    )
+                elif t_link.destination_url != record.wp_post_url:
+                    t_link.destination_url = record.wp_post_url
+                    t_link.save(update_fields=['destination_url'])
+            except Exception as e:
+                logger.warning("[FacebookCopy] Error asegurando tracking_link para #%s: %s", record.id, e)
+
         return {
             "success": True,
             "title": record.fb_title,
@@ -380,6 +418,10 @@ def analyze_video_for_facebook(record, force_regenerate: bool = False) -> dict:
             "hashtags": record.fb_hashtags,
             "hashtags_source": record.fb_hashtags_source,
             "wp_post_url": record.wp_post_url,
+            "tracking_url": f"/r/{t_link.slug}/" if t_link else "",
+            "tracking_slug": t_link.slug if t_link else "",
+            "total_clicks": t_link.total_clicks if t_link else 0,
+            "unique_clicks": t_link.unique_clicks if t_link else 0,
             "wp_article_title": record.wp_article_title,
             "wp_site_name": wp_site_name,
             "wp_category": record.wp_category,

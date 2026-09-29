@@ -66,6 +66,7 @@ def user_statistics_view(request):
     from extractor.models import FacebookPage, ExtractionJob
     from videoprompt.models import VideoPrompt
     from fanpages.models import FanpageProfile
+    from igdownloader.models import InstagramDownload, PostTrackingLink
 
     users_qs = CustomUser.objects.select_related('profile').order_by('-date_joined')
     selected_user_id = request.GET.get('user_id')
@@ -81,6 +82,8 @@ def user_statistics_view(request):
         total_followers = FacebookPage.objects.filter(user=u, followers__gt=0).aggregate(total=Sum("followers"))["total"] or 0
         prompts_count = VideoPrompt.objects.filter(user=u).count()
         fanpages_count = FanpageProfile.objects.filter(user=u).count()
+        wp_posts_count = InstagramDownload.objects.filter(user=u, wp_post_url__isnull=False).exclude(wp_post_url='').count()
+        wp_total_clicks = PostTrackingLink.objects.filter(user=u).aggregate(total=Sum("total_clicks"))["total"] or 0
 
         user_stats.append({
             'user': u,
@@ -89,12 +92,16 @@ def user_statistics_view(request):
             'formatted_followers': format_compact_number(total_followers),
             'prompts_count': prompts_count,
             'fanpages_count': fanpages_count,
+            'wp_posts_count': wp_posts_count,
+            'wp_total_clicks': wp_total_clicks,
+            'formatted_wp_clicks': format_compact_number(wp_total_clicks),
         })
 
     # Selected user inspection
     selected_user = None
     selected_user_pages = []
     selected_user_metrics = {}
+    selected_user_wp_articles = []
 
     if selected_user_id:
         try:
@@ -105,12 +112,50 @@ def user_statistics_view(request):
             tot_prompts = VideoPrompt.objects.filter(user=selected_user).count()
             tot_fanpages = FanpageProfile.objects.filter(user=selected_user).count()
 
+            # Métricas y artículos de WordPress
+            wp_downloads = InstagramDownload.objects.filter(
+                user=selected_user,
+                wp_post_url__isnull=False
+            ).exclude(wp_post_url='').select_related('wp_site', 'tracking_link').order_by('-created_at')
+
+            tot_wp_posts = wp_downloads.count()
+            tot_wp_clicks = PostTrackingLink.objects.filter(user=selected_user).aggregate(total=Sum("total_clicks"))["total"] or 0
+            tot_wp_unique = PostTrackingLink.objects.filter(user=selected_user).aggregate(total=Sum("unique_clicks"))["total"] or 0
+            avg_clicks = round(tot_wp_clicks / tot_wp_posts, 1) if tot_wp_posts > 0 else 0
+
+            for dl in wp_downloads:
+                t_link = getattr(dl, 'tracking_link', None)
+                if not t_link and dl.wp_post_url:
+                    try:
+                        t_link, _ = PostTrackingLink.objects.get_or_create(
+                            download=dl,
+                            defaults={'user': selected_user, 'destination_url': dl.wp_post_url}
+                        )
+                    except Exception:
+                        t_link = None
+
+                selected_user_wp_articles.append({
+                    'download': dl,
+                    'tracking_link': t_link,
+                    'tracking_url': f"/r/{t_link.slug}/" if t_link else '',
+                    'tracking_slug': t_link.slug if t_link else '',
+                    'total_clicks': t_link.total_clicks if t_link else 0,
+                    'unique_clicks': t_link.unique_clicks if t_link else 0,
+                    'last_clicked_at': t_link.last_clicked_at if t_link else None,
+                })
+
             selected_user_metrics = {
                 'total_pages': tot_pages,
                 'total_followers': tot_foll,
                 'formatted_followers': format_compact_number(tot_foll),
                 'total_prompts': tot_prompts,
                 'total_fanpages': tot_fanpages,
+                'total_wp_posts': tot_wp_posts,
+                'total_wp_clicks': tot_wp_clicks,
+                'formatted_wp_clicks': format_compact_number(tot_wp_clicks),
+                'total_wp_unique': tot_wp_unique,
+                'formatted_wp_unique': format_compact_number(tot_wp_unique),
+                'avg_clicks_per_post': avg_clicks,
             }
         except CustomUser.DoesNotExist:
             pass
@@ -120,6 +165,7 @@ def user_statistics_view(request):
         'selected_user': selected_user,
         'selected_user_pages': selected_user_pages,
         'selected_user_metrics': selected_user_metrics,
+        'selected_user_wp_articles': selected_user_wp_articles,
         'query': query,
     }
     return render(request, 'panel_admin/user_statistics.html', context)

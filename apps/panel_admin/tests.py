@@ -6,6 +6,7 @@ from django.test import TestCase, Client, override_settings
 from django.urls import reverse
 from django.core.files.uploadedfile import SimpleUploadedFile
 from accounts.models import CustomUser
+from igdownloader.models import InstagramDownload, PostTrackingLink
 from panel_admin.views import (
     format_compact_number,
     parse_cookie_file,
@@ -225,3 +226,111 @@ class TestCookiesAjaxEndpointTests(TestCase):
             data = response.json()
             self.assertFalse(data["success"])
             self.assertIn("Instagram login required", data["message"])
+
+
+class UserStatisticsWordPressMetricsTests(TestCase):
+    """
+    Unit tests for WordPress and tracking link metrics in panel_admin user_statistics.
+    """
+
+    def setUp(self):
+        self.client = Client()
+        self.admin = CustomUser.objects.create_user(
+            username="super_analytics",
+            password="password123",
+            role="superadmin",
+            is_staff=True,
+            is_superuser=True
+        )
+        self.user_a = CustomUser.objects.create_user(
+            username="redactor_a",
+            password="password123",
+            role="user"
+        )
+        self.user_b = CustomUser.objects.create_user(
+            username="redactor_b",
+            password="password123",
+            role="user"
+        )
+
+        # Create downloads with WP posts and clicks for user_a
+        dl1 = InstagramDownload.objects.create(
+            user=self.user_a,
+            instagram_url="https://www.instagram.com/reel/post1/",
+            title="Post 1 Redactor A",
+            wp_post_url="https://site.com/post-1/",
+            wp_article_title="Artículo 1",
+            wp_category="Dramas",
+            fb_status="completed"
+        )
+        PostTrackingLink.objects.create(
+            download=dl1,
+            user=self.user_a,
+            destination_url=dl1.wp_post_url,
+            total_clicks=150,
+            unique_clicks=120
+        )
+
+        dl2 = InstagramDownload.objects.create(
+            user=self.user_a,
+            instagram_url="https://www.instagram.com/reel/post2/",
+            title="Post 2 Redactor A",
+            wp_post_url="https://site.com/post-2/",
+            wp_article_title="Artículo 2",
+            wp_category="Comedia",
+            fb_status="completed"
+        )
+        PostTrackingLink.objects.create(
+            download=dl2,
+            user=self.user_a,
+            destination_url=dl2.wp_post_url,
+            total_clicks=50,
+            unique_clicks=40
+        )
+
+    def test_user_statistics_general_table_displays_wp_posts_and_clicks(self):
+        self.client.login(username="super_analytics", password="password123")
+        response = self.client.get(reverse("user_statistics"))
+        self.assertEqual(response.status_code, 200)
+
+        user_stats = response.context["user_stats"]
+        stat_a = next(item for item in user_stats if item["user"].username == "redactor_a")
+        stat_b = next(item for item in user_stats if item["user"].username == "redactor_b")
+
+        self.assertEqual(stat_a["wp_posts_count"], 2)
+        self.assertEqual(stat_a["wp_total_clicks"], 200)
+        self.assertEqual(stat_a["formatted_wp_clicks"], "200")
+
+        self.assertEqual(stat_b["wp_posts_count"], 0)
+        self.assertEqual(stat_b["wp_total_clicks"], 0)
+
+        content = response.content.decode("utf-8")
+        self.assertIn("Artículos WP", content)
+        self.assertIn("Visitas WP", content)
+
+    def test_user_statistics_inspection_view_displays_wp_kpis_and_articles_table(self):
+        self.client.login(username="super_analytics", password="password123")
+        response = self.client.get(reverse("user_statistics"), {"user_id": self.user_a.id})
+        self.assertEqual(response.status_code, 200)
+
+        metrics = response.context["selected_user_metrics"]
+        self.assertEqual(metrics["total_wp_posts"], 2)
+        self.assertEqual(metrics["total_wp_clicks"], 200)
+        self.assertEqual(metrics["total_wp_unique"], 160)
+        self.assertEqual(metrics["avg_clicks_per_post"], 100.0)
+
+        articles = response.context["selected_user_wp_articles"]
+        self.assertEqual(len(articles), 2)
+
+        content = response.content.decode("utf-8")
+        self.assertIn("Visitas a Enlaces WP", content)
+        self.assertIn("Visitantes Únicos", content)
+        self.assertIn("Rendimiento Promedio", content)
+        self.assertIn("Artículos en WordPress y Métricas de Enlaces de redactor_a", content)
+        self.assertIn("Artículo 1", content)
+        self.assertIn("Artículo 2", content)
+        self.assertIn("https://site.com/post-1/", content)
+        self.assertIn("Lectores en Vivo", content)
+        self.assertIn("tabBtnLive", content)
+        self.assertIn("userTabLivePanel", content)
+        self.assertIn("Readers (", content)

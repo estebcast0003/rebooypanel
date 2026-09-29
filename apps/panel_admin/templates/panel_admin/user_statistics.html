@@ -81,6 +81,8 @@
                         <th class="text-right">Seguidores Acumulados</th>
                         <th class="text-center">Prompts IA</th>
                         <th class="text-center">Fanpages IA</th>
+                        <th class="text-center">Artículos WP</th>
+                        <th class="text-right">Visitas WP</th>
                         <th class="text-right pr-6 w-36">Acciones</th>
                     </tr>
                 </thead>
@@ -123,6 +125,16 @@
                         <td class="text-center font-mono text-xs font-semibold text-base-content">
                             {{ item.fanpages_count }}
                         </td>
+                        <td class="text-center">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-lg bg-base-200 border border-base-300 text-xs font-mono font-bold text-base-content">
+                                {{ item.wp_posts_count }}
+                            </span>
+                        </td>
+                        <td class="text-right">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-lg {% if item.wp_total_clicks > 0 %}bg-primary/10 text-primary border border-primary/20{% else %}bg-base-200 border border-base-300 text-base-content/60{% endif %} text-xs font-mono font-bold" title="{{ item.wp_total_clicks }} visitas a enlaces WP">
+                                {{ item.formatted_wp_clicks }}
+                            </span>
+                        </td>
                         <td class="text-right pr-6 whitespace-nowrap">
                             <a href="{% url 'user_statistics' %}?user_id={{ item.user.id }}" 
                                class="btn btn-ghost btn-sm rounded-xl border border-base-300 hover:border-primary hover:bg-primary/10 hover:text-primary text-base-content/80 gap-2 h-8 min-h-8 px-3.5 text-xs font-semibold transition-all inline-flex flex-row flex-nowrap items-center justify-center whitespace-nowrap shadow-2xs group">
@@ -133,7 +145,7 @@
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="7" class="p-16 text-center text-base-content/50">
+                        <td colspan="9" class="p-16 text-center text-base-content/50">
                             <div class="flex flex-col items-center justify-center gap-2">
                                 <i data-lucide="users" class="w-12 h-12 text-base-content/30 mb-1"></i>
                                 <div class="text-sm font-bold text-base-content">No se encontraron usuarios</div>
@@ -150,161 +162,432 @@
     {% else %}
     <!-- ═════════ VISTA DETALLADA: USUARIO SELECCIONADO ═════════ -->
 
-    <!-- Tarjetas KPI del Usuario (DaisyUI Stats) -->
-    <div class="stats stats-vertical lg:stats-horizontal shadow-sm bg-base-100 border border-base-300 w-full rounded-2xl divide-y lg:divide-y-0 lg:divide-x divide-base-300">
-        
-        <!-- Total Fanpages -->
-        <div class="stat p-5 lg:p-6">
-            <div class="stat-figure">
-                <div class="w-12 h-12 rounded-2xl bg-warning/10 text-warning border border-warning/20 flex items-center justify-center shadow-xs">
-                    <i data-lucide="layers" class="w-6 h-6"></i>
+    <!-- Selector de Secciones (Pills / Tabs Segmentadas) -->
+    <div class="flex items-center justify-between flex-wrap gap-3">
+        <div class="tabs tabs-boxed bg-base-200/80 border border-base-300/70 p-1 rounded-2xl inline-flex gap-1 shadow-2xs">
+            <button type="button" id="tabBtnFanpages" class="tab tab-sm rounded-xl text-xs font-semibold gap-2 transition-all user-stat-tab tab-active bg-primary text-primary-content font-bold shadow-xs" onclick="switchUserTab('fanpages', this)">
+                <i data-lucide="layers" class="w-3.5 h-3.5"></i>
+                <span>Fanpages Monitoreadas</span>
+                <span class="badge badge-sm rounded-lg font-mono font-bold bg-white/20 text-primary-content border-none px-2">{{ selected_user_pages.count }}</span>
+            </button>
+            <button type="button" id="tabBtnTraffic" class="tab tab-sm rounded-xl text-xs font-semibold gap-2 transition-all user-stat-tab text-base-content/75 hover:text-base-content" onclick="switchUserTab('traffic', this)">
+                <i data-lucide="globe" class="w-3.5 h-3.5 text-warning"></i>
+                <span>Tráfico & WordPress</span>
+                <span class="badge badge-sm rounded-lg font-mono font-bold bg-base-300 text-base-content px-2">{{ selected_user_wp_articles|length }}</span>
+            </button>
+            <button type="button" id="tabBtnLive" class="tab tab-sm rounded-xl text-xs font-semibold gap-2 transition-all user-stat-tab text-base-content/75 hover:text-base-content" onclick="switchUserTab('live', this)">
+                <span class="relative flex h-2 w-2">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                </span>
+                <span>Lectores en Vivo</span>
+                <span id="tabLiveBadge" class="badge badge-sm rounded-lg font-mono font-bold bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 px-2">0</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- ═════════ TAB 1: FANPAGES & AUDIENCIA ═════════ -->
+    <div id="userTabFanpagesPanel" class="flex flex-col gap-6">
+
+        <!-- Tarjetas KPI del Usuario (DaisyUI Stats) -->
+        <div class="stats stats-vertical lg:stats-horizontal shadow-sm bg-base-100 border border-base-300 w-full rounded-2xl divide-y lg:divide-y-0 lg:divide-x divide-base-300">
+            
+            <!-- Total Fanpages -->
+            <div class="stat p-5 lg:p-6">
+                <div class="stat-figure">
+                    <div class="w-12 h-12 rounded-2xl bg-warning/10 text-warning border border-warning/20 flex items-center justify-center shadow-xs">
+                        <i data-lucide="layers" class="w-6 h-6"></i>
+                    </div>
                 </div>
+                <div class="stat-title text-[11px] font-bold uppercase tracking-wider text-base-content/50">Fanpages Monitoreadas</div>
+                <div class="stat-value text-3xl font-extrabold tracking-tight font-mono text-base-content mt-1 flex items-baseline gap-2.5">
+                    <span>{{ selected_user_metrics.total_pages }}</span>
+                    <span class="badge badge-neutral badge-md font-bold px-2.5 text-xs">activas</span>
+                </div>
+                <div class="stat-desc text-xs text-base-content/60 mt-1">Registradas por el usuario</div>
             </div>
-            <div class="stat-title text-[11px] font-bold uppercase tracking-wider text-base-content/50">Fanpages Monitoreadas</div>
-            <div class="stat-value text-3xl font-extrabold tracking-tight font-mono text-base-content mt-1 flex items-baseline gap-2.5">
-                <span>{{ selected_user_metrics.total_pages }}</span>
-                <span class="badge badge-neutral badge-md font-bold px-2.5 text-xs">activas</span>
+
+            <!-- Total Seguidores -->
+            <div class="stat p-5 lg:p-6">
+                <div class="stat-figure">
+                    <div class="w-12 h-12 rounded-2xl bg-success/10 text-success border border-success/20 flex items-center justify-center shadow-xs">
+                        <i data-lucide="users" class="w-6 h-6"></i>
+                    </div>
+                </div>
+                <div class="stat-title text-[11px] font-bold uppercase tracking-wider text-base-content/50">Audiencia Total</div>
+                <div class="stat-value text-3xl font-extrabold tracking-tight font-mono text-success mt-1 flex items-baseline gap-2.5" title="{{ selected_user_metrics.total_followers|floatformat:0 }} seguidores">
+                    <span>{{ selected_user_metrics.formatted_followers }}</span>
+                    <span class="badge badge-success badge-md font-bold px-2.5 text-white text-xs">seguidores</span>
+                </div>
+                <div class="stat-desc text-xs text-base-content/60 mt-1">Comunidad acumulada</div>
             </div>
-            <div class="stat-desc text-xs text-base-content/60 mt-1">Registradas por el usuario</div>
+
+            <!-- Prompts IA -->
+            <div class="stat p-5 lg:p-6">
+                <div class="stat-figure">
+                    <div class="w-12 h-12 rounded-2xl bg-warning/10 text-warning border border-warning/20 flex items-center justify-center shadow-xs">
+                        <i data-lucide="clapperboard" class="w-6 h-6"></i>
+                    </div>
+                </div>
+                <div class="stat-title text-[11px] font-bold uppercase tracking-wider text-base-content/50">Prompts IA Creados</div>
+                <div class="stat-value text-3xl font-extrabold tracking-tight font-mono text-base-content mt-1 flex items-baseline gap-2.5">
+                    <span>{{ selected_user_metrics.total_prompts }}</span>
+                    <span class="badge badge-warning badge-md font-bold px-2.5 text-xs">completados</span>
+                </div>
+                <div class="stat-desc text-xs text-base-content/60 mt-1">Video to Prompt</div>
+            </div>
+
+            <!-- Fanpages IA -->
+            <div class="stat p-5 lg:p-6">
+                <div class="stat-figure">
+                    <div class="w-12 h-12 rounded-2xl bg-primary/10 text-primary border border-primary/20 flex items-center justify-center shadow-xs">
+                        <i data-lucide="sparkles" class="w-6 h-6"></i>
+                    </div>
+                </div>
+                <div class="stat-title text-[11px] font-bold uppercase tracking-wider text-base-content/50">Fanpages IA Creadas</div>
+                <div class="stat-value text-3xl font-extrabold tracking-tight font-mono text-base-content mt-1 flex items-baseline gap-2.5">
+                    <span>{{ selected_user_metrics.total_fanpages }}</span>
+                    <span class="badge badge-primary badge-md font-bold px-2.5 text-xs text-primary-content">perfiles</span>
+                </div>
+                <div class="stat-desc text-xs text-base-content/60 mt-1">Creator Studio</div>
+            </div>
+
         </div>
 
-        <!-- Total Seguidores -->
-        <div class="stat p-5 lg:p-6">
-            <div class="stat-figure">
-                <div class="w-12 h-12 rounded-2xl bg-success/10 text-success border border-success/20 flex items-center justify-center shadow-xs">
-                    <i data-lucide="users" class="w-6 h-6"></i>
+        <!-- Tabla de Fanpages del Usuario Seleccionado -->
+        <div class="card bg-base-100 shadow-sm border border-base-300 rounded-2xl overflow-hidden">
+            <div class="p-4 lg:px-6 border-b border-base-300/70 flex justify-between items-center bg-base-200/30">
+                <div class="flex items-center gap-2.5">
+                    <h2 class="text-sm font-bold text-base-content m-0">
+                        Fanpages Monitoreadas de {{ selected_user.username }}
+                    </h2>
+                    <span class="badge badge-neutral badge-md font-mono font-bold px-2.5">{{ selected_user_pages.count }}</span>
                 </div>
             </div>
-            <div class="stat-title text-[11px] font-bold uppercase tracking-wider text-base-content/50">Audiencia Total</div>
-            <div class="stat-value text-3xl font-extrabold tracking-tight font-mono text-success mt-1 flex items-baseline gap-2.5" title="{{ selected_user_metrics.total_followers|floatformat:0 }} seguidores">
-                <span>{{ selected_user_metrics.formatted_followers }}</span>
-                <span class="badge badge-success badge-md font-bold px-2.5 text-white text-xs">seguidores</span>
-            </div>
-            <div class="stat-desc text-xs text-base-content/60 mt-1">Comunidad acumulada</div>
-        </div>
 
-        <!-- Prompts IA -->
-        <div class="stat p-5 lg:p-6">
-            <div class="stat-figure">
-                <div class="w-12 h-12 rounded-2xl bg-warning/10 text-warning border border-warning/20 flex items-center justify-center shadow-xs">
-                    <i data-lucide="clapperboard" class="w-6 h-6"></i>
-                </div>
+            <div class="overflow-x-auto">
+                <table class="table table-zebra w-full">
+                    <thead>
+                        <tr class="bg-base-200/50 border-b border-base-300 text-[11px] font-bold uppercase tracking-wider text-base-content/50">
+                            <th class="w-12 text-center py-4 pl-4">#</th>
+                            <th>Fanpage</th>
+                            <th class="text-right">Seguidores</th>
+                            <th class="text-center">Crecimiento</th>
+                            <th class="text-center">Estado</th>
+                            <th class="text-center pr-6 w-36">Seguimiento</th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-sm">
+                        {% for page in selected_user_pages %}
+                        <tr class="hover:bg-base-200/30 transition-colors">
+                            <td class="text-center font-mono text-xs text-base-content/50 pl-4">{{ page.id }}</td>
+                            <td class="py-3.5">
+                                <div class="font-bold text-sm text-base-content tracking-tight">{{ page.name }}</div>
+                                <a href="{{ page.url }}" target="_blank" rel="noopener noreferrer" class="text-xs text-primary hover:underline font-mono opacity-80 inline-flex items-center gap-1 transition">
+                                    {{ page.url }}
+                                    <i data-lucide="external-link" class="w-3 h-3 opacity-60"></i>
+                                </a>
+                            </td>
+                            <td class="text-right font-mono font-bold text-sm text-base-content" title="{{ page.followers|floatformat:0 }} seguidores">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-lg bg-base-200 border border-base-300 text-xs">
+                                    {{ page.formatted_followers }}
+                                </span>
+                            </td>
+                            <td class="text-center font-mono text-xs">
+                                {% with growth=page.growth_data %}
+                                    {% if growth.is_positive %}
+                                        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-success/10 text-success border border-success/20" title="Crecimiento: {{ growth.delta|floatformat:0 }} seguidores">
+                                            <i data-lucide="trending-up" class="w-3 h-3"></i>
+                                            +{{ growth.formatted_delta }} ({{ growth.formatted_pct }})
+                                        </span>
+                                    {% else %}
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs text-base-content/50 bg-base-200 border border-base-300">
+                                            0 (0%)
+                                        </span>
+                                    {% endif %}
+                                {% endwith %}
+                            </td>
+                            <td class="text-center">
+                                {% if page.followers > 0 %}
+                                <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-success/10 text-success border border-success/20">
+                                    <i data-lucide="check" class="w-3 h-3"></i> Activa
+                                </span>
+                                {% else %}
+                                <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-warning/10 text-warning border border-warning/20" title="{{ page.status }}">
+                                    <i data-lucide="alert-triangle" class="w-3 h-3"></i> {{ page.status|truncatechars:14 }}
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center pr-6 whitespace-nowrap">
+                                <div class="inline-flex items-center gap-1.5 justify-center">
+                                    <button type="button" class="btn btn-ghost btn-xs gap-1.5 border border-base-300 hover:border-primary hover:bg-primary/10 hover:text-primary rounded-xl text-xs h-8 px-2.5 text-base-content/75 transition-all inline-flex items-center" onclick="openGrowthModal({{ page.id }})" title="Ver tabla de evolución">
+                                        <i data-lucide="line-chart" class="w-3.5 h-3.5 text-success"></i>
+                                        Historial
+                                    </button>
+                                    <a href="{{ page.url }}" target="_blank" rel="noopener noreferrer" class="btn btn-ghost btn-square btn-xs border border-base-300 hover:border-primary hover:bg-primary/10 hover:text-primary rounded-xl h-8 w-8 text-base-content/75 transition-all" title="Abrir en Facebook">
+                                        <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="p-16 text-center text-base-content/50">
+                                <div class="flex flex-col items-center justify-center gap-2">
+                                    <i data-lucide="inbox" class="w-12 h-12 text-base-content/30 mb-1"></i>
+                                    <div class="text-sm font-bold text-base-content">Sin fanpages registradas</div>
+                                    <div class="text-xs text-base-content/60">Este usuario no tiene fanpages registradas en este momento.</div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
-            <div class="stat-title text-[11px] font-bold uppercase tracking-wider text-base-content/50">Prompts IA Creados</div>
-            <div class="stat-value text-3xl font-extrabold tracking-tight font-mono text-base-content mt-1 flex items-baseline gap-2.5">
-                <span>{{ selected_user_metrics.total_prompts }}</span>
-                <span class="badge badge-warning badge-md font-bold px-2.5 text-xs">completados</span>
-            </div>
-            <div class="stat-desc text-xs text-base-content/60 mt-1">Video to Prompt</div>
-        </div>
-
-        <!-- Fanpages IA -->
-        <div class="stat p-5 lg:p-6">
-            <div class="stat-figure">
-                <div class="w-12 h-12 rounded-2xl bg-primary/10 text-primary border border-primary/20 flex items-center justify-center shadow-xs">
-                    <i data-lucide="sparkles" class="w-6 h-6"></i>
-                </div>
-            </div>
-            <div class="stat-title text-[11px] font-bold uppercase tracking-wider text-base-content/50">Fanpages IA Creadas</div>
-            <div class="stat-value text-3xl font-extrabold tracking-tight font-mono text-base-content mt-1 flex items-baseline gap-2.5">
-                <span>{{ selected_user_metrics.total_fanpages }}</span>
-                <span class="badge badge-primary badge-md font-bold px-2.5 text-xs text-primary-content">perfiles</span>
-            </div>
-            <div class="stat-desc text-xs text-base-content/60 mt-1">Creator Studio</div>
         </div>
 
     </div>
 
-    <!-- Tabla de Fanpages del Usuario Seleccionado -->
-    <div class="card bg-base-100 shadow-sm border border-base-300 rounded-2xl overflow-hidden">
-        <div class="p-4 lg:px-6 border-b border-base-300/70 flex justify-between items-center bg-base-200/30">
-            <div class="flex items-center gap-2.5">
-                <h2 class="text-sm font-bold text-base-content m-0">
-                    Fanpages Monitoreadas de {{ selected_user.username }}
-                </h2>
-                <span class="badge badge-neutral badge-md font-mono font-bold px-2.5">{{ selected_user_pages.count }}</span>
+    <!-- ═════════ TAB 2: TRÁFICO & WORDPRESS ═════════ -->
+    <div id="userTabTrafficPanel" class="hidden flex flex-col gap-6">
+
+        <!-- Tarjetas KPI de Tráfico & Enlaces WordPress -->
+        <div class="stats stats-vertical lg:stats-horizontal shadow-sm bg-base-100 border border-base-300 w-full rounded-2xl divide-y lg:divide-y-0 lg:divide-x divide-base-300">
+            
+            <!-- Artículos Publicados en WP -->
+            <div class="stat p-5 lg:p-6">
+                <div class="stat-figure">
+                    <div class="w-12 h-12 rounded-2xl bg-info/10 text-info border border-info/20 flex items-center justify-center shadow-xs">
+                        <i data-lucide="globe" class="w-6 h-6"></i>
+                    </div>
+                </div>
+                <div class="stat-title text-[11px] font-bold uppercase tracking-wider text-base-content/50">Artículos Publicados</div>
+                <div class="stat-value text-3xl font-extrabold tracking-tight font-mono text-base-content mt-1 flex items-baseline gap-2.5">
+                    <span>{{ selected_user_metrics.total_wp_posts }}</span>
+                    <span class="badge badge-info badge-md font-bold text-white px-2.5 text-xs">posts</span>
+                </div>
+                <div class="stat-desc text-xs text-base-content/60 mt-1">En sitios WordPress</div>
+            </div>
+
+            <!-- Visitas Totales a Enlaces -->
+            <div class="stat p-5 lg:p-6">
+                <div class="stat-figure">
+                    <div class="w-12 h-12 rounded-2xl bg-success/10 text-success border border-success/20 flex items-center justify-center shadow-xs">
+                        <i data-lucide="mouse-pointer-click" class="w-6 h-6"></i>
+                    </div>
+                </div>
+                <div class="stat-title text-[11px] font-bold uppercase tracking-wider text-base-content/50">Visitas a Enlaces WP</div>
+                <div class="stat-value text-3xl font-extrabold tracking-tight font-mono text-success mt-1 flex items-baseline gap-2.5" title="{{ selected_user_metrics.total_wp_clicks }} visitas totales">
+                    <span>{{ selected_user_metrics.formatted_wp_clicks }}</span>
+                    <span class="badge badge-success badge-md font-bold px-2.5 text-white text-xs">visitas</span>
+                </div>
+                <div class="stat-desc text-xs text-base-content/60 mt-1">Tráfico total obtenido</div>
+            </div>
+
+            <!-- Audiencia Única -->
+            <div class="stat p-5 lg:p-6">
+                <div class="stat-figure">
+                    <div class="w-12 h-12 rounded-2xl bg-primary/10 text-primary border border-primary/20 flex items-center justify-center shadow-xs">
+                        <i data-lucide="user-check" class="w-6 h-6"></i>
+                    </div>
+                </div>
+                <div class="stat-title text-[11px] font-bold uppercase tracking-wider text-base-content/50">Visitantes Únicos</div>
+                <div class="stat-value text-3xl font-extrabold tracking-tight font-mono text-primary mt-1 flex items-baseline gap-2.5" title="{{ selected_user_metrics.total_wp_unique }} visitantes únicos">
+                    <span>{{ selected_user_metrics.formatted_wp_unique }}</span>
+                    <span class="badge badge-primary badge-md font-bold px-2.5 text-xs text-primary-content">únicos</span>
+                </div>
+                <div class="stat-desc text-xs text-base-content/60 mt-1">IPs únicas registradas</div>
+            </div>
+
+            <!-- Promedio Visitas / Post -->
+            <div class="stat p-5 lg:p-6">
+                <div class="stat-figure">
+                    <div class="w-12 h-12 rounded-2xl bg-warning/10 text-warning border border-warning/20 flex items-center justify-center shadow-xs">
+                        <i data-lucide="trending-up" class="w-6 h-6"></i>
+                    </div>
+                </div>
+                <div class="stat-title text-[11px] font-bold uppercase tracking-wider text-base-content/50">Rendimiento Promedio</div>
+                <div class="stat-value text-3xl font-extrabold tracking-tight font-mono text-base-content mt-1 flex items-baseline gap-2.5">
+                    <span>{{ selected_user_metrics.avg_clicks_per_post }}</span>
+                    <span class="badge badge-warning badge-md font-bold px-2.5 text-xs">visitas/post</span>
+                </div>
+                <div class="stat-desc text-xs text-base-content/60 mt-1">Promedio por publicación</div>
+            </div>
+
+        </div>
+
+        <!-- Tabla de Artículos WordPress y Métricas de Enlaces -->
+        <div class="card bg-base-100 shadow-sm border border-base-300 rounded-2xl overflow-hidden">
+            <div class="p-4 lg:px-6 border-b border-base-300/70 flex justify-between items-center bg-base-200/30">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-7 h-7 rounded-lg bg-info/10 text-info flex items-center justify-center">
+                        <i data-lucide="globe" class="w-4 h-4"></i>
+                    </div>
+                    <h2 class="text-sm font-bold text-base-content m-0">
+                        Artículos en WordPress y Métricas de Enlaces de {{ selected_user.username }}
+                    </h2>
+                    <span class="badge badge-neutral badge-md font-mono font-bold px-2.5">{{ selected_user_wp_articles|length }}</span>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="table table-zebra w-full">
+                    <thead>
+                        <tr class="bg-base-200/50 border-b border-base-300 text-[11px] font-bold uppercase tracking-wider text-base-content/50">
+                            <th class="w-12 text-center py-4 pl-4">#</th>
+                            <th>Artículo Publicado</th>
+                            <th>Dominio WordPress</th>
+                            <th>Enlace del Artículo (con UTM)</th>
+                            <th class="text-right">Visitas Totales</th>
+                            <th class="text-right">Únicos</th>
+                            <th class="text-center">Última Visita</th>
+                            <th class="text-right pr-6 w-28">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-sm">
+                        {% for art in selected_user_wp_articles %}
+                        <tr class="hover:bg-base-200/30 transition-colors">
+                            <td class="text-center font-mono text-xs text-base-content/50 pl-4">{{ art.download.id }}</td>
+                            <td class="py-3.5 max-w-xs">
+                                <div class="font-bold text-sm text-base-content tracking-tight line-clamp-1" title="{{ art.download.wp_article_title|default:art.download.title }}">
+                                    {{ art.download.wp_article_title|default:art.download.title|default:"Artículo sin título" }}
+                                </div>
+                                <div class="flex items-center gap-2 mt-1">
+                                    {% if art.download.wp_category == 'Dramas' %}
+                                        <span class="badge badge-warning badge-xs font-bold">Dramas</span>
+                                    {% elif art.download.wp_category == 'Comedia' %}
+                                        <span class="badge badge-primary badge-xs font-bold text-primary-content">Comedia</span>
+                                    {% else %}
+                                        <span class="badge badge-neutral badge-xs font-bold">{{ art.download.wp_category|default:'Entretenimiento' }}</span>
+                                    {% endif %}
+                                    <span class="text-[11px] text-base-content/50 font-mono">
+                                        {{ art.download.created_at|date:"d/m/Y H:i" }}
+                                    </span>
+                                </div>
+                            </td>
+                            <td>
+                                {% if art.download.wp_site %}
+                                    <div class="font-semibold text-xs text-base-content">{{ art.download.wp_site.name }}</div>
+                                    <span class="text-[10px] text-base-content/50 font-mono truncate block max-w-[160px]">{{ art.download.wp_site.site_url }}</span>
+                                {% else %}
+                                    <span class="badge badge-neutral badge-xs font-mono text-base-content/60">Externo</span>
+                                {% endif %}
+                            </td>
+                            <td class="font-mono text-xs">
+                                {% if art.download.wp_post_url %}
+                                    <div class="flex items-center gap-1.5">
+                                        <span class="text-primary font-bold bg-primary/10 px-2 py-0.5 rounded-lg border border-primary/20 truncate max-w-[190px] block" title="{{ art.download.wp_post_url }}">
+                                            {{ art.download.wp_post_url }}
+                                        </span>
+                                        <button type="button" class="btn btn-ghost btn-circle btn-xs text-base-content/60 hover:text-primary shrink-0" onclick="copyFullUrl('{{ art.download.wp_post_url }}', this)" title="Copiar enlace completo con parámetros UTM">
+                                            <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                                        </button>
+                                    </div>
+                                {% else %}
+                                    <span class="text-base-content/40 text-xs">Sin enlace</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-right">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-lg {% if art.total_clicks > 0 %}bg-success/10 text-success border border-success/20 font-bold{% else %}bg-base-200 border border-base-300 text-base-content/50{% endif %} text-xs font-mono">
+                                    {{ art.total_clicks }}
+                                </span>
+                            </td>
+                            <td class="text-right">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-lg bg-base-200 border border-base-300 text-xs font-mono text-base-content/80">
+                                    {{ art.unique_clicks }}
+                                </span>
+                            </td>
+                            <td class="text-center font-mono text-[11px] text-base-content/60">
+                                {% if art.last_clicked_at %}
+                                    {{ art.last_clicked_at|date:"d/m/Y H:i" }}
+                                {% else %}
+                                    <span class="text-base-content/40">Sin visitas</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-right pr-6 whitespace-nowrap">
+                                <a href="{{ art.download.wp_post_url }}" target="_blank" rel="noopener noreferrer" class="btn btn-ghost btn-xs gap-1 border border-base-300 hover:border-primary hover:bg-primary/10 hover:text-primary rounded-xl text-xs h-8 px-2.5 text-base-content/75 transition-all inline-flex items-center" title="Abrir en WordPress">
+                                    <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+                                    <span>Ver Post</span>
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="8" class="p-16 text-center text-base-content/50">
+                                <div class="flex flex-col items-center justify-center gap-2">
+                                    <i data-lucide="globe" class="w-12 h-12 text-base-content/30 mb-1"></i>
+                                    <div class="text-sm font-bold text-base-content">Sin artículos de WordPress</div>
+                                    <div class="text-xs text-base-content/60">Este usuario aún no ha generado copys con publicación en WordPress.</div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
         </div>
 
-        <div class="overflow-x-auto">
-            <table class="table table-zebra w-full">
-                <thead>
-                    <tr class="bg-base-200/50 border-b border-base-300 text-[11px] font-bold uppercase tracking-wider text-base-content/50">
-                        <th class="w-12 text-center py-4 pl-4">#</th>
-                        <th>Fanpage</th>
-                        <th class="text-right">Seguidores</th>
-                        <th class="text-center">Crecimiento</th>
-                        <th class="text-center">Estado</th>
-                        <th class="text-center pr-6 w-36">Seguimiento</th>
-                    </tr>
-                </thead>
-                <tbody class="text-sm">
-                    {% for page in selected_user_pages %}
-                    <tr class="hover:bg-base-200/30 transition-colors">
-                        <td class="text-center font-mono text-xs text-base-content/50 pl-4">{{ page.id }}</td>
-                        <td class="py-3.5">
-                            <div class="font-bold text-sm text-base-content tracking-tight">{{ page.name }}</div>
-                            <a href="{{ page.url }}" target="_blank" rel="noopener noreferrer" class="text-xs text-primary hover:underline font-mono opacity-80 inline-flex items-center gap-1 transition">
-                                {{ page.url }}
-                                <i data-lucide="external-link" class="w-3 h-3 opacity-60"></i>
-                            </a>
-                        </td>
-                        <td class="text-right font-mono font-bold text-sm text-base-content" title="{{ page.followers|floatformat:0 }} seguidores">
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-lg bg-base-200 border border-base-300 text-xs">
-                                {{ page.formatted_followers }}
-                            </span>
-                        </td>
-                        <td class="text-center font-mono text-xs">
-                            {% with growth=page.growth_data %}
-                                {% if growth.is_positive %}
-                                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-success/10 text-success border border-success/20" title="Crecimiento: {{ growth.delta|floatformat:0 }} seguidores">
-                                        <i data-lucide="trending-up" class="w-3 h-3"></i>
-                                        +{{ growth.formatted_delta }} ({{ growth.formatted_pct }})
-                                    </span>
-                                {% else %}
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs text-base-content/50 bg-base-200 border border-base-300">
-                                        0 (0%)
-                                    </span>
-                                {% endif %}
-                            {% endwith %}
-                        </td>
-                        <td class="text-center">
-                            {% if page.followers > 0 %}
-                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-success/10 text-success border border-success/20">
-                                <i data-lucide="check" class="w-3 h-3"></i> Activa
-                            </span>
-                            {% else %}
-                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-warning/10 text-warning border border-warning/20" title="{{ page.status }}">
-                                <i data-lucide="alert-triangle" class="w-3 h-3"></i> {{ page.status|truncatechars:14 }}
-                            </span>
-                            {% endif %}
-                        </td>
-                        <td class="text-center pr-6 whitespace-nowrap">
-                            <div class="inline-flex items-center gap-1.5 justify-center">
-                                <button type="button" class="btn btn-ghost btn-xs gap-1.5 border border-base-300 hover:border-primary hover:bg-primary/10 hover:text-primary rounded-xl text-xs h-8 px-2.5 text-base-content/75 transition-all inline-flex items-center" onclick="openGrowthModal({{ page.id }})" title="Ver tabla de evolución">
-                                    <i data-lucide="line-chart" class="w-3.5 h-3.5 text-success"></i>
-                                    Historial
-                                </button>
-                                <a href="{{ page.url }}" target="_blank" rel="noopener noreferrer" class="btn btn-ghost btn-square btn-xs border border-base-300 hover:border-primary hover:bg-primary/10 hover:text-primary rounded-xl h-8 w-8 text-base-content/75 transition-all" title="Abrir en Facebook">
-                                    <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
-                                </a>
-                            </div>
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="6" class="p-16 text-center text-base-content/50">
-                            <div class="flex flex-col items-center justify-center gap-2">
-                                <i data-lucide="inbox" class="w-12 h-12 text-base-content/30 mb-1"></i>
-                                <div class="text-sm font-bold text-base-content">Sin fanpages registradas</div>
-                                <div class="text-xs text-base-content/60">Este usuario no tiene fanpages registradas en este momento.</div>
-                            </div>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+    </div>
+
+    <!-- ═════════ TAB 3: LECTORES EN VIVO (ESTILO WHOS.AMUNG.US) ═════════ -->
+    <div id="userTabLivePanel" class="hidden flex flex-col gap-6">
+
+        <div class="card bg-[#141518] text-gray-100 shadow-xl border border-[#2b2e36] rounded-2xl p-5 lg:p-7 overflow-hidden">
+            <!-- Header con Contador Readers (...) y Controles -->
+            <div class="flex items-center justify-between flex-wrap gap-4 pb-3">
+                <div class="flex items-center gap-3">
+                    <div class="flex items-center gap-2.5">
+                        <span class="relative flex h-3 w-3">
+                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                        </span>
+                        <h2 class="text-2xl lg:text-3xl font-black tracking-tight text-white m-0 font-mono flex items-baseline gap-2">
+                            Readers (<span id="liveReadersCount" class="text-emerald-400 font-extrabold">0</span>)
+                        </h2>
+                    </div>
+                    <span class="badge badge-sm bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-bold px-2.5 py-0.5">EN VIVO</span>
+                </div>
+                
+                <div class="flex items-center gap-2.5">
+                    <span id="liveSyncStatus" class="text-[11px] font-mono text-gray-400 hidden sm:inline">Último pulso: <span id="liveSyncTime">--:--:--</span></span>
+                    <button type="button" id="liveToggleBtn" class="btn btn-ghost btn-xs text-gray-300 hover:text-white border border-[#373a44] rounded-lg gap-1.5 h-7 px-3 bg-[#1e2025]" onclick="toggleLivePolling()">
+                        <i data-lucide="pause" id="liveToggleIcon" class="w-3 h-3 text-warning"></i>
+                        <span id="liveToggleLabel">Pausar</span>
+                    </button>
+                    <button type="button" class="btn btn-ghost btn-xs text-gray-300 hover:text-white border border-[#373a44] rounded-lg gap-1.5 h-7 px-3 bg-[#1e2025]" onclick="fetchLiveReaders(true)">
+                        <i data-lucide="refresh-cw" class="w-3 h-3 text-info"></i>
+                        <span>Refrescar</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Línea punteada decorativa idéntica a whos.amung.us -->
+            <div class="border-b border-dashed border-[#2f333c] my-3"></div>
+
+            <!-- Feed List Container -->
+            <div id="liveFeedContainer" class="flex flex-col">
+                <!-- Skeleton / Cargando inicial -->
+                <div id="liveFeedLoading" class="py-12 text-center text-gray-400 text-xs flex flex-col items-center gap-2">
+                    <span class="w-5 h-5 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin"></span>
+                    <span>Conectando con el pulso de lectores en vivo...</span>
+                </div>
+
+                <!-- Estado Vacío -->
+                <div id="liveFeedEmpty" class="hidden py-14 text-center text-gray-400">
+                    <div class="w-12 h-12 rounded-2xl bg-[#1e2026] text-gray-500 flex items-center justify-center mx-auto mb-2.5 border border-[#2b2e36]">
+                        <i data-lucide="activity" class="w-6 h-6"></i>
+                    </div>
+                    <div class="font-bold text-sm text-gray-200">Sin lectores activos en este instante</div>
+                    <p class="text-xs text-gray-500 max-w-sm mx-auto mt-1 leading-relaxed">
+                        Las visitas a los artículos de este usuario aparecerán aquí automáticamente en tiempo real cuando alguien abra el enlace desde Facebook o la web.
+                    </p>
+                </div>
+
+                <!-- Lista de Lectores Dinámica -->
+                <div id="liveFeedItems" class="flex flex-col divide-y divide-[#23262e]/70"></div>
+            </div>
         </div>
+
     </div>
 
     {% endif %}
@@ -596,6 +879,261 @@
             activeGrowthChart = null;
         }
     }
+
+    function copyFullUrl(url, btn) {
+        if (!url) return;
+        navigator.clipboard.writeText(url).then(() => {
+            const orig = btn.innerHTML;
+            btn.innerHTML = `<i data-lucide="check" class="w-3.5 h-3.5 text-success"></i>`;
+            if (window.lucide) lucide.createIcons();
+            setTimeout(() => {
+                btn.innerHTML = orig;
+                if (window.lucide) lucide.createIcons();
+            }, 1500);
+        });
+    }
+
+    function copyTrackingUrl(path, btn) {
+        const fullUrl = window.location.origin + path;
+        navigator.clipboard.writeText(fullUrl).then(() => {
+            const orig = btn.innerHTML;
+            btn.innerHTML = `<i data-lucide="check" class="w-3.5 h-3.5 text-success"></i>`;
+            if (window.lucide) lucide.createIcons();
+            setTimeout(() => {
+                btn.innerHTML = orig;
+                if (window.lucide) lucide.createIcons();
+            }, 1500);
+        });
+    }
+
+    // Alternador de Pestañas Segmentadas (Fanpages vs Tráfico vs En Vivo)
+    let livePollingTimer = null;
+    let livePollingPaused = false;
+    const currentSelectedUserId = '{{ selected_user.id|default:"" }}';
+
+    function switchUserTab(tabName, btn) {
+        document.querySelectorAll('.user-stat-tab').forEach(el => {
+            el.classList.remove('tab-active', 'bg-primary', 'text-primary-content', 'font-bold', 'shadow-xs');
+            el.classList.add('text-base-content/75');
+            const badge = el.querySelector('.badge');
+            if (badge && !badge.id.includes('tabLiveBadge')) {
+                badge.className = 'badge badge-sm rounded-lg font-mono font-bold bg-base-300 text-base-content px-2';
+            }
+        });
+
+        if (btn) {
+            btn.classList.add('tab-active', 'bg-primary', 'text-primary-content', 'font-bold', 'shadow-xs');
+            btn.classList.remove('text-base-content/75');
+            const badge = btn.querySelector('.badge');
+            if (badge && !badge.id.includes('tabLiveBadge')) {
+                badge.className = 'badge badge-sm rounded-lg font-mono font-bold bg-white/20 text-primary-content border-none px-2';
+            }
+        }
+
+        const fanpagesPanel = document.getElementById('userTabFanpagesPanel');
+        const trafficPanel = document.getElementById('userTabTrafficPanel');
+        const livePanel = document.getElementById('userTabLivePanel');
+
+        if (tabName === 'fanpages') {
+            if (fanpagesPanel) fanpagesPanel.classList.remove('hidden');
+            if (trafficPanel) trafficPanel.classList.add('hidden');
+            if (livePanel) livePanel.classList.add('hidden');
+            stopLivePolling();
+        } else if (tabName === 'traffic') {
+            if (trafficPanel) trafficPanel.classList.remove('hidden');
+            if (fanpagesPanel) fanpagesPanel.classList.add('hidden');
+            if (livePanel) livePanel.classList.add('hidden');
+            stopLivePolling();
+        } else if (tabName === 'live') {
+            if (livePanel) livePanel.classList.remove('hidden');
+            if (fanpagesPanel) fanpagesPanel.classList.add('hidden');
+            if (trafficPanel) trafficPanel.classList.add('hidden');
+            startLivePolling();
+        }
+
+        if (window.lucide) lucide.createIcons();
+    }
+
+    function startLivePolling() {
+        fetchLiveReaders(true);
+        if (!livePollingTimer) {
+            livePollingTimer = setInterval(() => {
+                if (!livePollingPaused) fetchLiveReaders(false);
+            }, 3500);
+        }
+    }
+
+    function stopLivePolling() {
+        if (livePollingTimer) {
+            clearInterval(livePollingTimer);
+            livePollingTimer = null;
+        }
+    }
+
+    function toggleLivePolling() {
+        livePollingPaused = !livePollingPaused;
+        const icon = document.getElementById('liveToggleIcon');
+        const label = document.getElementById('liveToggleLabel');
+        if (livePollingPaused) {
+            if (label) label.textContent = 'Reanudar';
+            if (icon) {
+                icon.setAttribute('data-lucide', 'play');
+                icon.className = 'w-3 h-3 text-success';
+            }
+        } else {
+            if (label) label.textContent = 'Pausar';
+            if (icon) {
+                icon.setAttribute('data-lucide', 'pause');
+                icon.className = 'w-3 h-3 text-warning';
+            }
+            fetchLiveReaders(true);
+        }
+        if (window.lucide) lucide.createIcons();
+    }
+
+    async function fetchLiveReaders(isManual = false) {
+        if (!currentSelectedUserId) return;
+        try {
+            const res = await fetch(`/api/telemetry/live-readers/?user_id=${currentSelectedUserId}`);
+            const data = await res.json();
+            if (data.status === 'ok') {
+                renderLiveReadersFeed(data);
+            }
+        } catch (err) {
+            console.warn('Error syncing live readers:', err);
+        }
+    }
+
+    function escapeHtml(text) {
+        if (!text) return '';
+        const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+        return text.replace(/[&<>"']/g, m => map[m]);
+    }
+
+    function getDeviceIconHtml(type) {
+        if (type === 'mobile') {
+            return '<span class="w-6 h-6 rounded-md bg-fuchsia-500/15 text-fuchsia-400 flex items-center justify-center" title="Dispositivo Móvil"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><path d="M12 18h.01"/></svg></span>';
+        } else if (type === 'tablet') {
+            return '<span class="w-6 h-6 rounded-md bg-purple-500/15 text-purple-400 flex items-center justify-center" title="Tablet"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="16" height="20" x="4" y="2" rx="2" ry="2"/><line x1="12" x2="12.01" y1="18" y2="18"/></svg></span>';
+        } else {
+            return '<span class="w-6 h-6 rounded-md bg-emerald-500/15 text-emerald-400 flex items-center justify-center" title="Computadora / Desktop"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/></svg></span>';
+        }
+    }
+
+    function getOsIconHtml(os) {
+        if (os === 'android') {
+            return '<span class="w-6 h-6 rounded-md bg-[#3DDC84]/15 flex items-center justify-center" title="Android"><svg class="w-3.5 h-3.5 fill-[#3DDC84]" viewBox="0 0 24 24"><path d="M17.523 15.3414c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.551 0 .9993.4482.9993.9993.0001.5511-.4482.9997-.9993.9997m-11.046 0c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.5511 0 .9993.4482.9993.9993 0 .5511-.4482.9997-.9993.9997m11.4045-6.02l1.9973-3.4592a.416.416 0 00-.1521-.5676.416.416 0 00-.5676.1521l-2.0223 3.503C15.589 8.358 13.856 8 12 8s-3.589.358-5.1368.9507L4.8409 5.4477a.4161.4161 0 00-.5677-.1521.4157.4157 0 00-.1521.5676l1.9973 3.4592C2.6889 11.1867.3432 14.6589 0 18.761h24c-.3435-4.1021-2.6892-7.5743-6.1185-9.4396"/></svg></span>';
+        } else if (os === 'ios' || os === 'macos') {
+            return '<span class="w-6 h-6 rounded-md bg-white/15 flex items-center justify-center text-gray-200" title="Apple iOS / macOS"><svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.37c.61-.75 1.04-1.8 1.01-2.87-.96.04-2.13.65-2.77 1.4-.56.65-1.06 1.71-.97 2.74 1.05.08 2.12-.52 2.73-1.27z"/></svg></span>';
+        } else if (os === 'windows') {
+            return '<span class="w-6 h-6 rounded-md bg-[#00ADEF]/15 flex items-center justify-center" title="Windows"><svg class="w-3.5 h-3.5 fill-[#00ADEF]" viewBox="0 0 24 24"><path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.9-1.801"/></svg></span>';
+        } else {
+            return '<span class="w-6 h-6 rounded-md bg-gray-500/15 text-gray-400 flex items-center justify-center" title="Linux / Otro"><svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="3"/></svg></span>';
+        }
+    }
+
+    function getBrowserIconHtml(browser) {
+        if (browser === 'facebook') {
+            return '<span class="w-6 h-6 rounded-md bg-[#1877F2]/15 flex items-center justify-center" title="Facebook App Browser"><svg class="w-3.5 h-3.5 fill-[#1877F2]" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg></span>';
+        } else if (browser === 'instagram') {
+            return '<span class="w-6 h-6 rounded-md bg-gradient-to-tr from-amber-500 via-rose-500 to-purple-600 text-white flex items-center justify-center shadow-2xs" title="Instagram App"><svg class="w-3 h-3 fill-none stroke-current stroke-2" viewBox="0 0 24 24"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg></span>';
+        } else if (browser === 'chrome') {
+            return '<span class="w-6 h-6 rounded-md bg-amber-500/15 flex items-center justify-center" title="Google Chrome"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24"><path fill="#EA4335" d="M12 5c3.2 0 6 1.5 7.7 4h-7.7L7.3 17.1C5.3 15.6 4 13.2 4 10.5 4 6.9 6.9 4 10.5 4H12z"/><path fill="#FBBC05" d="M22 12c0 2.2-.7 4.2-1.9 5.8l-4.7-8.1h4.3C21.2 10.4 22 11.2 22 12z"/><path fill="#34A853" d="M12 22c-3.7 0-6.9-2-8.5-5.1l4.7-8.1 3.8 6.5C12 15.3 12 15.3 12 22z"/><circle cx="12" cy="12" r="4" fill="#4285F4"/></svg></span>';
+        } else if (browser === 'safari') {
+            return '<span class="w-6 h-6 rounded-md bg-[#006CFF]/15 flex items-center justify-center" title="Safari"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="#006CFF" stroke-width="2"/><path d="M16.5 7.5l-3 6-6 3 3-6z" fill="#FF3B30"/><path d="M10.5 16.5l3-6 6-3-3 6z" fill="#006CFF"/></svg></span>';
+        } else if (browser === 'firefox') {
+            return '<span class="w-6 h-6 rounded-md bg-[#FF7139]/15 flex items-center justify-center" title="Firefox"><svg class="w-3.5 h-3.5 fill-[#FF7139]" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg></span>';
+        } else {
+            return '<span class="w-6 h-6 rounded-md bg-gray-500/15 text-gray-400 flex items-center justify-center" title="Navegador Web"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" x2="22" y1="12" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></span>';
+        }
+    }
+
+    function renderLiveReadersFeed(data) {
+        const countEl = document.getElementById('liveReadersCount');
+        const badgeEl = document.getElementById('tabLiveBadge');
+        const syncEl = document.getElementById('liveSyncTime');
+        const loadingEl = document.getElementById('liveFeedLoading');
+        const emptyEl = document.getElementById('liveFeedEmpty');
+        const itemsEl = document.getElementById('liveFeedItems');
+
+        if (countEl) countEl.textContent = data.active_readers ?? 0;
+        if (badgeEl) badgeEl.textContent = data.active_readers ?? 0;
+        if (syncEl) syncEl.textContent = data.server_time || '--:--:--';
+        if (loadingEl) loadingEl.classList.add('hidden');
+
+        if (!data.readers || data.readers.length === 0) {
+            if (emptyEl) emptyEl.classList.remove('hidden');
+            if (itemsEl) itemsEl.innerHTML = '';
+            return;
+        }
+
+        if (emptyEl) emptyEl.classList.add('hidden');
+
+        const html = data.readers.map(item => {
+            const locationStr = item.city_name ? `${escapeHtml(item.city_name)}, ${escapeHtml(item.country_name)}` : escapeHtml(item.country_name);
+            const statusDot = item.is_online
+                ? '<span class="relative flex h-2 w-2 shrink-0"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span></span>'
+                : '<span class="inline-flex rounded-full h-2 w-2 bg-gray-500 shrink-0" title="Inactivo reciente"></span>';
+
+            return `
+                <div class="flex items-center justify-between py-2.5 px-2 hover:bg-[#1a1d24] rounded-xl transition-colors gap-3">
+                    <div class="flex items-center gap-3.5 min-w-0">
+                        <div class="flex items-center gap-1.5 min-w-[55px] font-mono text-base lg:text-lg font-bold text-gray-200 tracking-tight shrink-0">
+                            ${statusDot}
+                            <span>${item.time_ago}</span>
+                        </div>
+                        <div class="min-w-0 flex flex-col justify-center">
+                            <div class="flex items-center gap-1.5 truncate">
+                                <span class="text-red-400 shrink-0" title="Lector activo">
+                                    <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M12 2c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm9 7h-6v13h-2v-6h-2v6H9V9H3V7h18v2z"/></svg>
+                                </span>
+                                <a href="${item.post_url || '#'}" target="_blank" rel="noopener noreferrer" class="text-xs lg:text-sm font-semibold text-gray-100 hover:text-emerald-400 hover:underline truncate transition-colors" title="${escapeHtml(item.post_title)}">
+                                    ${escapeHtml(item.post_title)}
+                                </a>
+                            </div>
+                            <div class="flex items-center gap-1.5 text-[11px] text-gray-400 mt-0.5 truncate">
+                                <span class="text-sm select-none">${item.flag_emoji || '🌐'}</span>
+                                <span class="truncate">${locationStr}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-1.5 shrink-0">
+                        ${getDeviceIconHtml(item.device_type)}
+                        ${getOsIconHtml(item.os_name)}
+                        ${getBrowserIconHtml(item.browser_name)}
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        if (itemsEl) itemsEl.innerHTML = html;
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const tab = urlParams.get('tab');
+        if (tab === 'traffic') {
+            const trafficBtn = document.getElementById('tabBtnTraffic');
+            if (trafficBtn) switchUserTab('traffic', trafficBtn);
+        } else if (tab === 'live') {
+            const liveBtn = document.getElementById('tabBtnLive');
+            if (liveBtn) switchUserTab('live', liveBtn);
+        }
+
+        // Carga inicial del contador de lectores activos en vivo para el badge
+        if (currentSelectedUserId) {
+            fetch(`/api/telemetry/live-readers/?user_id=${currentSelectedUserId}`)
+                .then(r => r.json())
+                .then(d => {
+                    if (d.status === 'ok') {
+                        const badge = document.getElementById('tabLiveBadge');
+                        if (badge) badge.textContent = d.active_readers || 0;
+                    }
+                })
+                .catch(() => {});
+        }
+    });
 
     window.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') closeGrowthModal();

@@ -6,7 +6,12 @@ from django.utils import timezone
 from django.test import TestCase, Client
 from django.urls import reverse
 from accounts.models import CustomUser
-from igdownloader.models import InstagramDownload
+from igdownloader.models import InstagramDownload, PostTrackingLink, PostLinkClick, LiveReaderSession
+from igdownloader.services.telemetry_service import (
+    parse_client_device_and_software,
+    country_code_to_flag,
+    resolve_ip_location,
+)
 from igdownloader.services.facebook_copy_service import (
     analyze_video_for_facebook,
     FacebookPostCopy,
@@ -135,6 +140,8 @@ class FacebookCopyServiceTests(TestCase):
             direct_video_url="https://video.example.com/direct.mp4",
             username=self.user.username,
             category="Entretenimiento",
+            download_id=self.download.id,
+            panel_url=None,
         )
 
     @patch("igdownloader.services.facebook_copy_service.get_or_refresh_direct_url", return_value="https://video.example.com/direct.mp4")
@@ -240,6 +247,8 @@ class FacebookCopyServiceTests(TestCase):
             direct_video_url="https://video.example.com/direct.mp4",
             username=self.user.username,
             category="Entretenimiento",
+            download_id=self.download.id,
+            panel_url=None,
         )
 
     def test_facebook_post_copy_schema_title_no_emojis(self):
@@ -375,12 +384,12 @@ class InstagramDownloaderViewsTests(TestCase):
         self.assertIn('id="fbWpEmptyNotice"', content)
 
         # Botones y textos
-        self.assertIn('Enlace para el 1er Comentario (Artículo WordPress)', content)
+        self.assertIn('Artículo WordPress', content)
         self.assertIn('copySocialOnly(this)', content)
-        self.assertIn('Copiar Copy para Red Social', content)
+        self.assertIn('Copiar Copy', content)
         self.assertIn('copyWpLinkOnly(this)', content)
-        self.assertIn('Copiar Link para Comentario', content)
-        self.assertIn('Copiar Todo (Copy Social + Link Comentario)', content)
+        self.assertIn('Copiar Enlace', content)
+        self.assertIn('Copiar Todo', content)
         self.assertIn('Dominios WordPress', content)
 
     def test_index_template_contains_updated_descriptions_and_js_handlers(self):
@@ -429,6 +438,313 @@ class InstagramDownloaderViewsTests(TestCase):
         self.assertIn(recent_download.id, my_history_ids)
         self.assertNotIn(old_download.id, my_history_ids)
         self.assertIn('Últimas 24 hs', response.content.decode('utf-8'))
+
+
+class PostTrackingLinkTests(TestCase):
+    """
+    Unit tests for WordPress PostTrackingLink, atomic click counter,
+    302 redirection gateway, and status AJAX payloads.
+    """
+
+    def setUp(self):
+        self.client = Client()
+        self.user = CustomUser.objects.create_user(
+            username="wp_track_user",
+            password="password123",
+            can_view_ig_downloader=True
+        )
+        self.download = InstagramDownload.objects.create(
+            user=self.user,
+            instagram_url="https://www.instagram.com/reel/track123/",
+            title="Tracking Test Reel",
+            wp_post_url="https://mywpsite.com/art-track-123/",
+            wp_article_title="Artículo de Prueba",
+            fb_status="completed"
+        )
+
+    def test_post_tracking_link_creation_and_slug(self):
+        link = PostTrackingLink.objects.create(
+            download=self.download,
+            user=self.user,
+            destination_url=self.download.wp_post_url
+        )
+        self.assertIsNotNone(link.slug)
+        self.assertEqual(len(link.slug), 7)
+        self.assertEqual(link.total_clicks, 0)
+        self.assertEqual(link.unique_clicks, 0)
+        self.assertIsNone(link.last_clicked_at)
+
+    def test_record_click_increments_counters_and_tracks_uniques(self):
+        link = PostTrackingLink.objects.create(
+            download=self.download,
+            user=self.user,
+            destination_url=self.download.wp_post_url
+        )
+
+        # 1st click from IP 1
+        is_uniq1 = link.record_click(ip_hash="hash_ip_1", referer="https://facebook.com", user_agent="Mozilla Android")
+        self.assertTrue(is_uniq1)
+        self.assertEqual(link.total_clicks, 1)
+        self.assertEqual(link.unique_clicks, 1)
+        self.assertIsNotNone(link.last_clicked_at)
+        self.assertEqual(PostLinkClick.objects.filter(tracking_link=link).count(), 1)
+        click_record = PostLinkClick.objects.filter(tracking_link=link).first()
+        self.assertEqual(click_record.user, self.user)
+        self.assertTrue(click_record.is_mobile)
+
+        # 2nd click from same IP 1 -> not unique
+        is_uniq2 = link.record_click(ip_hash="hash_ip_1", referer="https://m.facebook.com")
+        self.assertFalse(is_uniq2)
+        self.assertEqual(link.total_clicks, 2)
+        self.assertEqual(link.unique_clicks, 1)
+
+        # 3rd click from different IP 2 -> unique
+        is_uniq3 = link.record_click(ip_hash="hash_ip_2")
+        self.assertTrue(is_uniq3)
+        self.assertEqual(link.total_clicks, 3)
+        self.assertEqual(link.unique_clicks, 2)
+
+    def test_tracking_redirect_view_performs_302_and_records_hit(self):
+        link = PostTrackingLink.objects.create(
+            download=self.download,
+            user=self.user,
+            destination_url="https://mywpsite.com/art-track-123/"
+        )
+
+        response = self.client.get(
+            f"/r/{link.slug}/",
+            HTTP_USER_AGENT="Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)",
+            HTTP_REFERER="https://l.facebook.com/"
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, "https://mywpsite.com/art-track-123/")
+
+        link.refresh_from_db()
+        self.assertEqual(link.total_clicks, 1)
+        self.assertEqual(link.unique_clicks, 1)
+        click = PostLinkClick.objects.filter(tracking_link=link).first()
+        self.assertIsNotNone(click)
+        self.assertTrue(click.is_mobile)
+        self.assertEqual(click.referer, "https://l.facebook.com/")
+
+    def test_tracking_redirect_view_404_for_invalid_slug(self):
+        response = self.client.get("/r/invalid999slug/")
+        self.assertEqual(response.status_code, 404)
+
+    def test_status_ajax_auto_creates_and_returns_tracking_link(self):
+        self.client.login(username="wp_track_user", password="password123")
+        response = self.client.get(reverse("igdownloader:status_ajax", args=[self.download.id]))
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+
+        self.assertIn("wp_tracking_url", data)
+        self.assertTrue(data["wp_tracking_url"].startswith("/r/"))
+        self.assertEqual(data["wp_total_clicks"], 0)
+        self.assertEqual(data["wp_unique_clicks"], 0)
+
+        # PostTrackingLink must exist in DB now
+        t_link = PostTrackingLink.objects.filter(download=self.download).first()
+        self.assertIsNotNone(t_link)
+        self.assertEqual(t_link.destination_url, self.download.wp_post_url)
+
+
+class TelemetryEndpointTests(TestCase):
+    """
+    Unit tests for ultra-fast telemetry endpoint (/api/telemetry/view/).
+    """
+
+    def setUp(self):
+        self.client = Client()
+        self.user = CustomUser.objects.create_user(
+            username="beacon_user",
+            password="password123",
+            can_view_ig_downloader=True
+        )
+        self.download = InstagramDownload.objects.create(
+            user=self.user,
+            instagram_url="https://www.instagram.com/reel/beacon123/",
+            title="Beacon Test Reel",
+            wp_post_url="https://mywpsite.com/beacon-post-1/",
+            wp_article_title="Artículo Beacon",
+            fb_status="completed"
+        )
+        self.tracking_link = PostTrackingLink.objects.create(
+            download=self.download,
+            user=self.user,
+            destination_url=self.download.wp_post_url
+        )
+
+    def test_options_cors_preflight(self):
+        response = self.client.options("/api/telemetry/view/")
+        self.assertEqual(response.status_code, 204)
+        self.assertEqual(response.headers.get("Access-Control-Allow-Origin"), "*")
+        self.assertIn("POST", response.headers.get("Access-Control-Allow-Methods", ""))
+
+    def test_post_beacon_increments_views_and_returns_204(self):
+        payload = json.dumps({
+            "u": "beacon_user",
+            "did": self.download.id,
+            "src": "facebook",
+            "med": "social",
+            "path": "/beacon-post-1/"
+        })
+        response = self.client.post(
+            "/api/telemetry/view/",
+            data=payload,
+            content_type="text/plain",
+            HTTP_USER_AGENT="Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)",
+            HTTP_REFERER="https://l.facebook.com/"
+        )
+        self.assertEqual(response.status_code, 204)
+        self.assertEqual(response.headers.get("Access-Control-Allow-Origin"), "*")
+
+        self.tracking_link.refresh_from_db()
+        self.assertEqual(self.tracking_link.total_clicks, 1)
+        self.assertEqual(self.tracking_link.unique_clicks, 1)
+        self.assertIsNotNone(self.tracking_link.last_clicked_at)
+
+        click = PostLinkClick.objects.filter(tracking_link=self.tracking_link).first()
+        self.assertIsNotNone(click)
+        self.assertTrue(click.is_mobile)
+        self.assertEqual(click.user, self.user)
+
+    def test_get_telemetry_increments_views_and_returns_204(self):
+        response = self.client.get(
+            f"/api/telemetry/view/?u=beacon_user&did={self.download.id}",
+            HTTP_USER_AGENT="Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+        )
+        self.assertEqual(response.status_code, 204)
+
+        self.tracking_link.refresh_from_db()
+        self.assertEqual(self.tracking_link.total_clicks, 1)
+
+    def test_post_beacon_creates_live_reader_session_and_heartbeat_updates(self):
+        # 1. Initial view ping with Facebook In-App Browser UA
+        fb_ua = (
+            "Mozilla/5.0 (iPhone; CPU iPhone OS 17_4_1 like Mac OS X) AppleWebKit/605.1.15 "
+            "(KHTML, like Gecko) Mobile/21E236 [FBAN/FBIOS;FBAV/456.0.0;FBBV/579998;FBDV/iPhone15,2;FBMD/iPhone]"
+        )
+        payload = json.dumps({
+            "sid": "tab_sess_abc123",
+            "u": "beacon_user",
+            "did": self.download.id,
+            "t": "Novela de Traición y Venganza",
+            "path": "/novela-traicion/",
+            "src": "facebook",
+            "hb": 0
+        })
+        response = self.client.post(
+            "/api/telemetry/view/",
+            data=payload,
+            content_type="text/plain",
+            HTTP_USER_AGENT=fb_ua,
+            HTTP_CF_IPCOUNTRY="MX",
+            HTTP_CF_IPCITY="Guadalajara",
+            REMOTE_ADDR="187.190.12.34"
+        )
+        self.assertEqual(response.status_code, 204)
+
+        # Check LiveReaderSession was created
+        session = LiveReaderSession.objects.filter(session_id="tab_sess_abc123").first()
+        self.assertIsNotNone(session)
+        self.assertEqual(session.user, self.user)
+        self.assertEqual(session.country_code, "MX")
+        self.assertEqual(session.city_name, "Guadalajara")
+        self.assertEqual(session.device_type, "mobile")
+        self.assertEqual(session.os_name, "ios")
+        self.assertEqual(session.browser_name, "facebook")
+        self.assertEqual(session.post_title, "Novela de Traición y Venganza")
+        self.assertTrue(session.is_online)
+        self.assertEqual(session.flag_emoji, "🇲🇽")
+
+        self.tracking_link.refresh_from_db()
+        self.assertEqual(self.tracking_link.total_clicks, 1)
+
+        # 2. Heartbeat ping (hb=1) should update ping without incrementing post clicks
+        old_clicks = self.tracking_link.total_clicks
+        hb_payload = json.dumps({
+            "sid": "tab_sess_abc123",
+            "u": "beacon_user",
+            "did": self.download.id,
+            "path": "/novela-traicion/",
+            "hb": 1
+        })
+        response_hb = self.client.post(
+            "/api/telemetry/view/",
+            data=hb_payload,
+            content_type="text/plain",
+            HTTP_USER_AGENT=fb_ua
+        )
+        self.assertEqual(response_hb.status_code, 204)
+
+        self.tracking_link.refresh_from_db()
+        self.assertEqual(self.tracking_link.total_clicks, old_clicks)
+
+    def test_live_readers_api_endpoint_returns_json_and_active_count(self):
+        # Create an active live reader (last ping now)
+        LiveReaderSession.objects.create(
+            user=self.user,
+            download=self.download,
+            session_id="reader_active_1",
+            post_title="Artículo Activo 1",
+            post_path="/art-1/",
+            country_code="BR",
+            country_name="Brazil",
+            city_name="São Paulo",
+            device_type="mobile",
+            os_name="android",
+            browser_name="facebook",
+            last_ping_at=timezone.now()
+        )
+
+        # Create an expired live reader (last ping 5 minutes ago)
+        expired_sess = LiveReaderSession.objects.create(
+            user=self.user,
+            download=self.download,
+            session_id="reader_expired_2",
+            post_title="Artículo Vencido",
+            post_path="/art-old/",
+            country_code="US",
+            country_name="United States",
+            device_type="desktop",
+            os_name="windows",
+            browser_name="chrome",
+        )
+        LiveReaderSession.objects.filter(id=expired_sess.id).update(
+            last_ping_at=timezone.now() - timedelta(minutes=5)
+        )
+
+        self.client.login(username="beacon_user", password="password123")
+        response = self.client.get(f"/api/telemetry/live-readers/?user_id={self.user.id}")
+        self.assertEqual(response.status_code, 200)
+
+        data = response.json()
+        self.assertEqual(data["status"], "ok")
+        self.assertEqual(data["active_readers"], 1)  # Only 1 within 60s
+        self.assertEqual(data["total_in_feed"], 2)   # Both in 30min feed
+        self.assertEqual(data["readers"][0]["session_id"], "reader_active_1")
+        self.assertEqual(data["readers"][0]["browser_name"], "facebook")
+        self.assertEqual(data["readers"][0]["flag_emoji"], "🇧🇷")
+
+    def test_telemetry_service_helpers(self):
+        # 1. User Agent parsing
+        ua_android_fb = "Mozilla/5.0 (Linux; Android 14; SM-S928B) AppleWebKit/537.36 [FBAN/EMA;FBLC/es_ES;FBAV/390.0.0]"
+        parsed = parse_client_device_and_software(ua_android_fb)
+        self.assertEqual(parsed["device_type"], "mobile")
+        self.assertEqual(parsed["os_name"], "android")
+        self.assertEqual(parsed["browser_name"], "facebook")
+
+        ua_win_chrome = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+        parsed_win = parse_client_device_and_software(ua_win_chrome)
+        self.assertEqual(parsed_win["device_type"], "desktop")
+        self.assertEqual(parsed_win["os_name"], "windows")
+        self.assertEqual(parsed_win["browser_name"], "chrome")
+
+        # 2. Flag emoji
+        self.assertEqual(country_code_to_flag("BR"), "🇧🇷")
+        self.assertEqual(country_code_to_flag("US"), "🇺🇸")
+        self.assertEqual(country_code_to_flag(""), "🌐")
+        self.assertEqual(country_code_to_flag("INVALID"), "🌐")
 
 
 class InstagramDownloadCleanupTests(TestCase):

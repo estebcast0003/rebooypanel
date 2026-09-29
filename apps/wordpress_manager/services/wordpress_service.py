@@ -5,6 +5,7 @@ import re
 import requests
 from django.utils import timezone
 from django.utils.text import slugify
+from django.conf import settings
 
 from wordpress_manager.models import WordPressSite
 
@@ -130,16 +131,100 @@ def build_instagram_embed_html(instagram_url: str) -> str:
     )
 
 
+def build_telemetry_beacon_html(
+    username: str = None,
+    download_id: int = None,
+    panel_url: str = None,
+) -> str:
+    """
+    Genera un script de telemetría ultraliviano y no bloqueante para registrar
+    las visitas de la campaña y la presencia en tiempo real (estilo whos.amung.us Readers)
+    mediante sendBeacon/fetch y Page Visibility API sin afectar Core Web Vitals ni Google AdSense.
+    """
+    base_panel_url = (panel_url or getattr(settings, 'PANEL_PUBLIC_URL', '') or '').rstrip('/')
+    if not base_panel_url:
+        return ""
+
+    endpoint = f"{base_panel_url}/api/telemetry/view/"
+    user_str = str(username or '').strip()
+    did_str = str(download_id or '').strip()
+
+    return (
+        '<!-- Rebooy Panel Analytics & Live Readers Beacon -->\n'
+        '<script>\n'
+        '(function(){\n'
+        '  try {\n'
+        '    var sid = "";\n'
+        '    try {\n'
+        '      sid = window.sessionStorage.getItem("_rb_sid");\n'
+        '      if (!sid) {\n'
+        '        sid = Math.random().toString(36).substring(2, 10) + Date.now().toString(36);\n'
+        '        window.sessionStorage.setItem("_rb_sid", sid);\n'
+        '      }\n'
+        '    } catch(e){\n'
+        '      sid = Math.random().toString(36).substring(2, 10) + Date.now().toString(36);\n'
+        '    }\n'
+        '    var send = function(isHb){\n'
+        '      var p = new URLSearchParams(window.location.search);\n'
+        '      var u = p.get("utm_campaign") || ' + (f'"{user_str}"' if user_str else '""') + ';\n'
+        '      if (!u) return;\n'
+        '      var ep = "' + endpoint + '";\n'
+        '      var payload = JSON.stringify({\n'
+        '        sid: sid,\n'
+        '        u: u,\n'
+        '        did: "' + did_str + '",\n'
+        '        t: (document.title || "").substring(0, 150),\n'
+        '        src: p.get("utm_source") || "",\n'
+        '        med: p.get("utm_medium") || "",\n'
+        '        cnt: p.get("utm_content") || "",\n'
+        '        path: window.location.pathname,\n'
+        '        url: window.location.href,\n'
+        '        ref: (document.referrer || "").substring(0, 250),\n'
+        '        hb: isHb ? 1 : 0\n'
+        '      });\n'
+        '      if (window.navigator && window.navigator.sendBeacon) {\n'
+        '        window.navigator.sendBeacon(ep, payload);\n'
+        '      } else {\n'
+        '        fetch(ep, {\n'
+        '          method: "POST",\n'
+        '          body: payload,\n'
+        '          mode: "no-cors",\n'
+        '          keepalive: true,\n'
+        '          headers: { "Content-Type": "text/plain" }\n'
+        '        }).catch(function(){});\n'
+        '      }\n'
+        '    };\n'
+        '    var init = function(){\n'
+        '      send(false);\n'
+        '      setInterval(function(){\n'
+        '        if (!document.hidden) send(true);\n'
+        '      }, 25000);\n'
+        '      document.addEventListener("visibilitychange", function(){\n'
+        '        if (!document.hidden) send(true);\n'
+        '      });\n'
+        '    };\n'
+        '    if (document.readyState === "complete") { setTimeout(init, 100); }\n'
+        '    else { window.addEventListener("load", function(){ setTimeout(init, 100); }); }\n'
+        '  } catch(e) {}\n'
+        '})();\n'
+        '</script>'
+    )
+
+
 def build_wordpress_article_html(
     article_html: str,
     instagram_url: str = None,
     direct_video_url: str = None,
     poster_url: str = None,
+    username: str = None,
+    download_id: int = None,
+    panel_url: str = None,
 ) -> str:
     """
     Combina el artículo HTML generado con el reproductor nativo HTML5 (si existe
     direct_video_url) o con el bloque de incrustación de Instagram como fallback.
     Ubica el reproductor después del primer párrafo </p> o al inicio del artículo.
+    Adjunta opcionalmente el micro-beacon de telemetría al final del contenido.
     """
     content = (article_html or "").strip()
 
@@ -152,24 +237,33 @@ def build_wordpress_article_html(
     elif instagram_url and str(instagram_url).strip():
         media_block = build_instagram_embed_html(instagram_url)
 
+    beacon_block = build_telemetry_beacon_html(
+        username=username,
+        download_id=download_id,
+        panel_url=panel_url,
+    )
+
     if not media_block:
-        return content
+        final_content = content
+    elif not content:
+        final_content = media_block
+    else:
+        # Search for the end of the first paragraph </p>
+        first_p_close = re.search(r'</p>', content, flags=re.IGNORECASE)
+        if first_p_close:
+            split_idx = first_p_close.end()
+            before = content[:split_idx]
+            after = content[split_idx:].lstrip()
+            if after:
+                final_content = f"{before}\n\n{media_block}\n\n{after}"
+            else:
+                final_content = f"{before}\n\n{media_block}"
+        else:
+            final_content = f"{media_block}\n\n{content}"
 
-    if not content:
-        return media_block
-
-    # Search for the end of the first paragraph </p>
-    first_p_close = re.search(r'</p>', content, flags=re.IGNORECASE)
-    if first_p_close:
-        split_idx = first_p_close.end()
-        before = content[:split_idx]
-        after = content[split_idx:].lstrip()
-        if after:
-            return f"{before}\n\n{media_block}\n\n{after}"
-        return f"{before}\n\n{media_block}"
-
-    # If no closing </p> tag found, place the embed/player at the top of the article
-    return f"{media_block}\n\n{content}"
+    if beacon_block:
+        return f"{final_content}\n\n{beacon_block}".strip()
+    return final_content
 
 
 def generate_cinematic_cover_16_9(image_path: str) -> str:
@@ -375,6 +469,8 @@ def publish_article_to_wordpress(
     direct_video_url: str = None,
     username: str = None,
     category: str = None,
+    download_id: int = None,
+    panel_url: str = None,
 ) -> dict:
     """
     Publishes an article to one of the active WordPress sites in the pool.
@@ -410,6 +506,9 @@ def publish_article_to_wordpress(
             instagram_url=instagram_url,
             direct_video_url=direct_video_url,
             poster_url=media_url,
+            username=username,
+            download_id=download_id,
+            panel_url=panel_url,
         )
 
         payload = {

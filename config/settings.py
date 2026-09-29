@@ -252,4 +252,7 @@ CLI_PROXY_MODEL = os.getenv('CLI_PROXY_MODEL', 'gemini-3.7-flash-high')
 # Instagram / Facebook Session Cookies Path
 INSTAGRAM_COOKIE_FILE = os.getenv('INSTAGRAM_COOKIE_FILE', str(BASE_DIR / 'cookies.txt'))
 
+# Public URL of Rebooy Panel for Webhook/Telemetry Callbacks
+PANEL_PUBLIC_URL = os.getenv('PANEL_PUBLIC_URL', '').rstrip('/')
+
 
