@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "skills": {
+    "django-celery": {
+      "source": "affaan-m/ecc",
+      "sourceType": "github",
+      "skillPath": "skills/django-celery/SKILL.md",
+      "computedHash": "50445431aef614f506a7d14c922c8af122c243c3e16a993aed43a33a6f50658e"
+    },
+    "django-patterns": {
+      "source": "affaan-m/ecc",
+      "sourceType": "github",
+      "skillPath": "skills/django-patterns/SKILL.md",
+      "computedHash": "93fc4501b3dfc6fae1e40dc8b0114681838e308ddb865966bfcd57125df7b2d5"
+    },
+    "django-security": {
+      "source": "affaan-m/ecc",
+      "sourceType": "github",
+      "skillPath": "skills/django-security/SKILL.md",
+      "computedHash": "9bb29e8ddc48d8a0ab4ed4c42732586c1b5af8e09340ca58ac759a39f493639f"
+    },
+    "django-tdd": {
+      "source": "affaan-m/ecc",
+      "sourceType": "github",
+      "skillPath": "skills/django-tdd/SKILL.md",
+      "computedHash": "65809c76dd072aa8d59c32d9119987429e15047b5ea4708003de145327710db4"
+    }
+  }
+}
