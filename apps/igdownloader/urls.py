@@ -10,9 +10,6 @@ urlpatterns = [
     path('download/<int:pk>/', views.download_video_stream, name='download_video_stream'),
     path('delete-ajax/<int:pk>/', views.delete_ajax, name='delete_ajax'),
     path('facebook-copy/<int:pk>/', views.generate_facebook_copy_ajax, name='generate_facebook_copy_ajax'),
-    path('telemetry/view/', views.telemetry_view, name='telemetry_view'),
-    path('telemetry/ping/', views.telemetry_view, name='telemetry_ping'),
-    path('telemetry/live-readers/', views.live_readers_api_view, name='live_readers_api'),
     path('r/<str:slug>/', views.tracking_redirect_view, name='tracking_redirect'),
     path('diagnostico/', views.diagnostico_view, name='diagnostico'),
 ]

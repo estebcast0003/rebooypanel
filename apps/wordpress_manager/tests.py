@@ -16,7 +16,6 @@ from wordpress_manager.services.wordpress_service import (
     append_utm_parameters,
     build_html5_video_player_html,
     build_wordpress_article_html,
-    build_telemetry_beacon_html,
     upload_featured_media_to_wordpress,
     publish_article_to_wordpress,
 )
@@ -593,30 +592,6 @@ class WordPressServiceTests(TestCase):
         # 4. If article_html is empty, returns embed alone
         result_empty_article = build_wordpress_article_html("", ig_url)
         self.assertIn("wp-block-embed-instagram", result_empty_article)
-
-        # 5. Appends telemetry beacon when panel_url is provided
-        result_with_beacon = build_wordpress_article_html(
-            article_multi_p,
-            ig_url,
-            username="editor_ana",
-            download_id=99,
-            panel_url="https://panel.rebooy.com"
-        )
-        self.assertIn("https://panel.rebooy.com/api/telemetry/view/", result_with_beacon)
-        self.assertIn('"editor_ana"', result_with_beacon)
-        self.assertIn('"99"', result_with_beacon)
-        self.assertIn("sendBeacon", result_with_beacon)
-
-    def test_build_telemetry_beacon_html(self):
-        # Empty when no panel_url and no setting
-        self.assertEqual(build_telemetry_beacon_html("user1", 10, panel_url=""), "")
-
-        # Generates script when panel_url provided
-        beacon = build_telemetry_beacon_html("user1", 10, panel_url="https://panel.test.com")
-        self.assertIn("https://panel.test.com/api/telemetry/view/", beacon)
-        self.assertIn('"user1"', beacon)
-        self.assertIn('"10"', beacon)
-        self.assertIn("utm_campaign", beacon)
 
     def test_publish_article_to_wordpress_no_active_sites(self):
         # Deactivate all sites
