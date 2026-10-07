@@ -70,6 +70,7 @@ class LoginViewMetadataAndAssetsTests(TestCase):
         self.assertTrue('favicon.' in content and '.ico' in content)
         self.assertTrue('favicon.' in content and '.png' in content)
         self.assertIn('rel="apple-touch-icon"', content)
+        self.assertIn('rel="preload" as="image"', content)
 
         # Background image & Creator Identity avatar
         self.assertIn('background-image: url(', content)
