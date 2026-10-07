@@ -4,7 +4,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <title>{% block title %}Rebooy Panel{% endblock %}</title>
+
+    <!-- Metadatos SEO y del Sistema -->
+    <meta name="description" content="{% block meta_description %}Panel central de control, automatización y gestión para Rebooy Studio.{% endblock %}">
+    <meta name="author" content="Rebooy">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="theme-color" content="#0f172a">
+
+    <!-- Open Graph -->
+    <meta property="og:site_name" content="Rebooy Panel">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="{% block og_title %}Rebooy Panel — Creator Studio{% endblock %}">
+    <meta property="og:description" content="{% block og_description %}Panel central de control, automatización y gestión para Rebooy Studio.{% endblock %}">
+    <meta property="og:image" content="{% if request %}{{ request.scheme }}://{{ request.get_host }}{% endif %}{% static 'img/id.jpg' %}">
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{% block twitter_title %}Rebooy Panel — Creator Studio{% endblock %}">
+    <meta name="twitter:description" content="{% block twitter_description %}Panel central de control, automatización y gestión para Rebooy Studio.{% endblock %}">
+    <meta name="twitter:image" content="{% if request %}{{ request.scheme }}://{{ request.get_host }}{% endif %}{% static 'img/id.jpg' %}">
 
     <!-- Favicon & Brand Identity -->
     <link rel="icon" type="image/x-icon" href="{% static 'img/favicon.ico' %}">

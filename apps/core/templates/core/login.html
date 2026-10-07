@@ -1,7 +1,13 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Login — Rebooy Panel{% endblock %}
+{% block title %}Iniciar Sesión — Rebooy Panel{% endblock %}
+
+{% block meta_description %}Acceso al sistema central y panel administrativo de Rebooy Studio.{% endblock %}
+{% block og_title %}Iniciar Sesión — Rebooy Panel{% endblock %}
+{% block og_description %}Acceso al sistema central y panel administrativo de Rebooy Studio.{% endblock %}
+{% block twitter_title %}Iniciar Sesión — Rebooy Panel{% endblock %}
+{% block twitter_description %}Acceso al sistema central y panel administrativo de Rebooy Studio.{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -10,11 +16,13 @@
         background-size: cover;
         background-position: center;
         background-repeat: no-repeat;
+        background-attachment: fixed;
     }
     .overlay {
-        position: absolute;
+        position: fixed;
         inset: 0;
         background: radial-gradient(circle at center, rgba(15, 23, 42, 0.4) 0%, rgba(15, 23, 42, 0.9) 100%);
+        pointer-events: none;
     }
 
     /* ── Particle canvas ── */
@@ -84,7 +92,7 @@
 
         <div class="relative z-10 text-center mb-8">
             <div class="inline-flex p-1 rounded-2xl bg-gradient-to-tr from-brand-600 to-brand-400 shadow-xl shadow-brand-500/25 mb-4 border border-brand-400/40">
-                <img src="{% static 'img/id.jpg' %}" alt="Rebooy Creator Identity" class="w-16 h-16 rounded-xl object-cover">
+                <img src="{% static 'img/id.jpg' %}" alt="Rebooy Creator Identity" class="w-16 h-16 rounded-xl object-cover" loading="eager" width="64" height="64">
             </div>
             <h1 class="text-3xl font-bold text-white tracking-tight mb-2">Rebooy<span class="text-brand-500">Panel</span></h1>
             <p class="text-slate-400 text-sm">Acceso al sistema central</p>

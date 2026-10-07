@@ -4,7 +4,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Panel Administrativo{% endblock %}</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>{% block title %}Panel Administrativo — Rebooy Panel{% endblock %}</title>
+
+    <!-- Metadatos SEO y del Sistema -->
+    <meta name="description" content="{% block meta_description %}Panel central de control, automatización y gestión para Rebooy Studio.{% endblock %}">
+    <meta name="keywords" content="{% block meta_keywords %}rebooy, rebooy panel, automation studio, creator studio, instagram downloader, fanpage studio{% endblock %}">
+    <meta name="author" content="Rebooy">
+    <meta name="robots" content="{% block meta_robots %}noindex, nofollow{% endblock %}">
+    <meta name="theme-color" content="#0f172a">
+    <meta name="color-scheme" content="dark">
+
+    <!-- Open Graph / Redes Sociales -->
+    <meta property="og:site_name" content="Rebooy Panel">
+    <meta property="og:type" content="{% block og_type %}website{% endblock %}">
+    <meta property="og:title" content="{% block og_title %}Rebooy Panel — Sistema Central{% endblock %}">
+    <meta property="og:description" content="{% block og_description %}Panel central de control, automatización y gestión para Rebooy Studio.{% endblock %}">
+    <meta property="og:url" content="{% block og_url %}{% if request %}{{ request.build_absolute_uri }}{% endif %}{% endblock %}">
+    <meta property="og:image" content="{% block og_image %}{% if request %}{{ request.scheme }}://{{ request.get_host }}{% endif %}{% static 'img/id.jpg' %}{% endblock %}">
+    <meta property="og:image:alt" content="Rebooy Creator Identity">
+
+    <!-- Twitter Cards -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{% block twitter_title %}Rebooy Panel — Sistema Central{% endblock %}">
+    <meta name="twitter:description" content="{% block twitter_description %}Panel central de control, automatización y gestión para Rebooy Studio.{% endblock %}">
+    <meta name="twitter:image" content="{% block twitter_image %}{% if request %}{{ request.scheme }}://{{ request.get_host }}{% endif %}{% static 'img/id.jpg' %}{% endblock %}">
+
+    {% block extra_meta %}{% endblock %}
 
     <!-- Favicon & Brand Identity -->
     <link rel="icon" type="image/x-icon" href="{% static 'img/favicon.ico' %}">
