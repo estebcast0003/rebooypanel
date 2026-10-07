@@ -1,6 +1,10 @@
 #!/bin/sh
 set -e
 
+# Asegurar entorno de producción en todo el ciclo de vida del contenedor
+export DJANGO_SETTINGS_MODULE="${DJANGO_SETTINGS_MODULE:-config.django.production}"
+echo "=== Configuración activa: $DJANGO_SETTINGS_MODULE ==="
+
 echo "=== Verificando conexión a la base de datos ==="
 python - << 'EOF'
 import os, sys, time
@@ -32,10 +36,10 @@ for attempt in range(1, max_retries + 1):
 EOF
 
 echo "=== Aplicando migraciones de base de datos ==="
-python manage.py migrate --noinput
+python manage.py migrate --noinput --settings="$DJANGO_SETTINGS_MODULE"
 
 echo "=== Recolectando archivos estáticos ==="
-python manage.py collectstatic --noinput
+python manage.py collectstatic --noinput --settings="$DJANGO_SETTINGS_MODULE"
 
 echo "=== Iniciando servidor Gunicorn en el puerto ${PORT:-8000} ==="
 exec gunicorn config.wsgi:application \

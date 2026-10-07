@@ -3,7 +3,8 @@ FROM python:3.13-slim
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    PORT=8000
+    PORT=8000 \
+    DJANGO_SETTINGS_MODULE=config.django.production
 
 # Install system dependencies (build-essential, libpq for Postgres, ffmpeg/opencv libs, curl)
 RUN apt-get update && apt-get install -y --no-install-recommends \
