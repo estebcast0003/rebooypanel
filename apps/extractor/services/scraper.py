@@ -1,11 +1,11 @@
 import asyncio
-import html
 import json
 import logging
 import re
 import ssl
 from dataclasses import dataclass
-from urllib.parse import urlparse
+from html.parser import HTMLParser
+from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
 
 import httpx
 from django.conf import settings
@@ -26,13 +26,37 @@ class ExtractionResult:
 
 
 def normalize_url(raw_url: str) -> str:
-    """Normalizes raw input URLs ensuring proper https protocol and clean domain."""
+    """Normalizes raw input URLs ensuring proper https protocol, clean domain, and stripped tracking params."""
     url = raw_url.strip()
     if not url:
         return ""
-    if not url.startswith("http://") and not url.startswith("https://"):
+    if not url.startswith(("http://", "https://")):
         url = "https://" + url
-    return url
+
+    try:
+        p = urlparse(url)
+        netloc = p.netloc.lower()
+        if netloc in (
+            "m.facebook.com",
+            "mobile.facebook.com",
+            "web.facebook.com",
+            "touch.facebook.com",
+        ):
+            netloc = "www.facebook.com"
+
+        path = p.path
+        if "profile.php" in path:
+            qs = parse_qs(p.query)
+            clean_qs = {}
+            if "id" in qs and qs["id"]:
+                clean_qs["id"] = qs["id"][0]
+            query = urlencode(clean_qs)
+        else:
+            query = ""
+
+        return urlunparse((p.scheme or "https", netloc, path, "", query, ""))
+    except Exception:
+        return url
 
 
 def parse_follower_count(text: str) -> int:
@@ -78,29 +102,86 @@ def parse_follower_count(text: str) -> int:
     return 0
 
 
-def _extract_meta_content(html_text: str, *attribute_patterns: str) -> list[str]:
-    """Extracts all content attributes matching given attribute patterns."""
-    found = []
-    for pattern in attribute_patterns:
-        for m in re.findall(rf'<meta\s+[^>]*?{pattern}[^>]*?content=["\']([^"\']+)["\']', html_text, re.IGNORECASE):
-            if m.strip() and m.strip() not in found:
-                found.append(m.strip())
-        for m in re.findall(rf'<meta\s+[^>]*?content=["\']([^"\']+)["\'][^>]*?{pattern}', html_text, re.IGNORECASE):
-            if m.strip() and m.strip() not in found:
-                found.append(m.strip())
-    return found
+class MetaTagParser(HTMLParser):
+    """Resilient, zero-dependency HTML parser for meta tags and page titles."""
+
+    def __init__(self):
+        super().__init__()
+        self.metas: list[dict[str, str]] = []
+        self.title: str = ""
+        self._in_title = False
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]):
+        tag_lower = tag.lower()
+        if tag_lower == "meta":
+            attr_dict = {k.lower(): (v or "") for k, v in attrs}
+            self.metas.append(attr_dict)
+        elif tag_lower == "title":
+            self._in_title = True
+
+    def handle_endtag(self, tag: str):
+        if tag.lower() == "title":
+            self._in_title = False
+
+    def handle_data(self, data: str):
+        if self._in_title and not self.title:
+            self.title = data.strip()
 
 
 def parse_html(html_content: str) -> tuple[str, int, str]:
     """Extracts page title and follower/like counts from server-rendered HTML meta tags and JSON-LD."""
-    text = html.unescape(html_content)
-
     followers_count = 0
     name = "Desconocido"
     status_msg = "No se encontraron seguidores en el DOM"
 
-    # Strategy 1: JSON-LD schemas
-    for json_script in re.findall(r'<script[^>]*?type=["\']application/ld\+json["\'][^>]*?>(.*?)</script>', text, re.DOTALL | re.IGNORECASE):
+    lower_html = html_content.lower()
+    if "login/?next=" in lower_html or "iniciar sesión en facebook" in lower_html or "log in to facebook" in lower_html:
+        status_msg = "Requiere inicio de sesión (perfil privado o restringido)"
+    elif "contenido no está disponible" in lower_html or "se eliminó" in lower_html or "content isn't available" in lower_html:
+        status_msg = "Página no disponible o eliminada"
+
+    # Strategy 1: HTMLParser extraction for meta tags
+    parser = MetaTagParser()
+    try:
+        parser.feed(html_content)
+    except Exception:
+        pass
+
+    descriptions: list[str] = []
+    titles: list[str] = []
+
+    for meta in parser.metas:
+        prop = meta.get("property", "").lower()
+        m_name = meta.get("name", "").lower()
+        content = meta.get("content", "").strip()
+        if not content:
+            continue
+
+        if prop in ("og:description", "description", "twitter:description") or m_name in (
+            "og:description",
+            "description",
+            "twitter:description",
+        ):
+            if content not in descriptions:
+                descriptions.append(content)
+
+        if prop in ("og:title", "title", "twitter:title") or m_name in (
+            "og:title",
+            "title",
+            "twitter:title",
+        ):
+            if content not in titles:
+                titles.append(content)
+
+    if parser.title and parser.title not in titles:
+        titles.append(parser.title)
+
+    # Strategy 2: JSON-LD schemas
+    for json_script in re.findall(
+        r'<script[^>]*?type=["\']application/ld\+json["\'][^>]*?>(.*?)</script>',
+        html_content,
+        re.DOTALL | re.IGNORECASE,
+    ):
         try:
             data = json.loads(json_script.strip())
             if isinstance(data, dict):
@@ -119,22 +200,24 @@ def parse_html(html_content: str) -> tuple[str, int, str]:
         except Exception:
             pass
 
-    # Strategy 2: Meta description & og:description
-    descriptions = _extract_meta_content(
-        text,
-        r'name=["\']description["\']',
-        r'property=["\']og:description["\']',
-        r'name=["\']og:description["\']',
-    )
-
-    follower_regexes = [
-        r"(\d+(?:[\s.,\xa0\u202f]\d+)*(?:\s*(?:k\b|m\b|b\b|mil\b|millones\b|millón\b|mill\b|mill\.))?)\s*(?:followers|seguidores|personas\s+siguen|personas\s+están\s+siguiendo|personas\s+que\s+siguen|siguen\s+esto|people\s+follow\s+this|likes|me\s+gusta|personas\s+les\s+gusta)",
-        r"(?:followers|seguidores|likes|me gusta):\s*(\d+(?:[\s.,\xa0\u202f]\d+)*(?:\s*(?:k\b|m\b|b\b|mil\b|millones\b|millón\b|mill\b|mill\.))?)",
-        r"(\d+(?:[\s.,\xa0\u202f]\d+)*(?:\s*(?:k\b|m\b|b\b|mil\b|millones\b|millón\b|mill\b|mill\.))?)\s*(?:•|·|,)\s*\d+.*?(?:followers|seguidores|likes|me gusta)",
+    # Strategy 3: Bilingual Followers & Likes Matching on Meta Descriptions
+    # Priority A: Explicit follower patterns (Spanish & English)
+    follower_patterns = [
+        # "82 213 384 seguidores", "2 millones de seguidores", "1,5 mill. de seguidores", "15K followers", "300 personas siguen esto"
+        r"(\d+(?:[\s.,\xa0\u202f]\d+)*(?:\s*(?:k\b|m\b|b\b|mil\b|millones\b|millón\b|mill\b|mill\.))?)\s*(?:de\s+)?(?:followers|seguidores|personas\s+(?:que\s+)?(?:están\s+)?(?:siguiendo|siguen)(?:\s+(?:a\s+)?esta\s+página|\s+esto)?|people\s+follow\s+this)",
+        # "Followers: 15K", "Seguidores: 1.5M", "Seguidores · 1500"
+        r"(?:followers|seguidores)\s*[:\-•·]\s*(\d+(?:[\s.,\xa0\u202f]\d+)*(?:\s*(?:k\b|m\b|b\b|mil\b|millones\b|millón\b|mill\b|mill\.))?)",
     ]
 
+    # Priority B: Fallback likes patterns (Spanish & English)
+    like_patterns = [
+        r"(\d+(?:[\s.,\xa0\u202f]\d+)*(?:\s*(?:k\b|m\b|b\b|mil\b|millones\b|millón\b|mill\b|mill\.))?)\s*(?:de\s+)?(?:likes|me\s+gusta|personas\s+les\s+gusta(?:\s+esto)?|people\s+like\s+this)",
+        r"(?:likes|me\s+gusta)\s*[:\-•·]\s*(\d+(?:[\s.,\xa0\u202f]\d+)*(?:\s*(?:k\b|m\b|b\b|mil\b|millones\b|millón\b|mill\b|mill\.))?)",
+    ]
+
+    # First check Priority A (followers)
     for desc in descriptions:
-        for rgx in follower_regexes:
+        for rgx in follower_patterns:
             match = re.search(rgx, desc, re.IGNORECASE)
             if match:
                 f_count = parse_follower_count(match.group(1))
@@ -142,25 +225,40 @@ def parse_html(html_content: str) -> tuple[str, int, str]:
                     followers_count = f_count
                     status_msg = "Éxito"
 
-        if (not name or name == "Desconocido") and "." in desc:
-            first_sentence = desc.split(".")[0].strip()
-            if first_sentence and len(first_sentence) < 80:
-                name = first_sentence
+    # If no followers found, fallback to Priority B (likes)
+    if followers_count == 0:
+        for desc in descriptions:
+            for rgx in like_patterns:
+                match = re.search(rgx, desc, re.IGNORECASE)
+                if match:
+                    f_count = parse_follower_count(match.group(1))
+                    if f_count > followers_count:
+                        followers_count = f_count
+                        status_msg = "Éxito"
 
-    # Strategy 3: og:title & title tag
-    titles = _extract_meta_content(text, r'property=["\']og:title["\']', r'name=["\']og:title["\']')
-    if not titles:
-        titles = re.findall(r'<title[^>]*>(.*?)</title>', text, re.IGNORECASE)
-
+    # Resolve Page Name from titles or description
     for title in titles:
         extracted = title.strip()
-        if extracted and extracted.lower() not in ("facebook", "log in to facebook", "iniciar sesión en facebook"):
+        if extracted and extracted.lower() not in (
+            "facebook",
+            "log in to facebook",
+            "iniciar sesión en facebook",
+            "error facebook",
+        ):
             cleaned = re.sub(r"\s*(\||-)\s*Facebook.*$", "", extracted, flags=re.IGNORECASE).strip()
             if cleaned:
                 name = cleaned
                 break
 
-    # Strategy 4: Raw embedded JSON search
+    if (not name or name == "Desconocido") and descriptions:
+        for desc in descriptions:
+            if "." in desc:
+                first_sentence = desc.split(".")[0].strip()
+                if first_sentence and len(first_sentence) < 80:
+                    name = first_sentence
+                    break
+
+    # Strategy 4: Raw embedded JSON search if still 0
     if followers_count == 0:
         json_count_patterns = [
             r'"follower_count":\s*(\d+)',
@@ -172,7 +270,7 @@ def parse_html(html_content: str) -> tuple[str, int, str]:
             r'"page_followers":\s*(\d+)',
         ]
         for jpat in json_count_patterns:
-            jmatch = re.search(jpat, text)
+            jmatch = re.search(jpat, html_content)
             if jmatch:
                 try:
                     c = int(jmatch.group(1))
@@ -181,6 +279,12 @@ def parse_html(html_content: str) -> tuple[str, int, str]:
                         status_msg = "Éxito"
                 except ValueError:
                     pass
+
+    if followers_count == 0 and status_msg == "No se encontraron seguidores en el DOM":
+        if not descriptions and (not titles or all(t.strip().lower() in ("facebook", "log in to facebook", "iniciar sesión en facebook", "error facebook") for t in titles)):
+            status_msg = "Página no encontrada, privada o sin datos públicos"
+        elif descriptions:
+            status_msg = "No se encontraron seguidores en la descripción"
 
     return name, followers_count, status_msg
 
@@ -207,25 +311,28 @@ async def _fetch_with_client(client: httpx.AsyncClient, normalized_url: str, tim
         "Accept": "*/*",
         "Accept-Language": "es-ES,es;q=0.9,en-US,en;q=0.8",
     }
-    browser_headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    bot_fallback_headers = {
+        "User-Agent": "Twitterbot/1.0",
+        "Accept": "*/*",
         "Accept-Language": "es-ES,es;q=0.9,en-US,en;q=0.8",
-        "Sec-Ch-Ua": '"Chromium";v="128", "Not;A=Brand";v="24", "Google Chrome";v="128"',
-        "Sec-Ch-Ua-Mobile": "?0",
-        "Sec-Ch-Ua-Platform": '"Windows"',
     }
 
-    # 1. Primary Strategy: Crawler Header
+    # 1. Primary Strategy: Facebook Crawler Header
     response = await _execute_http_get(client, normalized_url, crawler_headers, timeout)
     response.raise_for_status()
+
+    # Detect login wall redirect immediately
+    final_url_str = str(response.url).lower()
+    if "/login" in final_url_str:
+        return "Desconocido", 0, "Requiere inicio de sesión (perfil privado o restringido)"
+
     name, followers, status_msg = parse_html(response.text)
 
-    # 2. Secondary Strategy if crawler returned 0 followers: Standard Browser User-Agent
+    # 2. Secondary Strategy if crawler returned 0 followers: Secondary Bot Header
     if followers == 0:
         try:
-            b_response = await _execute_http_get(client, normalized_url, browser_headers, timeout)
-            if b_response.is_success:
+            b_response = await _execute_http_get(client, normalized_url, bot_fallback_headers, timeout)
+            if b_response.is_success and "login/?next=" not in str(b_response.url).lower():
                 b_name, b_followers, b_status = parse_html(b_response.text)
                 if b_followers > 0:
                     name, followers, status_msg = b_name, b_followers, b_status
@@ -308,15 +415,17 @@ async def fetch_page(
     # If first attempt returned 0 followers and we have a direct client, give it a direct try
     if direct_client and direct_client != client:
         try:
-            name, followers, status_msg = await _fetch_with_client(direct_client, normalized_url, timeout)
-            if followers > 0:
+            d_name, d_followers, d_status = await _fetch_with_client(direct_client, normalized_url, timeout)
+            if d_followers > 0:
                 return ExtractionResult(
                     url=normalized_url,
-                    name=name,
-                    followers=followers,
-                    status=status_msg,
+                    name=d_name,
+                    followers=d_followers,
+                    status=d_status,
                     is_success=True,
                 )
+            if "Requiere inicio de sesión" in d_status or "Página no disponible" in d_status:
+                status_msg = d_status
         except Exception:
             pass
 
@@ -377,5 +486,3 @@ async def extract_all_urls(
             await asyncio.gather(*tasks, return_exceptions=True)
 
     return results
-
-

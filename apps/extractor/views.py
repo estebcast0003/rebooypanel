@@ -251,12 +251,24 @@ def start_extraction_view(request):
 
         # Detección de duplicados para evitar procesamiento y scraping redundante
         from django.db.models import Q
+        match_urls = set(clean_urls)
+        for u in clean_urls:
+            if "://www.facebook.com" in u:
+                match_urls.add(u.replace("://www.facebook.com", "://facebook.com"))
+            elif "://facebook.com" in u:
+                match_urls.add(u.replace("://facebook.com", "://www.facebook.com"))
+        for u in list(match_urls):
+            if u.endswith("/"):
+                match_urls.add(u[:-1])
+            else:
+                match_urls.add(u + "/")
+
         if request.user.role == 'superadmin':
-            existing_pages = list(FacebookPage.objects.filter(url__in=clean_urls))
+            existing_pages = list(FacebookPage.objects.filter(url__in=match_urls))
         else:
             existing_pages = list(FacebookPage.objects.filter(
                 Q(user=request.user) | Q(user__isnull=True),
-                url__in=clean_urls
+                url__in=match_urls
             ))
 
         if existing_pages:

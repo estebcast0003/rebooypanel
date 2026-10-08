@@ -56,9 +56,8 @@ class JobEventManager:
 event_manager = JobEventManager()
 
 
-@sync_to_async
-def _save_item_to_db(job_id: str, result: ExtractionResult):
-    """Synchronous database persistence wrapped for async execution with busy retry."""
+def save_item_to_db(job_id: str, result: ExtractionResult):
+    """Synchronous database persistence wrapped with retry and metric protection."""
     import time
     import random
     from django.db import connection, close_old_connections
@@ -77,19 +76,53 @@ def _save_item_to_db(job_id: str, result: ExtractionResult):
                 else:
                     job = ExtractionJob.objects.select_for_update().get(id=job_id)
 
-                # Check previous followers before update
-                existing_page = FacebookPage.objects.filter(user=job.user, url=result.url).first()
-                prev_followers = existing_page.followers if existing_page else 0
+                # Check previous followers before update across flexible URLs
+                match_urls = {result.url}
+                if "://www.facebook.com" in result.url:
+                    match_urls.add(result.url.replace("://www.facebook.com", "://facebook.com"))
+                elif "://facebook.com" in result.url:
+                    match_urls.add(result.url.replace("://facebook.com", "://www.facebook.com"))
+                for u in list(match_urls):
+                    if u.endswith("/"):
+                        match_urls.add(u[:-1])
+                    else:
+                        match_urls.add(u + "/")
 
-                page, _ = FacebookPage.objects.update_or_create(
-                    user=job.user,
-                    url=result.url,
-                    defaults={
-                        "name": result.name,
-                        "followers": result.followers,
-                        "status": result.status,
-                    },
-                )
+                existing_page = FacebookPage.objects.filter(user=job.user, url__in=match_urls).first()
+                prev_followers = existing_page.followers if existing_page else 0
+                prev_name = existing_page.name if (existing_page and existing_page.name) else "Desconocido"
+
+                # Protect existing positive follower metric
+                if result.followers > 0:
+                    final_followers = result.followers
+                    final_name = result.name if result.name != "Desconocido" else prev_name
+                    final_status = result.status
+                else:
+                    if prev_followers > 0:
+                        final_followers = prev_followers
+                        final_name = prev_name if prev_name != "Desconocido" else result.name
+                        final_status = f"Alerta actualización: {result.status}" if result.status else "Error en actualización"
+                    else:
+                        final_followers = 0
+                        final_name = result.name
+                        final_status = result.status
+
+                if existing_page:
+                    page = existing_page
+                    page.name = final_name
+                    page.followers = final_followers
+                    page.status = final_status
+                    page.save(update_fields=["name", "followers", "status", "updated_at"])
+                else:
+                    page, _ = FacebookPage.objects.update_or_create(
+                        user=job.user,
+                        url=result.url,
+                        defaults={
+                            "name": final_name,
+                            "followers": final_followers,
+                            "status": final_status,
+                        },
+                    )
 
                 if result.followers > 0:
                     PageGrowthSnapshot.objects.create(
@@ -101,8 +134,8 @@ def _save_item_to_db(job_id: str, result: ExtractionResult):
                     job=job,
                     page=page,
                     url=result.url,
-                    name=result.name,
-                    followers=result.followers,
+                    name=final_name,
+                    followers=final_followers,
                     status=result.status,
                     is_success=result.is_success,
                 )
@@ -133,12 +166,12 @@ def _save_item_to_db(job_id: str, result: ExtractionResult):
         "item",
         {
             "id": page.id,
-            "item_id": item.id,
+            "item_id": item.id if item else None,
             "url": result.url,
-            "name": result.name,
-            "followers": result.followers,
+            "name": page.name if page else result.name,
+            "followers": page.followers if page else result.followers,
             "growth": growth_info,
-            "status": result.status,
+            "status": page.status if page else result.status,
             "is_success": result.is_success,
             "processed": job.processed_urls,
             "total": job.total_urls,
@@ -146,6 +179,11 @@ def _save_item_to_db(job_id: str, result: ExtractionResult):
             "failed": job.failed_urls,
         },
     )
+
+
+@sync_to_async
+def _save_item_to_db(job_id: str, result: ExtractionResult):
+    return save_item_to_db(job_id, result)
 
 
 @sync_to_async
@@ -168,12 +206,24 @@ def _update_job_status(job_id: str, status: str, error_message: str = ""):
 
 def _run_extraction_worker(job_id: str, urls: list[str], proxy_url: str | None = None):
     """Worker function to execute asynchronous scraping and DB persistence."""
-    try:
-        job = ExtractionJob.objects.get(id=job_id)
-        job.status = ExtractionJob.JobStatus.RUNNING
-        job.save(update_fields=["status"])
-    except ExtractionJob.DoesNotExist:
-        return
+    import time
+    from django.db import close_old_connections
+
+    max_retries = 5
+    job = None
+    for attempt in range(max_retries):
+        try:
+            close_old_connections()
+            job = ExtractionJob.objects.get(id=job_id)
+            job.status = ExtractionJob.JobStatus.RUNNING
+            job.save(update_fields=["status"])
+            break
+        except Exception as e:
+            if attempt < max_retries - 1:
+                time.sleep(0.1 * (2 ** attempt))
+                continue
+            logger.error(f"Failed to start extraction job {job_id}: {e}")
+            return
 
     async def async_main():
         async def on_item(res: ExtractionResult):
