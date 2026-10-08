@@ -674,7 +674,12 @@ function upsertTableRow(data) {
     const growth = data.growth || { formatted_delta: '0', formatted_pct: '0%', is_positive: false, is_negative: false };
 
     const rowHtml = `
-        <td class="text-center font-mono text-xs text-base-content/50 pl-4">${data.id || '-'}</td>
+        <td class="text-center pl-4 py-3.5">
+            <label class="cursor-pointer inline-flex items-center">
+                <input type="checkbox" class="checkbox checkbox-sm checkbox-primary rounded-md row-checkbox" value="${data.id || ''}" data-id="${data.id || ''}" onchange="onRowCheckboxChange()" />
+            </label>
+        </td>
+        <td class="text-center font-mono text-xs text-base-content/50">${data.id || '-'}</td>
         <td class="py-3.5">
             <div class="font-bold text-sm text-base-content tracking-tight">${escapeHtml(displayName)}</div>
             <a href="${escapeHtml(data.url)}" target="_blank" rel="noopener noreferrer" class="text-xs text-primary hover:underline font-mono opacity-80 inline-flex items-center gap-1 transition">
@@ -738,17 +743,26 @@ function upsertTableRow(data) {
     if (row) {
         row.innerHTML = rowHtml;
         row.className = 'fanpage-row hover:bg-base-200/30 transition-colors';
+        row.setAttribute('data-id', data.id || '');
         row.setAttribute('data-followers', data.followers || 0);
+        row.setAttribute('data-growth-delta', growth.delta || 0);
         row.setAttribute('data-has-growth', growth.is_positive ? 'true' : 'false');
+        row.setAttribute('data-status', isSuccess ? 'active' : 'alert');
     } else {
         row = document.createElement('tr');
         row.id = rowId;
         row.className = 'fanpage-row hover:bg-base-200/30 transition-colors';
+        row.setAttribute('data-id', data.id || '');
         row.setAttribute('data-followers', data.followers || 0);
+        row.setAttribute('data-growth-delta', growth.delta || 0);
         row.setAttribute('data-has-growth', growth.is_positive ? 'true' : 'false');
+        row.setAttribute('data-status', isSuccess ? 'active' : 'alert');
         row.innerHTML = rowHtml;
         tbody.insertBefore(row, tbody.firstChild);
     }
+
+    updateSelectAllState();
+    updateBulkDeleteButton();
 
     if (window.lucide) {
         lucide.createIcons();
@@ -1131,7 +1145,7 @@ function checkEmptyTable() {
 
     tbody.innerHTML = `
         <tr id="emptyTableMessage">
-            <td colspan="6" class="p-16 text-center text-base-content/50">
+            <td colspan="7" class="p-16 text-center text-base-content/50">
                 <div class="flex flex-col items-center justify-center gap-2.5">
                     <i data-lucide="inbox" class="w-12 h-12 text-base-content/30 mb-1"></i>
                     <div class="text-sm font-bold text-base-content">No hay fanpages registradas todavía</div>
@@ -1184,14 +1198,8 @@ function initSearchFilter() {
     const searchInput = document.getElementById('tableSearchInput');
     if (!searchInput) return;
 
-    searchInput.addEventListener('input', (e) => {
-        const term = e.target.value.toLowerCase().trim();
-        const rows = document.querySelectorAll('#pagesTableBody tr[id^="row-page-"], #pagesTableBody tr[id^="row-url-"]');
-
-        rows.forEach(row => {
-            const text = row.textContent.toLowerCase();
-            row.style.display = text.includes(term) ? '' : 'none';
-        });
+    searchInput.addEventListener('input', () => {
+        applyTableFiltersAndSort();
     });
 }
 
@@ -1348,29 +1356,272 @@ function closeExtractionModal() {
     }
 }
 
+// ----------------------------------------------------
+// Checkboxes & Bulk Delete Operations
+// ----------------------------------------------------
+function toggleSelectAllRows(isChecked) {
+    const visibleCheckboxes = document.querySelectorAll('#pagesTableBody tr.fanpage-row:not([style*="display: none"]) .row-checkbox');
+    visibleCheckboxes.forEach(cb => {
+        cb.checked = isChecked;
+    });
+    updateBulkDeleteButton();
+}
+
+function onRowCheckboxChange() {
+    updateSelectAllState();
+    updateBulkDeleteButton();
+}
+
+function updateSelectAllState() {
+    const selectAll = document.getElementById('selectAllCheckbox');
+    if (!selectAll) return;
+
+    const visibleCheckboxes = Array.from(document.querySelectorAll('#pagesTableBody tr.fanpage-row:not([style*="display: none"]) .row-checkbox'));
+    const checkedCount = visibleCheckboxes.filter(cb => cb.checked).length;
+
+    if (visibleCheckboxes.length === 0) {
+        selectAll.checked = false;
+        selectAll.indeterminate = false;
+    } else if (checkedCount === visibleCheckboxes.length) {
+        selectAll.checked = true;
+        selectAll.indeterminate = false;
+    } else if (checkedCount > 0) {
+        selectAll.checked = false;
+        selectAll.indeterminate = true;
+    } else {
+        selectAll.checked = false;
+        selectAll.indeterminate = false;
+    }
+}
+
+function updateBulkDeleteButton() {
+    const checked = Array.from(document.querySelectorAll('#pagesTableBody .row-checkbox:checked'));
+    const btn = document.getElementById('bulkDeleteBtn');
+    const badge = document.getElementById('selectedCountBadge');
+
+    if (btn) {
+        if (checked.length > 0) {
+            btn.disabled = false;
+            btn.classList.remove('opacity-50', 'cursor-not-allowed');
+            if (badge) {
+                badge.textContent = checked.length;
+                badge.classList.remove('hidden');
+            }
+        } else {
+            btn.disabled = true;
+            btn.classList.add('opacity-50', 'cursor-not-allowed');
+            if (badge) {
+                badge.classList.add('hidden');
+            }
+        }
+    }
+}
+
+function openBulkDeleteModal() {
+    const checked = Array.from(document.querySelectorAll('#pagesTableBody .row-checkbox:checked'));
+    if (!checked.length) return;
+
+    const countLabel = document.getElementById('bulkDeleteModalCountText');
+    if (countLabel) {
+        countLabel.textContent = `${checked.length} fanpage${checked.length > 1 ? 's' : ''} seleccionada${checked.length > 1 ? 's' : ''}`;
+    }
+
+    const modal = document.getElementById('bulkDeleteConfirmModal');
+    if (modal) {
+        modal.style.display = 'flex';
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        document.body.style.overflow = 'hidden';
+        if (window.lucide) lucide.createIcons();
+    }
+}
+
+function closeBulkDeleteModal() {
+    const modal = document.getElementById('bulkDeleteConfirmModal');
+    if (modal) {
+        modal.style.display = 'none';
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+        document.body.style.overflow = 'auto';
+    }
+}
+
+async function executeBulkDelete() {
+    const checked = Array.from(document.querySelectorAll('#pagesTableBody .row-checkbox:checked'));
+    const ids = checked.map(cb => parseInt(cb.value, 10)).filter(id => !isNaN(id) && id > 0);
+    if (!ids.length) return;
+
+    const btn = document.getElementById('confirmBulkDeleteBtn');
+    const text = document.getElementById('confirmBulkDeleteText');
+    if (btn) btn.disabled = true;
+    if (text) text.textContent = 'Eliminando...';
+
+    try {
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+        const res = await fetch('/extractor/api/pages/bulk-delete/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken,
+            },
+            body: JSON.stringify({ ids: ids })
+        });
+        const data = await res.json();
+        if (data.status === 'ok') {
+            ids.forEach(id => {
+                const row = document.getElementById(`row-page-${id}`);
+                if (row) row.remove();
+            });
+            checkEmptyTable();
+            refreshGlobalMetrics();
+            closeBulkDeleteModal();
+            updateSelectAllState();
+            updateBulkDeleteButton();
+            applyTableFiltersAndSort();
+            showToast(`${data.deleted_count || ids.length} fanpages eliminadas correctamente`, 'success');
+        } else {
+            showToast(data.message || 'Error al eliminar fanpages seleccionadas', 'error');
+        }
+    } catch (err) {
+        console.error('Error executing bulk delete:', err);
+        showToast('Error de conexión al eliminar las fanpages seleccionadas', 'error');
+    } finally {
+        if (btn) btn.disabled = false;
+        if (text) text.textContent = 'Eliminar Todas';
+    }
+}
+
+// ----------------------------------------------------
+// Unified Filters & Sorting Operations
+// ----------------------------------------------------
+function onFollowersSortChange() {
+    const folVal = document.getElementById('sortFollowersSelect')?.value || 'default';
+    const growthSelect = document.getElementById('sortGrowthSelect');
+    if (folVal !== 'default' && growthSelect && (growthSelect.value === 'desc' || growthSelect.value === 'asc')) {
+        growthSelect.value = 'default';
+    }
+    applyTableFiltersAndSort();
+}
+
+function onGrowthSortChange() {
+    const groVal = document.getElementById('sortGrowthSelect')?.value || 'default';
+    const folSelect = document.getElementById('sortFollowersSelect');
+    if ((groVal === 'desc' || groVal === 'asc') && folSelect) {
+        folSelect.value = 'default';
+    }
+    applyTableFiltersAndSort();
+}
+
+function applyTableFiltersAndSort() {
+    const tbody = document.getElementById('pagesTableBody');
+    if (!tbody) return;
+
+    const rows = Array.from(tbody.querySelectorAll('.fanpage-row'));
+    if (!rows.length) {
+        const countBadge = document.getElementById('tableCountBadge');
+        if (countBadge) countBadge.textContent = '0';
+        return;
+    }
+
+    const searchVal = (document.getElementById('tableSearchInput')?.value || '').toLowerCase().trim();
+    const statusVal = document.getElementById('filterStatusSelect')?.value || 'all';
+    const followersSort = document.getElementById('sortFollowersSelect')?.value || 'default';
+    const growthSort = document.getElementById('sortGrowthSelect')?.value || 'default';
+    const activeTab = document.querySelector('.pill-tab.tab-active')?.getAttribute('data-category') || 'all';
+
+    const visibleRows = [];
+
+    rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        const followers = parseFloat(row.getAttribute('data-followers')) || 0;
+        const growthDelta = parseFloat(row.getAttribute('data-growth-delta')) || 0;
+        const hasGrowth = row.getAttribute('data-has-growth') === 'true';
+        const rowStatus = row.getAttribute('data-status') || (followers > 0 ? 'active' : 'alert');
+
+        // 1. Text Search
+        const matchesSearch = !searchVal || text.includes(searchVal);
+
+        // 2. Tab Filter
+        let matchesTab = true;
+        if (activeTab === 'growth') matchesTab = hasGrowth;
+        else if (activeTab === 'major') matchesTab = followers >= 100000;
+
+        // 3. Status Filter ComboBox
+        let matchesStatus = true;
+        if (statusVal === 'active') matchesStatus = (rowStatus === 'active' || followers > 0);
+        else if (statusVal === 'alert') matchesStatus = (rowStatus === 'alert' || followers === 0);
+
+        // 4. Growth Filter ComboBox
+        let matchesGrowthFilter = true;
+        if (growthSort === 'positive') matchesGrowthFilter = hasGrowth;
+
+        if (matchesSearch && matchesTab && matchesStatus && matchesGrowthFilter) {
+            row.style.display = '';
+            visibleRows.push(row);
+        } else {
+            row.style.display = 'none';
+        }
+    });
+
+    // Sort visible rows
+    if (followersSort === 'desc') {
+        visibleRows.sort((a, b) => {
+            const fa = parseFloat(a.getAttribute('data-followers')) || 0;
+            const fb = parseFloat(b.getAttribute('data-followers')) || 0;
+            return fb - fa;
+        });
+    } else if (followersSort === 'asc') {
+        visibleRows.sort((a, b) => {
+            const fa = parseFloat(a.getAttribute('data-followers')) || 0;
+            const fb = parseFloat(b.getAttribute('data-followers')) || 0;
+            return fa - fb;
+        });
+    } else if (growthSort === 'desc') {
+        visibleRows.sort((a, b) => {
+            const ga = parseFloat(a.getAttribute('data-growth-delta')) || 0;
+            const gb = parseFloat(b.getAttribute('data-growth-delta')) || 0;
+            return gb - ga;
+        });
+    } else if (growthSort === 'asc') {
+        visibleRows.sort((a, b) => {
+            const ga = parseFloat(a.getAttribute('data-growth-delta')) || 0;
+            const gb = parseFloat(b.getAttribute('data-growth-delta')) || 0;
+            return ga - gb;
+        });
+    } else {
+        // Default sort by ID desc
+        visibleRows.sort((a, b) => {
+            const idA = parseInt(a.getAttribute('data-id') || 0, 10);
+            const idB = parseInt(b.getAttribute('data-id') || 0, 10);
+            return idB - idA;
+        });
+    }
+
+    // Re-append visible rows in sorted order
+    visibleRows.forEach(row => tbody.appendChild(row));
+
+    // Update count badge
+    const countBadge = document.getElementById('tableCountBadge');
+    if (countBadge) {
+        countBadge.textContent = visibleRows.length;
+    }
+
+    updateSelectAllState();
+    updateBulkDeleteButton();
+}
+
 function filterTableCategory(category, btn) {
     document.querySelectorAll('.pill-tab').forEach(el => {
         el.classList.remove('tab-active', 'bg-base-100', 'shadow-sm', 'text-primary', 'font-bold');
         el.classList.add('text-base-content/70');
+        el.removeAttribute('data-category');
     });
     if (btn) {
         btn.classList.add('tab-active', 'bg-base-100', 'shadow-sm', 'text-primary', 'font-bold');
         btn.classList.remove('text-base-content/70');
+        btn.setAttribute('data-category', category);
     }
-
-    const rows = document.querySelectorAll('.fanpage-row');
-    rows.forEach(row => {
-        const followers = parseFloat(row.getAttribute('data-followers')) || 0;
-        const hasGrowth = row.getAttribute('data-has-growth') === 'true';
-
-        if (category === 'all') {
-            row.style.display = '';
-        } else if (category === 'growth') {
-            row.style.display = hasGrowth ? '' : 'none';
-        } else if (category === 'major') {
-            row.style.display = followers >= 100000 ? '' : 'none';
-        }
-    });
+    applyTableFiltersAndSort();
 }
 
 function showToast(message, type = 'info') {
@@ -1460,11 +1711,22 @@ window.openDuplicateFanpagesModal = openDuplicateFanpagesModal;
 window.closeDuplicateFanpagesModal = closeDuplicateFanpagesModal;
 window.filterTableCategory = filterTableCategory;
 window.showToast = showToast;
+window.toggleSelectAllRows = toggleSelectAllRows;
+window.onRowCheckboxChange = onRowCheckboxChange;
+window.updateSelectAllState = updateSelectAllState;
+window.updateBulkDeleteButton = updateBulkDeleteButton;
+window.openBulkDeleteModal = openBulkDeleteModal;
+window.closeBulkDeleteModal = closeBulkDeleteModal;
+window.executeBulkDelete = executeBulkDelete;
+window.applyTableFiltersAndSort = applyTableFiltersAndSort;
+window.onFollowersSortChange = onFollowersSortChange;
+window.onGrowthSortChange = onGrowthSortChange;
 
 window.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
         closeExtractionModal();
         closeDeleteModal();
+        closeBulkDeleteModal();
         closeGrowthModal();
         closeDuplicateFanpagesModal();
     }
@@ -1474,6 +1736,9 @@ document.getElementById('newExtractionModal')?.addEventListener('click', (e) => 
 });
 document.getElementById('deleteConfirmModal')?.addEventListener('click', (e) => {
     if (e.target.id === 'deleteConfirmModal') closeDeleteModal();
+});
+document.getElementById('bulkDeleteConfirmModal')?.addEventListener('click', (e) => {
+    if (e.target.id === 'bulkDeleteConfirmModal') closeBulkDeleteModal();
 });
 document.getElementById('growthHistoryModal')?.addEventListener('click', (e) => {
     if (e.target.id === 'growthHistoryModal') closeGrowthModal();

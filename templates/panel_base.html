@@ -1,6 +1,6 @@
 {% load static %}
 <!DOCTYPE html>
-<html lang="es" data-theme="coffee">
+<html lang="es" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -69,11 +69,11 @@
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-    <!-- Theme Pre-loader Script (Evita parpadeo FOUC) -->
+    <!-- Theme Pre-loader Script (Modo claro por defecto) -->
     <script>
         (function() {
-            const savedTheme = localStorage.getItem('panel_theme') || 'coffee';
-            document.documentElement.setAttribute('data-theme', savedTheme);
+            localStorage.setItem('panel_theme', 'light');
+            document.documentElement.setAttribute('data-theme', 'light');
         })();
     </script>
 

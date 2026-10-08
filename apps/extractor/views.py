@@ -139,6 +139,44 @@ def delete_page_view(request, page_id):
 
 
 @login_required
+@require_http_methods(["POST"])
+def bulk_delete_pages_view(request):
+    """Deletes multiple selected Facebook pages owned by current user."""
+    if not _has_extractor_access(request.user):
+        return JsonResponse({"status": "error", "message": "Acceso denegado."}, status=403)
+
+    try:
+        data = json.loads(request.body.decode("utf-8")) if request.body else {}
+        page_ids = data.get("ids", [])
+    except Exception:
+        page_ids = request.POST.getlist("ids")
+
+    if not page_ids:
+        return JsonResponse({"status": "error", "message": "No se seleccionaron fanpages para eliminar."}, status=400)
+
+    from django.db.models import Q
+    if request.user.role == 'superadmin':
+        qs = FacebookPage.objects.filter(id__in=page_ids)
+    else:
+        qs = FacebookPage.objects.filter(id__in=page_ids).filter(Q(user=request.user) | Q(user__isnull=True))
+
+    deleted_count, _ = qs.delete()
+
+    pages = _get_user_pages(request.user)
+    total_pages = pages.filter(followers__gt=0).count()
+    total_followers = pages.filter(followers__gt=0).aggregate(total=Sum("followers"))["total"] or 0
+
+    return JsonResponse(
+        {
+            "status": "ok",
+            "deleted_count": deleted_count,
+            "total_pages": total_pages,
+            "total_followers": total_followers,
+        }
+    )
+
+
+@login_required
 def page_growth_history_api_view(request, page_id):
     """Returns historical growth snapshots for a given Facebook page."""
     if not _has_extractor_access(request.user):

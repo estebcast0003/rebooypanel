@@ -177,15 +177,15 @@
     <div class="flex flex-wrap items-center justify-between gap-4">
         <!-- Segmented Tabs -->
         <div class="tabs tabs-boxed bg-base-200/80 border border-base-300/60 p-1 rounded-xl">
-            <button type="button" class="tab tab-sm rounded-lg text-xs font-semibold gap-1.5 transition-all tab-active bg-base-100 shadow-sm text-primary font-bold pill-tab active" onclick="filterTableCategory('all', this)">
+            <button type="button" class="tab tab-sm rounded-lg text-xs font-semibold gap-1.5 transition-all tab-active bg-base-100 shadow-sm text-primary font-bold pill-tab active" data-category="all" onclick="filterTableCategory('all', this)">
                 <i data-lucide="layout-grid" class="w-3.5 h-3.5"></i>
                 Todos
             </button>
-            <button type="button" class="tab tab-sm rounded-lg text-xs font-semibold gap-1.5 transition-all text-base-content/70 hover:text-base-content pill-tab" onclick="filterTableCategory('growth', this)">
+            <button type="button" class="tab tab-sm rounded-lg text-xs font-semibold gap-1.5 transition-all text-base-content/70 hover:text-base-content pill-tab" data-category="growth" onclick="filterTableCategory('growth', this)">
                 <i data-lucide="trending-up" class="w-3.5 h-3.5 text-success"></i>
                 Con Crecimiento
             </button>
-            <button type="button" class="tab tab-sm rounded-lg text-xs font-semibold gap-1.5 transition-all text-base-content/70 hover:text-base-content pill-tab" onclick="filterTableCategory('major', this)">
+            <button type="button" class="tab tab-sm rounded-lg text-xs font-semibold gap-1.5 transition-all text-base-content/70 hover:text-base-content pill-tab" data-category="major" onclick="filterTableCategory('major', this)">
                 <i data-lucide="zap" class="w-3.5 h-3.5 text-warning"></i>
                 Audiencia (+100K)
             </button>
@@ -211,10 +211,35 @@
                 <span id="tableCountBadge" class="badge badge-neutral badge-md font-mono font-bold px-2.5">{{ pages.count }}</span>
             </div>
 
-            <div class="flex items-center gap-2">
-                <button type="button" class="btn btn-ghost btn-xs gap-1.5 border border-base-300 hover:border-primary rounded-lg font-medium text-xs h-8 px-2.5 text-base-content/75" onclick="openExtractionModal()">
-                    <i data-lucide="plus" class="w-3.5 h-3.5 text-primary"></i>
-                    Agregar URLs
+            <!-- Toolbar Derecha: Filtros ComboBox & Botón Eliminar Seleccionados -->
+            <div class="flex items-center flex-wrap gap-2">
+                <!-- ComboBox: Estado -->
+                <select id="filterStatusSelect" class="select select-bordered select-xs h-8 text-xs rounded-lg bg-base-100 border-base-300 font-medium focus:border-primary" onchange="applyTableFiltersAndSort()" title="Filtrar por estado">
+                    <option value="all">Estado: Todos</option>
+                    <option value="active">Activas</option>
+                    <option value="alert">Con alerta / error</option>
+                </select>
+
+                <!-- ComboBox: Seguidores -->
+                <select id="sortFollowersSelect" class="select select-bordered select-xs h-8 text-xs rounded-lg bg-base-100 border-base-300 font-medium focus:border-primary" onchange="onFollowersSortChange()" title="Filtrar u ordenar por seguidores">
+                    <option value="default">Seguidores: Por defecto</option>
+                    <option value="desc">Seguidores: Mayor a menor (Desc)</option>
+                    <option value="asc">Seguidores: Menor a mayor (Asc)</option>
+                </select>
+
+                <!-- ComboBox: Crecimiento -->
+                <select id="sortGrowthSelect" class="select select-bordered select-xs h-8 text-xs rounded-lg bg-base-100 border-base-300 font-medium focus:border-primary" onchange="onGrowthSortChange()" title="Filtrar u ordenar por crecimiento">
+                    <option value="default">Crecimiento: Por defecto</option>
+                    <option value="desc">Crecimiento: Mayor a menor (Desc)</option>
+                    <option value="asc">Crecimiento: Menor a mayor (Asc)</option>
+                    <option value="positive">Solo con crecimiento (+)</option>
+                </select>
+
+                <!-- Botón Eliminar Seleccionados -->
+                <button type="button" id="bulkDeleteBtn" class="btn btn-error btn-xs h-8 px-3 rounded-lg text-xs font-semibold gap-1.5 opacity-50 cursor-not-allowed shadow-xs transition-all text-white" disabled onclick="openBulkDeleteModal()" title="Eliminar filas seleccionadas">
+                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                    <span>Eliminar</span>
+                    <span id="selectedCountBadge" class="badge badge-xs bg-black/20 text-white font-mono font-bold hidden">0</span>
                 </button>
             </div>
         </div>
@@ -238,7 +263,12 @@
             <table class="table table-zebra w-full">
                 <thead>
                     <tr class="bg-base-200/50 border-b border-base-300 text-[11px] font-bold uppercase tracking-wider text-base-content/50">
-                        <th class="w-12 text-center py-4 pl-4">#</th>
+                        <th class="w-10 text-center py-4 pl-4">
+                            <label class="cursor-pointer inline-flex items-center">
+                                <input type="checkbox" id="selectAllCheckbox" class="checkbox checkbox-sm checkbox-primary rounded-md" onchange="toggleSelectAllRows(this.checked)" title="Seleccionar todas las visibles" />
+                            </label>
+                        </th>
+                        <th class="w-12 text-center py-4">#</th>
                         <th>Fanpage</th>
                         <th class="text-right">Seguidores</th>
                         <th class="text-center">Crecimiento</th>
@@ -248,8 +278,19 @@
                 </thead>
                 <tbody id="pagesTableBody" class="text-sm">
                     {% for page in pages %}
-                    <tr id="row-page-{{ page.id }}" class="fanpage-row hover:bg-base-200/30 transition-colors" data-followers="{{ page.followers }}" data-has-growth="{% if page.growth_data.is_positive %}true{% else %}false{% endif %}">
-                        <td class="text-center font-mono text-xs text-base-content/50 pl-4">{{ page.id }}</td>
+                    <tr id="row-page-{{ page.id }}"
+                        class="fanpage-row hover:bg-base-200/30 transition-colors"
+                        data-id="{{ page.id }}"
+                        data-followers="{{ page.followers }}"
+                        data-growth-delta="{{ page.growth_data.delta }}"
+                        data-has-growth="{% if page.growth_data.is_positive %}true{% else %}false{% endif %}"
+                        data-status="{% if page.followers > 0 %}active{% else %}alert{% endif %}">
+                        <td class="text-center pl-4 py-3.5">
+                            <label class="cursor-pointer inline-flex items-center">
+                                <input type="checkbox" class="checkbox checkbox-sm checkbox-primary rounded-md row-checkbox" value="{{ page.id }}" data-id="{{ page.id }}" onchange="onRowCheckboxChange()" />
+                            </label>
+                        </td>
+                        <td class="text-center font-mono text-xs text-base-content/50">{{ page.id }}</td>
                         <td class="py-3.5">
                             <div class="font-bold text-sm text-base-content tracking-tight">{{ page.name }}</div>
                             <a href="{{ page.url }}" target="_blank" rel="noopener noreferrer" class="text-xs text-primary hover:underline font-mono opacity-80 inline-flex items-center gap-1 transition">
@@ -309,7 +350,7 @@
                     </tr>
                     {% empty %}
                     <tr id="emptyTableMessage">
-                        <td colspan="6" class="p-16 text-center text-base-content/50">
+                        <td colspan="7" class="p-16 text-center text-base-content/50">
                             <div class="flex flex-col items-center justify-center gap-2.5">
                                 <i data-lucide="inbox" class="w-12 h-12 text-base-content/30 mb-1"></i>
                                 <div class="text-sm font-bold text-base-content">No hay fanpages registradas todavía</div>
@@ -553,6 +594,29 @@
             <button type="button" id="confirmDeleteBtn" class="btn btn-error btn-sm text-white flex-1 rounded-xl text-xs font-semibold gap-1.5 shadow-xs" onclick="executeDeletePage()">
                 <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
                 <span id="confirmDeleteText">Eliminar</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ═════════ MODAL: CONFIRMAR ELIMINACIÓN MASIVA ═════════ -->
+<div id="bulkDeleteConfirmModal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-md hidden items-center justify-center p-4">
+    <div class="card bg-base-100 shadow-2xl border border-base-300 w-full max-w-sm p-6 rounded-2xl text-center">
+        <div class="w-12 h-12 rounded-2xl bg-error/10 text-error border border-error/20 flex items-center justify-center mx-auto mb-3.5">
+            <i data-lucide="trash-2" class="w-5 h-5"></i>
+        </div>
+        
+        <h3 class="text-base font-bold text-base-content mb-1">¿Eliminar Fanpages Seleccionadas?</h3>
+        <p id="bulkDeleteModalCountText" class="text-xs text-base-content/75 font-semibold mb-2">0 fanpages seleccionadas</p>
+        <p class="text-xs text-base-content/60 leading-relaxed mb-6">
+            Esta acción eliminará de forma permanente todas las fanpages seleccionadas y su historial de métricas.
+        </p>
+
+        <div class="flex justify-end gap-2.5">
+            <button type="button" class="btn btn-ghost btn-sm flex-1 rounded-xl border border-base-300 text-xs font-semibold" onclick="closeBulkDeleteModal()">Cancelar</button>
+            <button type="button" id="confirmBulkDeleteBtn" class="btn btn-error btn-sm text-white flex-1 rounded-xl text-xs font-semibold gap-1.5 shadow-xs" onclick="executeBulkDelete()">
+                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                <span id="confirmBulkDeleteText">Eliminar Todas</span>
             </button>
         </div>
     </div>
@@ -885,7 +949,12 @@
         const growth = data.growth || { formatted_delta: '0', formatted_pct: '0%', is_positive: false, is_negative: false };
 
         const rowHtml = `
-            <td class="text-center font-mono text-xs text-base-content/50 pl-4">${data.id || '-'}</td>
+            <td class="text-center pl-4 py-3.5">
+                <label class="cursor-pointer inline-flex items-center">
+                    <input type="checkbox" class="checkbox checkbox-sm checkbox-primary rounded-md row-checkbox" value="${data.id || ''}" data-id="${data.id || ''}" onchange="onRowCheckboxChange()" />
+                </label>
+            </td>
+            <td class="text-center font-mono text-xs text-base-content/50">${data.id || '-'}</td>
             <td class="py-3.5">
                 <div class="font-bold text-sm text-base-content tracking-tight">${escapeHtml(displayName)}</div>
                 <a href="${escapeHtml(data.url)}" target="_blank" rel="noopener noreferrer" class="text-xs text-primary hover:underline font-mono opacity-80 inline-flex items-center gap-1 transition">
@@ -933,6 +1002,48 @@
                         <i data-lucide="line-chart" class="w-3.5 h-3.5 text-success"></i>
                         Historial
                     </button>
+                    ` : ''}
+                    <a href="${escapeHtml(data.url)}" target="_blank" rel="noopener noreferrer" class="btn btn-ghost btn-square btn-xs border border-base-300 hover:border-primary hover:bg-primary/10 hover:text-primary rounded-lg h-8 w-8 text-base-content/75 transition-all" title="Abrir en Facebook">
+                        <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+                    </a>
+                    ${data.id ? `
+                    <button type="button" onclick="openDeleteModal(${data.id}, '${escapeHtml(displayName).replace(/'/g, "\\'")}')" class="btn btn-ghost btn-square btn-xs border border-base-300 hover:border-error hover:bg-error/10 hover:text-error rounded-lg h-8 w-8 text-base-content/75 transition-all" title="Eliminar fila">
+                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                    </button>
+                    ` : ''}
+                </div>
+            </td>
+        `;
+
+        if (row) {
+            row.innerHTML = rowHtml;
+            row.className = 'fanpage-row hover:bg-base-200/30 transition-colors';
+            row.setAttribute('data-id', data.id || '');
+            row.setAttribute('data-followers', data.followers || 0);
+            row.setAttribute('data-growth-delta', growth.delta || 0);
+            row.setAttribute('data-has-growth', growth.is_positive ? 'true' : 'false');
+            row.setAttribute('data-status', isSuccess ? 'active' : 'alert');
+        } else {
+            row = document.createElement('tr');
+            row.id = rowId;
+            row.className = 'fanpage-row hover:bg-base-200/30 transition-colors';
+            row.setAttribute('data-id', data.id || '');
+            row.setAttribute('data-followers', data.followers || 0);
+            row.setAttribute('data-growth-delta', growth.delta || 0);
+            row.setAttribute('data-has-growth', growth.is_positive ? 'true' : 'false');
+            row.setAttribute('data-status', isSuccess ? 'active' : 'alert');
+            row.innerHTML = rowHtml;
+            tbody.insertBefore(row, tbody.firstChild);
+        }
+
+        if (typeof updateSelectAllState === 'function') updateSelectAllState();
+        if (typeof updateBulkDeleteButton === 'function') updateBulkDeleteButton();
+        if (typeof applyTableFiltersAndSort === 'function') applyTableFiltersAndSort();
+
+        if (window.lucide) {
+            lucide.createIcons();
+        }
+    }
                     ` : ''}
                     <a href="${escapeHtml(data.url)}" target="_blank" rel="noopener noreferrer" class="btn btn-ghost btn-square btn-xs border border-base-300 hover:border-primary hover:bg-primary/10 hover:text-primary rounded-lg h-8 w-8 text-base-content/75 transition-all" title="Abrir en Facebook">
                         <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
@@ -1385,6 +1496,9 @@
                     row.remove();
                     if (typeof checkEmptyTable === 'function') checkEmptyTable();
                 }
+                if (typeof updateSelectAllState === 'function') updateSelectAllState();
+                if (typeof updateBulkDeleteButton === 'function') updateBulkDeleteButton();
+                if (typeof applyTableFiltersAndSort === 'function') applyTableFiltersAndSort();
                 if (typeof refreshGlobalMetrics === 'function') refreshGlobalMetrics();
                 closeDeleteModal();
                 showToast('Fanpage eliminada correctamente', 'success');
@@ -1404,25 +1518,16 @@
         document.querySelectorAll('.pill-tab').forEach(el => {
             el.classList.remove('tab-active', 'bg-base-100', 'shadow-sm', 'text-primary', 'font-bold');
             el.classList.add('text-base-content/70');
+            el.removeAttribute('data-category');
         });
         if (btn) {
             btn.classList.add('tab-active', 'bg-base-100', 'shadow-sm', 'text-primary', 'font-bold');
             btn.classList.remove('text-base-content/70');
+            btn.setAttribute('data-category', category);
         }
-
-        const rows = document.querySelectorAll('.fanpage-row');
-        rows.forEach(row => {
-            const followers = parseFloat(row.getAttribute('data-followers')) || 0;
-            const hasGrowth = row.getAttribute('data-has-growth') === 'true';
-
-            if (category === 'all') {
-                row.style.display = '';
-            } else if (category === 'growth') {
-                row.style.display = hasGrowth ? '' : 'none';
-            } else if (category === 'major') {
-                row.style.display = followers >= 100000 ? '' : 'none';
-            }
-        });
+        if (typeof applyTableFiltersAndSort === 'function') {
+            applyTableFiltersAndSort();
+        }
     }
 
     // Toast DaisyUI Flotante
@@ -1454,6 +1559,7 @@
         if (e.key === 'Escape') {
             closeExtractionModal();
             closeDeleteModal();
+            if (typeof closeBulkDeleteModal === 'function') closeBulkDeleteModal();
             closeGrowthModal();
             closeDuplicateFanpagesModal();
         }
@@ -1465,6 +1571,9 @@
     document.getElementById('deleteConfirmModal')?.addEventListener('click', (e) => {
         if (e.target.id === 'deleteConfirmModal') closeDeleteModal();
     });
+    document.getElementById('bulkDeleteConfirmModal')?.addEventListener('click', (e) => {
+        if (e.target.id === 'bulkDeleteConfirmModal' && typeof closeBulkDeleteModal === 'function') closeBulkDeleteModal();
+    });
     document.getElementById('growthHistoryModal')?.addEventListener('click', (e) => {
         if (e.target.id === 'growthHistoryModal') closeGrowthModal();
     });
@@ -1472,6 +1581,16 @@
         if (e.target.id === 'duplicateFanpagesModal') closeDuplicateFanpagesModal();
     });
 
+    window.openBulkDeleteModal = openBulkDeleteModal;
+    window.closeBulkDeleteModal = closeBulkDeleteModal;
+    window.executeBulkDelete = executeBulkDelete;
+    window.toggleSelectAllRows = toggleSelectAllRows;
+    window.onRowCheckboxChange = onRowCheckboxChange;
+    window.updateSelectAllState = updateSelectAllState;
+    window.updateBulkDeleteButton = updateBulkDeleteButton;
+    window.applyTableFiltersAndSort = applyTableFiltersAndSort;
+    window.onFollowersSortChange = onFollowersSortChange;
+    window.onGrowthSortChange = onGrowthSortChange;
     window.openGrowthModal = openGrowthModal;
     window.closeGrowthModal = closeGrowthModal;
     window.openDeleteModal = openDeleteModal;

@@ -1,6 +1,6 @@
 {% load static %}
 <!DOCTYPE html>
-<html lang="es" data-theme="coffee">
+<html lang="es" data-theme="latte">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -57,15 +57,11 @@
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-    <!-- Preloader de Tema: Migra de 'dark' viejo a 'coffee' automáticamente -->
+    <!-- Preloader de Tema: Establece modo claro (latte) por defecto -->
     <script>
         (function() {
-            let savedTheme = localStorage.getItem('panel_theme');
-            if (!savedTheme || savedTheme === 'dark') {
-                savedTheme = 'coffee';
-                localStorage.setItem('panel_theme', 'coffee');
-            }
-            document.documentElement.setAttribute('data-theme', savedTheme);
+            localStorage.setItem('panel_theme', 'latte');
+            document.documentElement.setAttribute('data-theme', 'latte');
         })();
     </script>
 
@@ -193,12 +189,6 @@
 
             <!-- Acciones Topbar -->
             <div class="flex items-center gap-2">
-                <!-- Theme Switcher (Coffee 🌙 / Latte ☀️) -->
-                <button type="button" class="btn btn-ghost btn-circle btn-sm" onclick="toggleTheme()" title="Cambiar Tema (Coffee / Latte)">
-                    <i data-lucide="moon" id="themeIconMoon" class="w-4 h-4"></i>
-                    <i data-lucide="sun" id="themeIconSun" class="w-4 h-4 hidden"></i>
-                </button>
-
                 <!-- Menú de Usuario Dropdown DaisyUI -->
                 <div class="dropdown dropdown-end">
                     <button tabindex="0" class="btn btn-ghost btn-circle avatar placeholder btn-sm">
@@ -384,32 +374,8 @@
 {% block modals %}{% endblock %}
 
 <script>
-    function toggleTheme() {
-        const currentTheme = document.documentElement.getAttribute('data-theme') || 'coffee';
-        const newTheme = currentTheme === 'coffee' ? 'latte' : 'coffee';
-        document.documentElement.setAttribute('data-theme', newTheme);
-        localStorage.setItem('panel_theme', newTheme);
-        updateThemeIcons(newTheme);
-    }
-
-    function updateThemeIcons(theme) {
-        const isCoffee = theme === 'coffee';
-        const moon = document.getElementById('themeIconMoon');
-        const sun = document.getElementById('themeIconSun');
-        if (moon && sun) {
-            if (isCoffee) {
-                moon.classList.remove('hidden');
-                sun.classList.add('hidden');
-            } else {
-                moon.classList.add('hidden');
-                sun.classList.remove('hidden');
-            }
-        }
-    }
-
     document.addEventListener('DOMContentLoaded', () => {
-        const currentTheme = document.documentElement.getAttribute('data-theme') || 'coffee';
-        updateThemeIcons(currentTheme);
+        document.documentElement.setAttribute('data-theme', 'latte');
         if (window.lucide) {
             lucide.createIcons();
         }

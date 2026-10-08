@@ -41,3 +41,20 @@ class ExtractorViewsTestCase(TestCase):
         data = response.json()
         self.assertEqual(data['status'], 'ok')
         self.assertEqual(data['current_followers'], 5000)
+
+    def test_bulk_delete_pages_view(self):
+        p1 = FacebookPage.objects.create(user=self.user, url='https://facebook.com/del1', name='Del 1', followers=100)
+        p2 = FacebookPage.objects.create(user=self.user, url='https://facebook.com/del2', name='Del 2', followers=200)
+        p3 = FacebookPage.objects.create(user=self.user, url='https://facebook.com/keep3', name='Keep 3', followers=300)
+
+        response = self.client.post(
+            '/extractor/api/pages/bulk-delete/',
+            data=json.dumps({'ids': [p1.id, p2.id]}),
+            content_type='application/json'
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data['status'], 'ok')
+        self.assertEqual(data['deleted_count'], 2)
+        self.assertFalse(FacebookPage.objects.filter(id__in=[p1.id, p2.id]).exists())
+        self.assertTrue(FacebookPage.objects.filter(id=p3.id).exists())

@@ -14,6 +14,7 @@ urlpatterns = [
     path("api/scheduler/trigger/", views.trigger_scheduler_now_api_view, name="scheduler_trigger"),
     path("api/save-cache/", views.save_cache_view, name="save_cache"),
     path("api/page/<int:page_id>/delete/", views.delete_page_view, name="delete_page"),
+    path("api/pages/bulk-delete/", views.bulk_delete_pages_view, name="bulk_delete_pages"),
     path("api/page/<int:page_id>/history/", views.page_growth_history_api_view, name="page_growth_history"),
     path("api/pages/clear/", views.clear_all_pages_view, name="clear_pages"),
     path("api/stats/", views.get_stats_api_view, name="stats"),
