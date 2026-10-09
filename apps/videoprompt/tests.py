@@ -1,4 +1,5 @@
 from unittest.mock import patch, MagicMock
+import json
 
 from django.test import TestCase, Client
 from django.urls import reverse
@@ -58,8 +59,8 @@ class VideoStudioViewsTests(TestCase):
         self.assertIn("quota", response.context)
         self.assertEqual(response.context["quota"]["limit"], 1)
 
-    @patch("videoprompt.views.threading.Thread")
-    def test_generate_prompt_ajax_exceeds_quota(self, mock_thread):
+    @patch("videoprompt.views.dispatch_videoprompt_task")
+    def test_generate_prompt_ajax_exceeds_quota(self, mock_dispatch):
         self.client.login(username="studiouser", password="password123")
         # Consume the 1 allowed prompt
         VideoPrompt.objects.create(user=self.user, video_url="https://example.com/video1.mp4")
@@ -72,10 +73,10 @@ class VideoStudioViewsTests(TestCase):
         data = response.json()
         self.assertEqual(data["status"], "error")
         self.assertIn("Has alcanzado tu límite diario", data["message"])
-        mock_thread.assert_not_called()
+        mock_dispatch.assert_not_called()
 
-    @patch("videoprompt.views.threading.Thread")
-    def test_generate_prompt_ajax_missing_url(self, mock_thread):
+    @patch("videoprompt.views.dispatch_videoprompt_task")
+    def test_generate_prompt_ajax_missing_url(self, mock_dispatch):
         self.client.login(username="studiouser", password="password123")
         response = self.client.post(
             reverse("videoprompt:generate_prompt_ajax"),
@@ -85,10 +86,10 @@ class VideoStudioViewsTests(TestCase):
         data = response.json()
         self.assertEqual(data["status"], "error")
         self.assertIn("ingresa un enlace de video válido", data["message"])
-        mock_thread.assert_not_called()
+        mock_dispatch.assert_not_called()
 
-    @patch("videoprompt.views.threading.Thread")
-    def test_generate_prompt_ajax_success(self, mock_thread):
+    @patch("videoprompt.views.dispatch_videoprompt_task")
+    def test_generate_prompt_ajax_success(self, mock_dispatch):
         self.client.login(username="studiouser", password="password123")
         response = self.client.post(
             reverse("videoprompt:generate_prompt_ajax"),
@@ -108,4 +109,46 @@ class VideoStudioViewsTests(TestCase):
         self.assertEqual(created_prompt.user, self.user)
         self.assertEqual(created_prompt.video_url, "https://example.com/valid_video.mp4")
         self.assertEqual(created_prompt.status, "pending")
-        mock_thread.assert_called_once()
+        mock_dispatch.assert_called_once_with(created_prompt.id)
+
+
+class CeleryTaskVideoPromptTests(TestCase):
+    """
+    Tests for process_video_task in Celery worker.
+    """
+
+    def setUp(self):
+        self.user = CustomUser.objects.create_user(username="celeryuser", password="password123")
+
+    def test_process_video_task_nonexistent_record(self):
+        from videoprompt.tasks import process_video_task
+        result = process_video_task(999999)
+        self.assertEqual(result["status"], "error")
+
+    @patch("videoprompt.tasks.upload_and_analyze_video")
+    @patch("videoprompt.tasks.extract_video_thumbnail", return_value=False)
+    @patch("videoprompt.tasks.download_video_from_url")
+    def test_process_video_task_url_success(self, mock_download, mock_thumb, mock_analyze):
+        from videoprompt.tasks import process_video_task
+
+        prompt = VideoPrompt.objects.create(
+            user=self.user,
+            video_url="https://example.com/test.mp4",
+            status="pending"
+        )
+
+        mock_download.return_value = ("/fake/path.mp4", {"views": 100, "likes": 10, "comments": 2, "uploader": "test_chan", "duration": 15.0})
+        mock_analyze.return_value = json.dumps({
+            "style": {"visual_texture": "film"},
+            "cinematography": {"camera": "static"},
+            "scenes": [],
+            "full_prompt_markdown": "### Style\n* **Visual Texture:** film"
+        })
+
+        res = process_video_task(prompt.id)
+        self.assertEqual(res["status"], "completed")
+
+        prompt.refresh_from_db()
+        self.assertEqual(prompt.status, "completed")
+        self.assertEqual(prompt.views_count, 100)
+        self.assertIn("film", prompt.generated_prompt)

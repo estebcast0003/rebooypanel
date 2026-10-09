@@ -1,137 +1,41 @@
 import os
 import json
+import logging
 import threading
-import subprocess
+from django.conf import settings
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
-from django.db import close_old_connections
 from .models import VideoPrompt
-from .services.video_handler import handle_local_upload, download_video_from_url, extract_video_thumbnail, VideoValidationError
-from .services.gemini_client import upload_and_analyze_video
+from .services.video_handler import handle_local_upload, VideoValidationError
+from .tasks import process_video_task, normalize_markdown_formatting
+
+logger = logging.getLogger(__name__)
 
 
 def is_superadmin(user):
     return user.is_authenticated and user.role == 'superadmin'
 
 
-def normalize_markdown_formatting(text: str) -> str:
-    """Restores multi-line markdown headers and bullet points if LLM output collapsed into a single line."""
-    if not text:
-        return ""
-    if "\n" not in text or text.count("\n") < 5:
-        import re
-        t = text
-        t = re.sub(r"\s*###\s+", "\n\n### ", t)
-        t = re.sub(r"\s*---\s*", "\n\n---\n\n", t)
-        t = re.sub(r"\s*\*\s+\*\*", "\n* **", t)
-        t = re.sub(r"\s*\*\*(Scene\s+\d+[^*]*?)\*\*\s*", r"\n\n**\1**\n", t)
-        t = re.sub(r"\s*\*\*Actions:?\*\*\s*", "\n\n**Actions:**\n", t)
-        t = re.sub(r"\s*\*\*Dialogue:?\*\*\s*", "\n\n**Dialogue:**\n", t)
-        t = re.sub(r"\s*\*\*Background Sound:?\*\*\s*", "\n\n**Background Sound:**\n", t)
-        return t.strip()
-    return text
-
-
-def process_video_background(prompt_id, input_type, video_url, local_video_path, additional_context, prompt_language):
+def dispatch_videoprompt_task(prompt_id: int):
     """
-    Procesamiento en segundo plano: descarga si es URL, genera thumbnail, transcodifica y analiza con Gemini.
+    Dispatches Celery background worker task if Celery is enabled,
+    falling back gracefully to local thread if broker is unreachable.
     """
-    close_old_connections()
-    
-    try:
-        prompt_record = VideoPrompt.objects.get(pk=prompt_id)
-    except VideoPrompt.DoesNotExist:
-        close_old_connections()
-        return
-
-    prompt_record.status = 'processing'
-    prompt_record.save(update_fields=['status'])
-    
-    temp_video_path = local_video_path
-    
-    try:
-        # 1. Descargar video si viene por URL y extraer metadata
-        if input_type == 'link':
-            temp_video_path, meta = download_video_from_url(video_url)
-            if meta:
-                prompt_record.views_count = meta.get('views')
-                prompt_record.likes_count = meta.get('likes')
-                prompt_record.comments_count = meta.get('comments')
-                prompt_record.upload_date = meta.get('upload_date')
-                prompt_record.uploader_name = meta.get('uploader')
-                prompt_record.duration_seconds = meta.get('duration')
-                prompt_record.save(update_fields=['views_count', 'likes_count', 'comments_count', 'upload_date', 'uploader_name', 'duration_seconds'])
-            
-        # 2. Generar thumbnail con OpenCV / FFmpeg
-        if temp_video_path and os.path.exists(temp_video_path):
-            try:
-                thumbnail_name = f"thumb_{prompt_record.id}.jpg"
-                thumbnail_dir = os.path.join(settings.MEDIA_ROOT, 'thumbnails')
-                os.makedirs(thumbnail_dir, exist_ok=True)
-                thumbnail_path = os.path.join(thumbnail_dir, thumbnail_name)
-                
-                # Intentar con OpenCV
-                success = extract_video_thumbnail(temp_video_path, thumbnail_path)
-                
-                # Fallback con FFmpeg si OpenCV no pudo
-                if not success or not os.path.exists(thumbnail_path):
-                    cmd = [
-                        'ffmpeg',
-                        '-y',
-                        '-ss', '00:00:00.500',
-                        '-i', temp_video_path,
-                        '-vframes', '1',
-                        '-q:v', '2',
-                        thumbnail_path
-                    ]
-                    subprocess.run(cmd, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
-                
-                if os.path.exists(thumbnail_path) and os.path.getsize(thumbnail_path) > 1024:
-                    prompt_record.thumbnail = f"thumbnails/{thumbnail_name}"
-                    prompt_record.save(update_fields=['thumbnail'])
-                elif os.path.exists(thumbnail_path):
-                    # File exists but too small — likely corrupt, remove it
-                    os.remove(thumbnail_path)
-            except Exception as thumb_err:
-                print("Thumbnail extraction error:", thumb_err)
-                
-        # 3. Análisis con Gemini IA
-        raw_json_result = upload_and_analyze_video(
-            file_path=temp_video_path,
-            additional_context=additional_context,
-            language=prompt_language
-        )
-        
-        # Validar formato JSON
+    if getattr(settings, 'USE_CELERY', True):
         try:
-            if isinstance(raw_json_result, str):
-                parsed = json.loads(raw_json_result)
-                if isinstance(parsed, dict) and 'full_prompt_markdown' in parsed:
-                    parsed['full_prompt_markdown'] = normalize_markdown_formatting(parsed['full_prompt_markdown'])
-                    raw_json_result = json.dumps(parsed, ensure_ascii=False)
-            prompt_record.generated_prompt = raw_json_result
-        except json.JSONDecodeError:
-            fallback_data = {
-                "style": {"visual_texture": "Cinematográfica", "lighting_quality": "Natural", "color_palette": "Orgánica", "atmosphere": "Inmersiva"},
-                "cinematography": {"camera": "Dinámica", "lens": "Estándar", "lighting": "Equilibrada", "mood": "Realista"},
-                "scenes": [],
-                "full_prompt_markdown": normalize_markdown_formatting(raw_json_result)
-            }
-            prompt_record.generated_prompt = json.dumps(fallback_data, ensure_ascii=False)
-            
-        prompt_record.status = 'completed'
-        prompt_record.error_message = ''
-        prompt_record.save(update_fields=['status', 'generated_prompt', 'error_message'])
-        
-    except Exception as e:
-        prompt_record.status = 'failed'
-        prompt_record.error_message = str(e)
-        prompt_record.save(update_fields=['status', 'error_message'])
-    finally:
-        close_old_connections()
+            return process_video_task.delay(prompt_id)
+        except Exception as e:
+            logger.warning(f"Celery dispatch failed for VideoPrompt #{prompt_id} ({e}), running local thread fallback.")
+
+    def fallback_worker():
+        process_video_task(prompt_id)
+
+    thread = threading.Thread(target=fallback_worker, daemon=True)
+    thread.start()
+    return None
 
 
 @login_required
@@ -217,13 +121,8 @@ def generate_prompt_ajax(request):
         else:
             return JsonResponse({'status': 'error', 'message': 'Tipo de entrada no válido.'}, status=400)
             
-        # Iniciar procesamiento en background
-        thread = threading.Thread(
-            target=process_video_background,
-            args=(prompt_record.id, input_type, video_url, local_video_path, additional_context, prompt_language)
-        )
-        thread.daemon = True
-        thread.start()
+        # Iniciar procesamiento en background via Celery
+        dispatch_videoprompt_task(prompt_record.id)
         
         return JsonResponse({
             'status': 'success',
@@ -307,12 +206,7 @@ def retry_prompt_ajax(request, pk):
     prompt_record.error_message = ''
     prompt_record.save(update_fields=['status', 'error_message'])
     
-    thread = threading.Thread(
-        target=process_video_background,
-        args=(prompt_record.id, input_type, prompt_record.video_url, local_path, prompt_record.additional_context, prompt_record.prompt_language)
-    )
-    thread.daemon = True
-    thread.start()
+    dispatch_videoprompt_task(prompt_record.id)
     
     return JsonResponse({'status': 'success', 'message': 'Reintento iniciado.'})
 
