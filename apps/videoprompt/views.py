@@ -15,10 +15,6 @@ from .tasks import process_video_task, normalize_markdown_formatting
 logger = logging.getLogger(__name__)
 
 
-def is_superadmin(user):
-    return user.is_authenticated and user.role == 'superadmin'
-
-
 def dispatch_videoprompt_task(prompt_id: int):
     """
     Dispatches Celery background worker task if Celery is enabled,
@@ -41,19 +37,13 @@ def dispatch_videoprompt_task(prompt_id: int):
 @login_required
 def studio_view(request):
     """
-    Vista principal de Video to Prompt Studio con separación estricta de prompts propios y de otros usuarios.
+    Vista principal de Video to Prompt Studio.
     """
-    my_history = VideoPrompt.objects.filter(user=request.user).order_by('-created_at')[:30]
-    my_history_count = VideoPrompt.objects.filter(user=request.user).count()
-    
-    all_history = []
-    all_history_count = 0
-    if request.user.role == 'superadmin':
-        all_history = VideoPrompt.objects.select_related('user').exclude(user=request.user).order_by('-created_at')[:30]
-        all_history_count = VideoPrompt.objects.exclude(user=request.user).count()
+    history = VideoPrompt.objects.filter(user=request.user).order_by('-created_at')[:30]
+    history_count = VideoPrompt.objects.filter(user=request.user).count()
         
     quota_info = {
-        'is_unlimited': (request.user.role == 'superadmin' or request.user.is_unlimited_prompts),
+        'is_unlimited': (request.user.role == 'superadmin' or getattr(request.user, 'is_unlimited_prompts', False)),
         'limit': request.user.daily_prompt_limit,
         'used_today': request.user.get_prompts_used_today(),
         'remaining': request.user.get_prompts_remaining_today(),
@@ -61,10 +51,10 @@ def studio_view(request):
     }
         
     context = {
-        'my_history': my_history,
-        'my_history_count': my_history_count,
-        'all_history': all_history,
-        'all_history_count': all_history_count,
+        'history': history,
+        'history_count': history_count,
+        'my_history': history,
+        'my_history_count': history_count,
         'languages': VideoPrompt.LANGUAGE_CHOICES,
         'quota': quota_info,
     }

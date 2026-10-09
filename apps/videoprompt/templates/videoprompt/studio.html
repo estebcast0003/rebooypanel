@@ -240,7 +240,7 @@
                 <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
                     <div class="flex items-center gap-2">
                         <h2 class="text-base font-bold text-base-content m-0">History</h2>
-                        <span id="historyCountBadge" class="badge badge-neutral badge-sm font-bold font-mono px-2">{{ my_history_count }}</span>
+                        <span id="historyCountBadge" class="badge badge-neutral badge-sm font-bold font-mono px-2">{{ history_count }}</span>
                     </div>
 
                     <!-- Buscador en tiempo real -->
@@ -250,18 +250,6 @@
                                class="input input-bordered input-xs w-full pl-8 pr-2 rounded-lg bg-base-200/40 border-base-300 text-xs focus:border-primary">
                     </div>
                 </div>
-
-                {% if user.role == 'superadmin' %}
-                <!-- Segmented Tabs para Superadmin -->
-                <div class="tabs tabs-boxed bg-base-200/80 border border-base-300/60 p-0.5 rounded-lg w-full mb-3 text-xs">
-                    <button type="button" id="tabMyPromptsBtn" class="tab tab-xs flex-1 rounded-md font-semibold transition-all tab-active bg-base-100 shadow-xs text-primary font-bold" onclick="switchHistoryTab('my')">
-                        Mis Prompts ({{ my_history_count }})
-                    </button>
-                    <button type="button" id="tabAllPromptsBtn" class="tab tab-xs flex-1 rounded-md font-semibold transition-all text-base-content/70 hover:text-base-content" onclick="switchHistoryTab('all')">
-                        Otros Usuarios ({{ all_history_count }})
-                    </button>
-                </div>
-                {% endif %}
 
                 <!-- ═════════ TARJETA EN PROGRESO: PROCESSING... ═════════ -->
                 <div id="processingBanner" class="hidden mb-3 p-3.5 rounded-xl bg-primary/10 border border-primary/30 flex items-center justify-between gap-3 shadow-xs">
@@ -354,54 +342,6 @@
                     </div>
                     {% endfor %}
                 </div>
-
-                {% if user.role == 'superadmin' %}
-                <!-- Lista de Otros Usuarios (Superadmin) -->
-                <div id="allPromptsContainer" class="hidden flex flex-col gap-2.5 max-h-[580px] overflow-y-auto pr-1">
-                    {% for item in all_history %}
-                    <div class="history-card group p-2.5 rounded-xl border border-base-300 bg-base-200/40 hover:bg-base-200 hover:border-primary/40 transition cursor-pointer flex items-center justify-between gap-3"
-                         id="history-item-{{ item.id }}"
-                         data-title="Prompt #{{ item.id }} @{{ item.user.username }}"
-                         onclick="openPromptModal({{ item.id }})">
-                        
-                        <div class="flex items-center gap-3 min-w-0 flex-1">
-                            <div class="w-12 h-12 rounded-lg bg-base-300 overflow-hidden shrink-0 relative flex items-center justify-center border border-base-300">
-                                {% if item.thumbnail %}
-                                    <img src="{{ item.thumbnail.url }}" alt="Thumb" class="w-full h-full object-cover">
-                                {% else %}
-                                    <i data-lucide="film" class="w-5 h-5 text-base-content/40"></i>
-                                {% endif %}
-                            </div>
-                            <div class="min-w-0 flex-1">
-                                <div class="flex items-center gap-1.5">
-                                    <h3 class="font-bold text-xs text-base-content truncate">Prompt #{{ item.id }}</h3>
-                                    <span class="badge badge-neutral badge-xs">@{{ item.user.username }}</span>
-                                </div>
-                                <div class="text-[11px] text-base-content/60 truncate font-mono mt-0.5">
-                                    {% if item.video_url %}{{ item.video_url }}{% else %}Archivo Local{% endif %}
-                                </div>
-                                <div class="text-[10px] text-base-content/40 font-mono mt-0.5">
-                                    {{ item.created_at|date:"d M Y, H:i" }}
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="flex items-center gap-1 shrink-0" onclick="event.stopPropagation()">
-                            <button type="button" class="btn btn-ghost btn-square btn-xs rounded-lg text-base-content/60 hover:text-primary" onclick="openPromptModal({{ item.id }})">
-                                <i data-lucide="eye" class="w-3.5 h-3.5"></i>
-                            </button>
-                            <button type="button" class="btn btn-ghost btn-square btn-xs rounded-lg text-base-content/60 hover:text-error" onclick="openDeleteModal({{ item.id }})">
-                                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-                            </button>
-                        </div>
-                    </div>
-                    {% empty %}
-                    <div class="p-8 text-center text-base-content/50 border border-dashed border-base-300 rounded-xl">
-                        <p class="text-xs font-semibold">No hay prompts de otros usuarios.</p>
-                    </div>
-                    {% endfor %}
-                </div>
-                {% endif %}
 
             </div>
         </div>
@@ -1211,21 +1151,6 @@ async function executeDeletePrompt() {
     } finally {
         if (btn) btn.disabled = false;
     }
-}
-
-function switchHistoryTab(tab) {
-    const isMy = tab === 'my';
-    document.getElementById('myPromptsContainer')?.classList.toggle('hidden', !isMy);
-    document.getElementById('allPromptsContainer')?.classList.toggle('hidden', isMy);
-    
-    document.getElementById('tabMyPromptsBtn')?.classList.toggle('tab-active', isMy);
-    document.getElementById('tabMyPromptsBtn')?.classList.toggle('bg-base-100', isMy);
-    document.getElementById('tabMyPromptsBtn')?.classList.toggle('text-primary', isMy);
-    
-    document.getElementById('tabAllPromptsBtn')?.classList.toggle('tab-active', !isMy);
-    document.getElementById('tabAllPromptsBtn')?.classList.toggle('bg-base-100', !isMy);
-    document.getElementById('tabAllPromptsBtn')?.classList.toggle('text-primary', !isMy);
-    if (window.lucide) lucide.createIcons();
 }
 
 // Esc closing
