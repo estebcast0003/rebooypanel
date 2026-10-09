@@ -189,6 +189,8 @@ def check_prompt_status_ajax(request, pk):
         'error_message': prompt_record.error_message or '',
         'thumbnail_url': (prompt_record.thumbnail.url if prompt_record.thumbnail else '') if prompt_record.status == 'completed' else '',
         'created_at': prompt_record.created_at.strftime('%d %b %Y, %H:%M'),
+        'created_timestamp': int(prompt_record.created_at.timestamp() * 1000),
+        'video_file_name': os.path.basename(prompt_record.video_file.name) if prompt_record.video_file else '',
         'stats': {
             'upload_date': prompt_record.upload_date or 'No disponible',
             'views': prompt_record.views_count,
@@ -217,6 +219,81 @@ def check_prompt_status_ajax(request, pk):
             data['prompt_data'] = {'full_prompt_markdown': normalize_markdown_formatting(prompt_record.generated_prompt)}
             
     return JsonResponse(data)
+
+
+@login_required
+def batch_status_ajax(request):
+    """
+    Polling por lote para consultar el estado de múltiples prompts en un solo viaje de red.
+    Acepta IDs por query parameter (?ids=1,2,3) o por POST.
+    """
+    raw_ids = request.GET.get('ids') or request.POST.get('ids', '')
+    if not raw_ids:
+        return JsonResponse({'status': 'success', 'items': []})
+
+    import re
+    try:
+        if isinstance(raw_ids, str):
+            id_list = [int(x.strip()) for x in re.split(r'[,]+', raw_ids) if x.strip().isdigit()]
+        elif isinstance(raw_ids, list):
+            id_list = [int(x) for x in raw_ids if str(x).isdigit()]
+        else:
+            id_list = []
+    except (ValueError, TypeError):
+        id_list = []
+
+    if not id_list:
+        return JsonResponse({'status': 'success', 'items': []})
+
+    qs = VideoPrompt.objects.filter(id__in=id_list)
+    if request.user.role != 'superadmin':
+        qs = qs.filter(user=request.user)
+
+    items = []
+    for prompt_record in qs:
+        prompt_data = None
+        if prompt_record.status == 'completed' and prompt_record.generated_prompt:
+            try:
+                parsed = json.loads(prompt_record.generated_prompt)
+                if isinstance(parsed, dict) and 'full_prompt_markdown' in parsed:
+                    parsed['full_prompt_markdown'] = normalize_markdown_formatting(parsed['full_prompt_markdown'])
+                prompt_data = parsed
+            except json.JSONDecodeError:
+                prompt_data = {'full_prompt_markdown': normalize_markdown_formatting(prompt_record.generated_prompt)}
+
+        items.append({
+            'id': prompt_record.id,
+            'status': prompt_record.status,
+            'status_display': prompt_record.get_status_display(),
+            'video_url': prompt_record.video_url or '',
+            'video_file_name': os.path.basename(prompt_record.video_file.name) if prompt_record.video_file else '',
+            'video_file_url': prompt_record.video_file.url if prompt_record.video_file else '',
+            'error_message': prompt_record.error_message or '',
+            'thumbnail_url': (prompt_record.thumbnail.url if prompt_record.thumbnail else '') if prompt_record.status == 'completed' else '',
+            'created_at': prompt_record.created_at.strftime('%d %b %Y, %H:%M'),
+            'created_timestamp': int(prompt_record.created_at.timestamp() * 1000),
+            'stats': {
+                'upload_date': prompt_record.upload_date or 'No disponible',
+                'views': prompt_record.views_count,
+                'likes': prompt_record.likes_count,
+                'comments': prompt_record.comments_count,
+                'uploader': prompt_record.uploader_name or 'Creador original',
+                'duration': round(prompt_record.duration_seconds, 1) if prompt_record.duration_seconds else None,
+            },
+            'prompt_data': prompt_data,
+        })
+
+    return JsonResponse({
+        'status': 'success',
+        'items': items,
+        'quota': {
+            'is_unlimited': (request.user.role == 'superadmin' or getattr(request.user, 'is_unlimited_prompts', False)),
+            'limit': request.user.daily_prompt_limit,
+            'used_today': request.user.get_prompts_used_today(),
+            'remaining': request.user.get_prompts_remaining_today(),
+            'can_generate': request.user.can_generate_prompt(),
+        }
+    })
 
 
 @login_required

@@ -219,3 +219,41 @@ class CeleryTaskVideoPromptTests(TestCase):
         self.assertEqual(prompt.status, "completed")
         self.assertEqual(prompt.views_count, 100)
         self.assertIn("film", prompt.generated_prompt)
+
+
+class BatchStatusAjaxTests(TestCase):
+    """
+    Tests for batch_status_ajax polling endpoint.
+    """
+
+    def setUp(self):
+        self.client = Client()
+        self.user = CustomUser.objects.create_user(username="batchuser", password="password123")
+        self.other_user = CustomUser.objects.create_user(username="otheruser", password="password123")
+
+    def test_batch_status_empty_ids(self):
+        self.client.login(username="batchuser", password="password123")
+        response = self.client.get(reverse("videoprompt:batch_status_ajax"))
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data["status"], "success")
+        self.assertEqual(data["items"], [])
+
+    def test_batch_status_returns_user_items_only(self):
+        self.client.login(username="batchuser", password="password123")
+        p1 = VideoPrompt.objects.create(user=self.user, video_url="https://example.com/1.mp4", status="completed")
+        p2 = VideoPrompt.objects.create(user=self.user, video_url="https://example.com/2.mp4", status="processing")
+        p_other = VideoPrompt.objects.create(user=self.other_user, video_url="https://example.com/3.mp4", status="completed")
+
+        response = self.client.get(
+            reverse("videoprompt:batch_status_ajax"),
+            {"ids": f"{p1.id},{p2.id},{p_other.id}"}
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data["status"], "success")
+        ids_returned = [item["id"] for item in data["items"]]
+        self.assertIn(p1.id, ids_returned)
+        self.assertIn(p2.id, ids_returned)
+        self.assertNotIn(p_other.id, ids_returned)
+        self.assertEqual(len(data["items"]), 2)
