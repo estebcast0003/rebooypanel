@@ -75,9 +75,10 @@ def studio_view(request):
 @require_POST
 def generate_prompt_ajax(request):
     """
-    Endpoint AJAX para iniciar el análisis de un video con validación estricta de cuota diaria.
+    Endpoint AJAX para iniciar el análisis de videos (individual o por lote) con validación estricta de cuota diaria.
+    Soporta múltiples URLs (separadas por saltos de línea/comas) y múltiples archivos subidos.
     """
-    # 1. Validar cuota diaria del usuario
+    # 1. Validar cuota diaria inicial del usuario
     if not request.user.can_generate_prompt():
         return JsonResponse({
             'status': 'error',
@@ -88,47 +89,80 @@ def generate_prompt_ajax(request):
     additional_context = request.POST.get('additional_context', '').strip()
     prompt_language = request.POST.get('prompt_language', 'es').strip()
     
-    video_url = None
-    local_video_path = None
-    
     try:
+        created_records = []
+
         if input_type == 'link':
-            video_url = request.POST.get('video_url', '').strip()
-            if not video_url:
-                return JsonResponse({'status': 'error', 'message': 'Por favor ingresa un enlace de video válido.'}, status=400)
-                
-            prompt_record = VideoPrompt.objects.create(
-                user=request.user,
-                video_url=video_url,
-                additional_context=additional_context,
-                prompt_language=prompt_language,
-                status='pending'
-            )
-            
+            raw_urls = request.POST.get('video_urls') or request.POST.get('video_url', '')
+            import re
+            url_list = [u.strip() for u in re.split(r'[\r\n,]+', raw_urls) if u.strip()]
+
+            if not url_list:
+                return JsonResponse({'status': 'error', 'message': 'Por favor ingresa al menos un enlace de video válido.'}, status=400)
+
+            # Validar cuota suficiente para la cantidad de URLs
+            remaining_quota = request.user.get_prompts_remaining_today()
+            is_unlimited = (request.user.role == 'superadmin' or getattr(request.user, 'is_unlimited_prompts', False))
+            if not is_unlimited and len(url_list) > remaining_quota:
+                return JsonResponse({
+                    'status': 'error',
+                    'message': f'Intentas procesar {len(url_list)} videos, pero solo te quedan {remaining_quota} prompts disponibles hoy.'
+                }, status=429)
+
+            for url in url_list:
+                record = VideoPrompt.objects.create(
+                    user=request.user,
+                    video_url=url,
+                    additional_context=additional_context,
+                    prompt_language=prompt_language,
+                    status='pending'
+                )
+                created_records.append(record)
+                dispatch_videoprompt_task(record.id)
+
         elif input_type == 'file':
-            video_file = request.FILES.get('video_file')
-            if not video_file:
-                return JsonResponse({'status': 'error', 'message': 'Por favor selecciona un archivo de video.'}, status=400)
-                
-            prompt_record = VideoPrompt.objects.create(
-                user=request.user,
-                video_file=video_file,
-                additional_context=additional_context,
-                prompt_language=prompt_language,
-                status='pending'
-            )
-            local_video_path = prompt_record.video_file.path
+            file_list = request.FILES.getlist('video_files')
+            if not file_list and 'video_file' in request.FILES:
+                file_list = request.FILES.getlist('video_file')
+
+            if not file_list:
+                return JsonResponse({'status': 'error', 'message': 'Por favor selecciona al menos un archivo de video.'}, status=400)
+
+            # Validar cuota suficiente para la cantidad de archivos
+            remaining_quota = request.user.get_prompts_remaining_today()
+            is_unlimited = (request.user.role == 'superadmin' or getattr(request.user, 'is_unlimited_prompts', False))
+            if not is_unlimited and len(file_list) > remaining_quota:
+                return JsonResponse({
+                    'status': 'error',
+                    'message': f'Intentas subir {len(file_list)} videos, pero solo te quedan {remaining_quota} prompts disponibles hoy.'
+                }, status=429)
+
+            for video_file in file_list:
+                record = VideoPrompt.objects.create(
+                    user=request.user,
+                    video_file=video_file,
+                    additional_context=additional_context,
+                    prompt_language=prompt_language,
+                    status='pending'
+                )
+                created_records.append(record)
+                dispatch_videoprompt_task(record.id)
         else:
             return JsonResponse({'status': 'error', 'message': 'Tipo de entrada no válido.'}, status=400)
-            
-        # Iniciar procesamiento en background via Celery
-        dispatch_videoprompt_task(prompt_record.id)
-        
+
+        prompt_ids = [r.id for r in created_records]
         return JsonResponse({
             'status': 'success',
-            'prompt_id': prompt_record.id,
-            'message': 'Procesamiento de video iniciado correctamente.'
+            'prompt_ids': prompt_ids,
+            'prompt_id': prompt_ids[0] if prompt_ids else None,
+            'count': len(prompt_ids),
+            'message': f'Procesamiento iniciado correctamente para {len(prompt_ids)} video(s).'
         })
+
+    except VideoValidationError as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': f'Error del servidor: {str(e)}'}, status=500)
         
     except VideoValidationError as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=400)

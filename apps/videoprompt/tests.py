@@ -1,5 +1,6 @@
 from unittest.mock import patch, MagicMock
 import json
+from django.core.files.uploadedfile import SimpleUploadedFile
 
 from django.test import TestCase, Client
 from django.urls import reverse
@@ -85,7 +86,7 @@ class VideoStudioViewsTests(TestCase):
         self.assertEqual(response.status_code, 400)
         data = response.json()
         self.assertEqual(data["status"], "error")
-        self.assertIn("ingresa un enlace de video válido", data["message"])
+        self.assertIn("enlace de video", data["message"])
         mock_dispatch.assert_not_called()
 
     @patch("videoprompt.views.dispatch_videoprompt_task")
@@ -110,6 +111,72 @@ class VideoStudioViewsTests(TestCase):
         self.assertEqual(created_prompt.video_url, "https://example.com/valid_video.mp4")
         self.assertEqual(created_prompt.status, "pending")
         mock_dispatch.assert_called_once_with(created_prompt.id)
+
+    @patch("videoprompt.views.dispatch_videoprompt_task")
+    def test_generate_prompt_ajax_batch_urls_success(self, mock_dispatch):
+        self.user.daily_prompt_limit = 5
+        self.user.save()
+        self.client.login(username="studiouser", password="password123")
+
+        urls_text = "https://example.com/v1.mp4\nhttps://example.com/v2.mp4, https://example.com/v3.mp4"
+        response = self.client.post(
+            reverse("videoprompt:generate_prompt_ajax"),
+            {
+                "input_type": "link",
+                "video_urls": urls_text,
+                "prompt_language": "en"
+            }
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data["status"], "success")
+        self.assertEqual(data["count"], 3)
+        self.assertEqual(len(data["prompt_ids"]), 3)
+        self.assertEqual(mock_dispatch.call_count, 3)
+
+    @patch("videoprompt.views.dispatch_videoprompt_task")
+    def test_generate_prompt_ajax_batch_urls_exceeds_quota(self, mock_dispatch):
+        self.user.daily_prompt_limit = 2
+        self.user.save()
+        self.client.login(username="studiouser", password="password123")
+
+        urls_text = "https://example.com/v1.mp4\nhttps://example.com/v2.mp4\nhttps://example.com/v3.mp4"
+        response = self.client.post(
+            reverse("videoprompt:generate_prompt_ajax"),
+            {
+                "input_type": "link",
+                "video_urls": urls_text
+            }
+        )
+        self.assertEqual(response.status_code, 429)
+        data = response.json()
+        self.assertEqual(data["status"], "error")
+        self.assertIn("solo te quedan 2 prompts", data["message"])
+        mock_dispatch.assert_not_called()
+
+    @patch("videoprompt.views.dispatch_videoprompt_task")
+    def test_generate_prompt_ajax_batch_files_success(self, mock_dispatch):
+        self.user.daily_prompt_limit = 5
+        self.user.save()
+        self.client.login(username="studiouser", password="password123")
+
+        f1 = SimpleUploadedFile("v1.mp4", b"dummy_video_bytes_1", content_type="video/mp4")
+        f2 = SimpleUploadedFile("v2.mp4", b"dummy_video_bytes_2", content_type="video/mp4")
+
+        response = self.client.post(
+            reverse("videoprompt:generate_prompt_ajax"),
+            {
+                "input_type": "file",
+                "video_files": [f1, f2],
+                "prompt_language": "es"
+            }
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data["status"], "success")
+        self.assertEqual(data["count"], 2)
+        self.assertEqual(len(data["prompt_ids"]), 2)
+        self.assertEqual(mock_dispatch.call_count, 2)
 
 
 class CeleryTaskVideoPromptTests(TestCase):
