@@ -59,6 +59,11 @@ class VideoStudioViewsTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn("quota", response.context)
         self.assertEqual(response.context["quota"]["limit"], 1)
+        self.assertContains(response, 'id="videoUrlsInput"')
+        self.assertContains(response, 'id="videoFilesInput"')
+        self.assertContains(response, 'id="processingBanner"')
+        self.assertContains(response, 'id="myPromptsContainer"')
+        self.assertContains(response, 'id="promptModal"')
 
     @patch("videoprompt.views.dispatch_videoprompt_task")
     def test_generate_prompt_ajax_exceeds_quota(self, mock_dispatch):

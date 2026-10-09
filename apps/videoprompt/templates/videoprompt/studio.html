@@ -68,348 +68,370 @@
         border-radius: 0 6px 6px 0;
         color: oklch(var(--bc) / 0.8);
     }
+    .pulse-dot {
+        animation: pulseDot 1.4s infinite ease-in-out both;
+    }
+    @keyframes pulseDot {
+        0%, 80%, 100% { opacity: 0.2; transform: scale(0.8); }
+        40% { opacity: 1; transform: scale(1.1); }
+    }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="flex flex-col gap-6 pb-12 w-full">
 
-    <!-- ═════════ HEADER ═════════ -->
+    <!-- ═════════ HEADER SUPERIOR ═════════ -->
     <div class="flex items-center justify-between flex-wrap gap-4">
         <div class="flex items-center gap-3.5">
-            <div class="w-12 h-12 rounded-2xl bg-warning/10 text-warning border border-warning/20 flex items-center justify-center shrink-0 shadow-sm">
-                <i data-lucide="clapperboard" class="w-6 h-6"></i>
+            <div class="w-11 h-11 rounded-2xl bg-primary/10 text-primary border border-primary/20 flex items-center justify-center shrink-0 shadow-sm">
+                <i data-lucide="clapperboard" class="w-5 h-5"></i>
             </div>
             <div>
-                <h1 class="text-2xl lg:text-3xl font-extrabold tracking-tight text-base-content leading-tight">
+                <h1 class="text-2xl font-extrabold tracking-tight text-base-content leading-tight">
                     Video to Prompt Studio
                 </h1>
-                <p class="text-xs lg:text-sm text-base-content/65 mt-0.5 leading-relaxed">
-                    Analiza videos con Gemini IA y genera prompts cinematográficos escena por escena.
+                <p class="text-xs text-base-content/65 mt-0.5">
+                    Analiza videos con IA y genera prompts cinematográficos escena por escena.
                 </p>
             </div>
         </div>
-    </div>
 
-    <!-- ═════════ 1. TARJETA DE CREACIÓN DE PROMPT ═════════ -->
-    <div class="card bg-base-100 shadow-sm border border-base-300 rounded-2xl p-6 lg:p-8">
-        
-        <div class="flex justify-between items-center mb-5 flex-wrap gap-3">
-            <h2 class="text-base font-bold text-base-content m-0 flex items-center gap-2">
-                <i data-lucide="sparkles" class="w-4 h-4 text-warning"></i>
-                Generar Nuevo Prompt
-            </h2>
-
-            <!-- Indicador de Cuota Diaria con Badges Grandes -->
-            <div>
-                {% if quota.is_unlimited %}
-                    <span class="badge badge-neutral badge-md font-bold text-xs gap-1.5 px-3 py-1">
-                        <i data-lucide="infinity" class="w-3.5 h-3.5 text-info"></i>
-                        Cuota Ilimitada
-                    </span>
-                {% else %}
-                    <span id="quotaBadge" class="badge {% if quota.remaining > 0 %}badge-primary text-primary-content{% else %}badge-error text-white{% endif %} badge-md font-bold text-xs gap-1.5 px-3 py-1">
-                        <i data-lucide="zap" class="w-3.5 h-3.5"></i>
-                        Cuota hoy: <strong id="quotaUsedText">{{ quota.used_today }}</strong> / {{ quota.limit }} prompts
-                    </span>
-                {% endif %}
-            </div>
-        </div>
-
-        {% if not quota.can_generate %}
-        <div id="quotaExhaustedAlert" class="alert alert-error text-white text-xs rounded-xl shadow-sm mb-5">
-            <i data-lucide="alert-circle" class="w-4 h-4 shrink-0"></i>
-            <span>Has alcanzado tu límite diario de <strong>{{ quota.limit }} prompts</strong> por hoy. Tu cuota se reiniciará a medianoche.</span>
-        </div>
-        {% endif %}
-
-        <!-- Selector Segmentado: Enlace vs Subir Archivo -->
-        <div class="tabs tabs-boxed bg-base-200/80 border border-base-300/60 p-1 rounded-xl w-fit mb-5">
-            <button type="button" id="tabUrlBtn" class="tab tab-sm rounded-lg text-xs font-semibold gap-1.5 transition-all tab-active bg-base-100 shadow-sm text-primary font-bold" onclick="switchTab('url')">
-                <i data-lucide="link" class="w-3.5 h-3.5"></i>
-                Enlace / URL
-            </button>
-            <button type="button" id="tabUploadBtn" class="tab tab-sm rounded-lg text-xs font-semibold gap-1.5 transition-all text-base-content/70 hover:text-base-content" onclick="switchTab('upload')">
-                <i data-lucide="upload-cloud" class="w-3.5 h-3.5"></i>
-                Subir Video
-            </button>
-        </div>
-
-        <form id="videoPromptForm" enctype="multipart/form-data">
-            {% csrf_token %}
-            <input type="hidden" name="input_type" id="inputTypeInput" value="link">
-
-            <div class="flex flex-col gap-5">
-                <!-- Entrada 1: Pegar Enlace -->
-                <div id="urlSection">
-                    <label class="text-[11px] font-bold uppercase tracking-wider text-base-content/60 flex items-center gap-1.5 mb-2">
-                        <i data-lucide="link" class="w-3.5 h-3.5 text-warning"></i>
-                        Enlace de Video (Facebook Reels, YouTube, TikTok)
-                    </label>
-                    <div class="relative">
-                        <i data-lucide="link" class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-base-content/40"></i>
-                        <input type="url" name="video_url" id="videoUrlInput" placeholder="https://www.facebook.com/reel/..."
-                               {% if not quota.can_generate %}disabled{% endif %}
-                               class="input input-bordered w-full pl-10 pr-4 rounded-xl bg-base-200/40 border-base-300 text-sm focus:border-primary focus:outline-none h-11 font-mono">
-                    </div>
-                </div>
-
-                <!-- Entrada 2: Subir Archivo -->
-                <div id="uploadSection" class="hidden">
-                    <label class="text-[11px] font-bold uppercase tracking-wider text-base-content/60 flex items-center gap-1.5 mb-2">
-                        <i data-lucide="upload-cloud" class="w-3.5 h-3.5 text-warning"></i>
-                        Archivo de Video (Máx 50MB, 2 min)
-                    </label>
-                    <div id="dropZone" class="border-2 border-dashed border-base-300 rounded-2xl p-8 text-center bg-base-200/40 hover:bg-primary/5 hover:border-primary transition cursor-pointer"
-                         {% if quota.can_generate %}onclick="document.getElementById('videoFileInput').click()"{% endif %}>
-                        <i data-lucide="film" class="w-8 h-8 text-warning mx-auto mb-2 opacity-80"></i>
-                        <p id="fileLabel" class="text-sm font-bold text-base-content mb-1">
-                            Arrastra o haz clic para seleccionar video
-                        </p>
-                        <span class="text-xs text-base-content/50">Formatos soportados: MP4, MOV, MKV, WEBM</span>
-                        <input type="file" name="video_file" id="videoFileInput" accept="video/*" class="hidden" {% if not quota.can_generate %}disabled{% endif %} onchange="handleFileSelected(this)">
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <!-- Idioma de salida -->
-                    <div>
-                        <label class="text-[11px] font-bold uppercase tracking-wider text-base-content/60 flex items-center gap-1.5 mb-2">
-                            <i data-lucide="languages" class="w-3.5 h-3.5 text-warning"></i>
-                            Idioma del Prompt
-                        </label>
-                        <select name="prompt_language" {% if not quota.can_generate %}disabled{% endif %} class="select select-bordered w-full rounded-xl bg-base-200/40 border-base-300 text-sm focus:border-primary h-11">
-                            {% for code, name in languages %}
-                                <option value="{{ code }}" {% if code == 'es' %}selected{% endif %}>{{ name }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-
-                    <!-- Contexto Adicional -->
-                    <div>
-                        <label class="text-[11px] font-bold uppercase tracking-wider text-base-content/60 flex items-center gap-1.5 mb-2">
-                            <i data-lucide="message-square" class="w-3.5 h-3.5 text-warning"></i>
-                            Instrucciones Extra (Opcional)
-                        </label>
-                        <input type="text" name="additional_context" placeholder="Ej: Detalla la iluminación y atmósfera..."
-                               {% if not quota.can_generate %}disabled{% endif %}
-                               class="input input-bordered w-full rounded-xl bg-base-200/40 border-base-300 text-sm focus:border-primary focus:outline-none h-11">
-                    </div>
-                </div>
-
-                <!-- Botón de Generar -->
-                <button type="submit" id="submitBtn"
-                        {% if not quota.can_generate %}disabled class="btn btn-primary w-full rounded-xl gap-2 h-12 text-sm font-semibold opacity-50 cursor-not-allowed"{% else %}class="btn btn-primary w-full rounded-xl gap-2 h-12 text-sm font-semibold shadow-sm text-primary-content"{% endif %}>
-                    <i data-lucide="sparkles" class="w-4 h-4"></i>
-                    {% if quota.can_generate %}Generar Prompt con IA{% else %}Cuota Diaria Alcanzada{% endif %}
-                </button>
-            </div>
-        </form>
-
-        <!-- Estado de Procesamiento / Loading -->
-        <div id="processingCard" class="hidden mt-5 p-4 rounded-xl bg-primary/10 border border-primary/20">
-            <div class="flex items-center gap-3 mb-2.5">
-                <div class="w-5 h-5 rounded-full border-2 border-primary border-t-transparent animate-spin shrink-0"></div>
-                <div class="flex-1 min-w-0">
-                    <div id="processingTitle" class="text-sm font-bold text-base-content">Procesando video...</div>
-                    <div id="processingSub" class="text-xs text-base-content/60">Analizando cinematografía y escenas con Gemini</div>
-                </div>
-            </div>
-            <div class="w-full h-1.5 bg-base-300/60 rounded-full overflow-hidden">
-                <div id="progressBar" class="h-full bg-primary transition-all duration-300" style="width:30%;"></div>
-            </div>
-        </div>
-    </div>
-
-    <!-- ═════════ 2. GALERÍA DE PROMPTS GENERADOS (HISTORIAL) ═════════ -->
-    <div class="flex flex-col gap-5">
-        <div class="flex justify-between items-center flex-wrap gap-3">
-            <h2 class="text-xl font-bold tracking-tight text-base-content m-0 flex items-center gap-2">
-                Historial de Prompts
-            </h2>
-
-            {% if user.role == 'superadmin' %}
-            <!-- Segmented Tabs para Superadmin -->
-            <div class="tabs tabs-boxed bg-base-200/80 border border-base-300/60 p-1 rounded-xl">
-                <button type="button" id="tabMyPromptsBtn" class="tab tab-sm rounded-lg text-xs font-semibold gap-2 transition-all tab-active bg-base-100 shadow-sm text-primary font-bold" onclick="switchHistoryTab('my')">
-                    <i data-lucide="user" class="w-3.5 h-3.5"></i>
-                    Mis Prompts
-                    <span class="badge badge-primary badge-md font-mono font-bold px-2 text-primary-content">{{ my_history_count }}</span>
-                </button>
-                <button type="button" id="tabAllPromptsBtn" class="tab tab-sm rounded-lg text-xs font-semibold gap-2 transition-all text-base-content/70 hover:text-base-content" onclick="switchHistoryTab('all')">
-                    <i data-lucide="globe" class="w-3.5 h-3.5"></i>
-                    Otros Usuarios
-                    <span class="badge badge-neutral badge-md font-mono font-bold px-2">{{ all_history_count }}</span>
-                </button>
-            </div>
+        <!-- Indicador de Cuota Diaria -->
+        <div>
+            {% if quota.is_unlimited %}
+                <span class="badge badge-neutral badge-md font-bold text-xs gap-1.5 px-3 py-1">
+                    <i data-lucide="infinity" class="w-3.5 h-3.5 text-info"></i>
+                    Cuota Ilimitada
+                </span>
             {% else %}
-            <span class="badge badge-neutral badge-md font-bold px-3 py-1">{{ my_history_count }} registro{{ my_history_count|pluralize }}</span>
+                <span id="quotaBadge" class="badge {% if quota.remaining > 0 %}badge-primary text-primary-content{% else %}badge-error text-white{% endif %} badge-md font-bold text-xs gap-1.5 px-3 py-1">
+                    <i data-lucide="zap" class="w-3.5 h-3.5"></i>
+                    Cuota hoy: <strong id="quotaUsedText">{{ quota.used_today }}</strong> / {{ quota.limit }} prompts
+                </span>
             {% endif %}
         </div>
+    </div>
 
-        <!-- SECCIÓN 1: MIS PROMPTS -->
-        <div id="myPromptsSection">
-            <div id="historyGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {% for item in my_history %}
-                <div class="card bg-base-100 shadow-sm border border-base-300 rounded-2xl p-4 hover:border-primary/50 transition cursor-pointer flex flex-col justify-between" id="history-item-{{ item.id }}" onclick="openPromptModal({{ item.id }})">
-                    <div>
-                        <!-- Miniatura de Video -->
-                        <div class="w-full h-36 rounded-xl bg-base-200 border border-base-300 overflow-hidden relative mb-3 flex items-center justify-center">
-                            {% if item.thumbnail %}
-                                <img src="{{ item.thumbnail.url }}" alt="Miniatura Video" class="w-full h-full object-cover" onerror="this.onerror=null; this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='flex';">
-                                <div class="hidden w-full h-full items-center justify-center">
-                                    <i data-lucide="film" class="w-9 h-9 text-base-content/30"></i>
-                                </div>
-                            {% else %}
-                                <i data-lucide="film" class="w-9 h-9 text-base-content/30"></i>
-                            {% endif %}
-                            <div class="absolute bottom-2 left-2">
-                                <span class="badge {% if item.status == 'completed' %}badge-success text-white{% elif item.status == 'processing' or item.status == 'pending' %}badge-warning{% else %}badge-neutral{% endif %} badge-md font-bold text-xs px-2.5">
-                                    {{ item.get_status_display }}
-                                </span>
+    <!-- ═════════ SPLIT LAYOUT: GENERADOR (IZQ) + HISTORIAL (DER) ═════════ -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+        <!-- ═════════ COLUMNA IZQUIERDA: GENERADOR DE PROMPTS (7 cols) ═════════ -->
+        <div class="lg:col-span-7 flex flex-col gap-5">
+            <div class="card bg-base-100 shadow-sm border border-base-300 rounded-2xl p-5 lg:p-6">
+                
+                <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+                    <h2 class="text-base font-bold text-base-content m-0 flex items-center gap-2">
+                        <i data-lucide="sparkles" class="w-4 h-4 text-warning"></i>
+                        Generar Prompts desde Video
+                    </h2>
+                    <span class="text-xs text-base-content/50 font-medium">Soporta múltiples enlaces o archivos</span>
+                </div>
+
+                {% if not quota.can_generate %}
+                <div id="quotaExhaustedAlert" class="alert alert-error text-white text-xs rounded-xl shadow-sm mb-4">
+                    <i data-lucide="alert-circle" class="w-4 h-4 shrink-0"></i>
+                    <span>Has alcanzado tu límite diario de <strong>{{ quota.limit }} prompts</strong> por hoy. Tu cuota se reiniciará a medianoche.</span>
+                </div>
+                {% endif %}
+
+                <!-- Selector Segmentado: Add Link vs Upload File -->
+                <div class="tabs tabs-boxed bg-base-200/80 border border-base-300/60 p-1 rounded-xl w-fit mb-5">
+                    <button type="button" id="tabUrlBtn" class="tab tab-sm rounded-lg text-xs font-semibold gap-1.5 transition-all tab-active bg-base-100 shadow-sm text-primary font-bold" onclick="switchTab('url')">
+                        <i data-lucide="link" class="w-3.5 h-3.5"></i>
+                        Add Link
+                    </button>
+                    <button type="button" id="tabUploadBtn" class="tab tab-sm rounded-lg text-xs font-semibold gap-1.5 transition-all text-base-content/70 hover:text-base-content" onclick="switchTab('upload')">
+                        <i data-lucide="upload-cloud" class="w-3.5 h-3.5"></i>
+                        Upload File
+                    </button>
+                </div>
+
+                <form id="videoPromptForm" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <input type="hidden" name="input_type" id="inputTypeInput" value="link">
+
+                    <div class="flex flex-col gap-4">
+
+                        <!-- Modo 1: Múltiples Enlaces (Textarea) -->
+                        <div id="urlSection">
+                            <div class="flex items-center justify-between mb-1.5">
+                                <label class="text-[11px] font-bold uppercase tracking-wider text-base-content/70 flex items-center gap-1.5">
+                                    <i data-lucide="link" class="w-3.5 h-3.5 text-warning"></i>
+                                    Enlaces de Video (YouTube Shorts, TikTok, Reels)
+                                </label>
+                                <span id="urlCountBadge" class="badge badge-sm badge-ghost text-[10px] font-mono hidden">0 enlaces</span>
                             </div>
+                            <div class="relative">
+                                <textarea name="video_urls" id="videoUrlsInput" rows="4"
+                                    placeholder="Pega uno o más enlaces de YouTube Shorts o TikTok (un enlace por línea o separados por comas)..."
+                                    {% if not quota.can_generate %}disabled{% endif %}
+                                    class="textarea textarea-bordered w-full rounded-xl bg-base-200/30 border-base-300 text-sm focus:border-primary focus:outline-none font-mono leading-relaxed resize-y"></textarea>
+                            </div>
+                            <p class="text-[11px] text-base-content/50 mt-1">Podés pegar varios enlaces para procesarlos en paralelo con Celery.</p>
                         </div>
 
-                        <!-- Título y Origen -->
-                        <h3 class="font-bold text-sm text-base-content truncate mb-1">
-                            Prompt #{{ item.id }}
-                        </h3>
+                        <!-- Modo 2: Múltiples Archivos (Dropzone) -->
+                        <div id="uploadSection" class="hidden">
+                            <div class="flex items-center justify-between mb-1.5">
+                                <label class="text-[11px] font-bold uppercase tracking-wider text-base-content/70 flex items-center gap-1.5">
+                                    <i data-lucide="upload-cloud" class="w-3.5 h-3.5 text-warning"></i>
+                                    Archivos de Video Locales (Máx 50MB c/u)
+                                </label>
+                                <span id="fileCountBadge" class="badge badge-sm badge-ghost text-[10px] font-mono hidden">0 archivos</span>
+                            </div>
 
-                        {% if item.video_url %}
-                        <div class="text-xs text-primary font-mono truncate flex items-center gap-1.5 mb-1.5 opacity-90" title="{{ item.video_url }}">
-                            <i data-lucide="link" class="w-3.5 h-3.5 shrink-0"></i>
-                            <span class="truncate">{{ item.video_url }}</span>
+                            <div id="dropZone" class="border-2 border-dashed border-base-300 rounded-2xl p-6 text-center bg-base-200/30 hover:bg-primary/5 hover:border-primary transition cursor-pointer"
+                                 {% if quota.can_generate %}onclick="document.getElementById('videoFilesInput').click()"{% endif %}>
+                                <i data-lucide="film" class="w-8 h-8 text-primary mx-auto mb-2 opacity-80"></i>
+                                <p id="dropZoneLabel" class="text-sm font-bold text-base-content mb-0.5">
+                                    Arrastra tus videos aquí o haz clic para seleccionarlos
+                                </p>
+                                <span class="text-xs text-base-content/50">MP4, MOV, WEBM, MKV (podés elegir múltiples archivos)</span>
+                                <input type="file" name="video_files" id="videoFilesInput" accept="video/*" multiple class="hidden" {% if not quota.can_generate %}disabled{% endif %} onchange="handleFilesSelected(this)">
+                            </div>
+
+                            <!-- Cola de archivos seleccionados -->
+                            <div id="selectedFilesQueue" class="flex flex-col gap-2 mt-3 empty:hidden"></div>
                         </div>
-                        {% else %}
-                        <div class="text-xs text-base-content/60 flex items-center gap-1.5 mb-1.5">
-                            <i data-lucide="upload-cloud" class="w-3.5 h-3.5 shrink-0"></i>
-                            <span>Archivo Local</span>
+
+                        <!-- Contexto Adicional -->
+                        <div>
+                            <label class="text-[11px] font-bold uppercase tracking-wider text-base-content/70 flex items-center gap-1.5 mb-1.5">
+                                <i data-lucide="message-square" class="w-3.5 h-3.5 text-warning"></i>
+                                Additional Context (Optional)
+                            </label>
+                            <input type="text" name="additional_context" placeholder="Enter your inspiration, e.g. dynamic transitions, rich color tones, sweeping camera moves..."
+                                   {% if not quota.can_generate %}disabled{% endif %}
+                                   class="input input-bordered w-full rounded-xl bg-base-200/30 border-base-300 text-sm focus:border-primary focus:outline-none h-11">
                         </div>
-                        {% endif %}
 
-                        <p class="text-[11px] text-base-content/50 font-mono mb-3">{{ item.created_at|date:"d M Y, H:i" }}</p>
-                    </div>
+                        <!-- Idioma del Prompt -->
+                        <div>
+                            <label class="text-[11px] font-bold uppercase tracking-wider text-base-content/70 flex items-center gap-1.5 mb-1.5">
+                                <i data-lucide="languages" class="w-3.5 h-3.5 text-warning"></i>
+                                Prompt Language
+                            </label>
+                            <select name="prompt_language" {% if not quota.can_generate %}disabled{% endif %} class="select select-bordered w-full rounded-xl bg-base-200/30 border-base-300 text-sm focus:border-primary h-11">
+                                {% for code, name in languages %}
+                                    <option value="{{ code }}" {% if code == 'es' %}selected{% endif %}>{{ name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
 
-                    <!-- Acciones Rápidas -->
-                    <div class="flex items-center justify-between pt-3 border-t border-base-300/70">
-                        <span class="text-xs font-bold text-primary inline-flex items-center gap-1 hover:underline">
-                            Ver Prompt <i data-lucide="arrow-right" class="w-3 h-3"></i>
-                        </span>
-                        <button type="button" class="btn btn-ghost btn-square btn-xs border border-base-300 hover:border-error hover:bg-error/10 hover:text-error rounded-lg h-7 w-7 text-base-content/60 transition-all" title="Eliminar" onclick="event.stopPropagation(); openDeleteModal({{ item.id }})">
-                            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                        <!-- Botón de Generar -->
+                        <button type="submit" id="submitBtn"
+                                {% if not quota.can_generate %}disabled class="btn btn-primary w-full rounded-xl gap-2 h-12 text-sm font-semibold opacity-50 cursor-not-allowed"{% else %}class="btn btn-primary w-full rounded-xl gap-2 h-12 text-sm font-semibold shadow-sm text-primary-content bg-gradient-to-r from-primary to-secondary hover:opacity-95"{% endif %}>
+                            <i data-lucide="sparkles" class="w-4 h-4"></i>
+                            <span id="submitBtnText">{% if quota.can_generate %}Generate (1 video){% else %}Cuota Diaria Alcanzada{% endif %}</span>
                         </button>
                     </div>
-                </div>
-                {% empty %}
-                <div id="noHistoryMsg" class="card bg-base-100 border border-base-300 rounded-2xl col-span-full text-center p-12 text-base-content/50">
-                    <i data-lucide="clapperboard" class="w-10 h-10 mx-auto mb-3 opacity-30 text-base-content"></i>
-                    <p class="text-sm font-semibold">Aún no has generado ningún prompt. ¡Pega un enlace arriba para comenzar!</p>
-                </div>
-                {% endfor %}
+                </form>
+
             </div>
         </div>
 
-        {% if user.role == 'superadmin' %}
-        <!-- SECCIÓN 2: OTROS USUARIOS (SUPERADMIN) -->
-        <div id="allPromptsSection" class="hidden">
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {% for item in all_history %}
-                <div class="card bg-base-100 shadow-sm border border-base-300 rounded-2xl p-4 hover:border-primary/50 transition cursor-pointer flex flex-col justify-between" id="history-item-{{ item.id }}" onclick="openPromptModal({{ item.id }})">
-                    <div>
-                        <!-- Miniatura con Badge Autor -->
-                        <div class="w-full h-36 rounded-xl bg-base-200 border border-base-300 overflow-hidden relative mb-3 flex items-center justify-center">
-                            {% if item.thumbnail %}
-                                <img src="{{ item.thumbnail.url }}" alt="Miniatura Video" class="w-full h-full object-cover" onerror="this.onerror=null; this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='flex';">
-                                <div class="hidden w-full h-full items-center justify-center">
-                                    <i data-lucide="film" class="w-9 h-9 text-base-content/30"></i>
+        <!-- ═════════ COLUMNA DERECHA: PANEL DE HISTORIAL (5 cols) ═════════ -->
+        <div class="lg:col-span-5 flex flex-col gap-4">
+            
+            <div class="card bg-base-100 shadow-sm border border-base-300 rounded-2xl p-5">
+                
+                <!-- Encabezado de Historial -->
+                <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+                    <div class="flex items-center gap-2">
+                        <h2 class="text-base font-bold text-base-content m-0">History</h2>
+                        <span id="historyCountBadge" class="badge badge-neutral badge-sm font-bold font-mono px-2">{{ my_history_count }}</span>
+                    </div>
+
+                    <!-- Buscador en tiempo real -->
+                    <div class="relative w-44 sm:w-52">
+                        <i data-lucide="search" class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-base-content/40"></i>
+                        <input type="text" id="historySearchInput" placeholder="Search..." oninput="filterHistoryItems(this.value)"
+                               class="input input-bordered input-xs w-full pl-8 pr-2 rounded-lg bg-base-200/40 border-base-300 text-xs focus:border-primary">
+                    </div>
+                </div>
+
+                {% if user.role == 'superadmin' %}
+                <!-- Segmented Tabs para Superadmin -->
+                <div class="tabs tabs-boxed bg-base-200/80 border border-base-300/60 p-0.5 rounded-lg w-full mb-3 text-xs">
+                    <button type="button" id="tabMyPromptsBtn" class="tab tab-xs flex-1 rounded-md font-semibold transition-all tab-active bg-base-100 shadow-xs text-primary font-bold" onclick="switchHistoryTab('my')">
+                        Mis Prompts ({{ my_history_count }})
+                    </button>
+                    <button type="button" id="tabAllPromptsBtn" class="tab tab-xs flex-1 rounded-md font-semibold transition-all text-base-content/70 hover:text-base-content" onclick="switchHistoryTab('all')">
+                        Otros Usuarios ({{ all_history_count }})
+                    </button>
+                </div>
+                {% endif %}
+
+                <!-- ═════════ TARJETA EN PROGRESO: PROCESSING... ═════════ -->
+                <div id="processingBanner" class="hidden mb-3 p-3.5 rounded-xl bg-primary/10 border border-primary/30 flex items-center justify-between gap-3 shadow-xs">
+                    <div class="flex items-center gap-3 min-w-0">
+                        <div class="w-9 h-9 rounded-lg bg-primary/20 text-primary flex items-center justify-center shrink-0">
+                            <!-- Matriz de puntos animada similar a la referencia -->
+                            <div class="grid grid-cols-2 gap-1 w-4 h-4">
+                                <span class="w-1.5 h-1.5 rounded-xs bg-primary pulse-dot" style="animation-delay: 0s;"></span>
+                                <span class="w-1.5 h-1.5 rounded-xs bg-primary pulse-dot" style="animation-delay: 0.2s;"></span>
+                                <span class="w-1.5 h-1.5 rounded-xs bg-primary pulse-dot" style="animation-delay: 0.4s;"></span>
+                                <span class="w-1.5 h-1.5 rounded-xs bg-primary pulse-dot" style="animation-delay: 0.6s;"></span>
+                            </div>
+                        </div>
+                        <div class="min-w-0">
+                            <div class="text-xs font-bold text-base-content flex items-center gap-1.5">
+                                <span>Processing...</span>
+                                <span id="processingQueueCount" class="badge badge-primary badge-xs font-mono">1</span>
+                            </div>
+                            <div class="text-[11px] text-primary font-medium truncate">Being processed, please wait a moment.</div>
+                        </div>
+                    </div>
+                    <span class="loading loading-spinner loading-sm text-primary shrink-0"></span>
+                </div>
+
+                <!-- ═════════ LISTA DE HISTORIAL VERTICAL ═════════ -->
+                <div id="myPromptsContainer" class="flex flex-col gap-2.5 max-h-[580px] overflow-y-auto pr-1">
+                    {% for item in my_history %}
+                    <div class="history-card group p-2.5 rounded-xl border border-base-300 bg-base-200/40 hover:bg-base-200 hover:border-primary/40 transition cursor-pointer flex items-center justify-between gap-3"
+                         id="history-item-{{ item.id }}"
+                         data-title="Prompt #{{ item.id }} {{ item.video_url|default:'' }}"
+                         onclick="openPromptModal({{ item.id }})">
+                        
+                        <div class="flex items-center gap-3 min-w-0 flex-1">
+                            <!-- Miniatura o Icono -->
+                            <div class="w-12 h-12 rounded-lg bg-base-300 overflow-hidden shrink-0 relative flex items-center justify-center border border-base-300">
+                                {% if item.thumbnail %}
+                                    <img src="{{ item.thumbnail.url }}" alt="Thumb" class="w-full h-full object-cover" onerror="this.onerror=null; this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='flex';">
+                                    <div class="hidden w-full h-full items-center justify-center bg-base-300 text-base-content/40">
+                                        <i data-lucide="film" class="w-5 h-5"></i>
+                                    </div>
+                                {% else %}
+                                    <div class="w-full h-full flex items-center justify-center bg-base-300/80 text-base-content/40">
+                                        <i data-lucide="film" class="w-5 h-5"></i>
+                                    </div>
+                                {% endif %}
+                                {% if item.status == 'processing' or item.status == 'pending' %}
+                                <div class="absolute inset-0 bg-black/40 flex items-center justify-center">
+                                    <span class="loading loading-spinner loading-xs text-primary"></span>
                                 </div>
-                            {% else %}
-                                <i data-lucide="film" class="w-9 h-9 text-base-content/30"></i>
-                            {% endif %}
-                            
-                            <!-- Badge de Autor -->
-                            <div class="absolute top-2 left-2">
-                                <span class="badge badge-neutral badge-md font-bold text-xs gap-1 px-2.5">
-                                    <i data-lucide="user" class="w-3 h-3"></i>
-                                    @{{ item.user.username }}
-                                </span>
+                                {% endif %}
                             </div>
 
-                            <div class="absolute bottom-2 left-2">
-                                <span class="badge {% if item.status == 'completed' %}badge-success text-white{% elif item.status == 'processing' or item.status == 'pending' %}badge-warning{% else %}badge-neutral{% endif %} badge-md font-bold text-xs px-2.5">
-                                    {{ item.get_status_display }}
-                                </span>
+                            <!-- Textos -->
+                            <div class="min-w-0 flex-1">
+                                <div class="flex items-center gap-1.5">
+                                    <h3 class="font-bold text-xs text-base-content truncate">
+                                        Prompt #{{ item.id }}
+                                    </h3>
+                                    {% if item.status == 'completed' %}
+                                        <span class="badge badge-success badge-xs text-white">ok</span>
+                                    {% elif item.status == 'failed' %}
+                                        <span class="badge badge-error badge-xs text-white">err</span>
+                                    {% elif item.status == 'processing' or item.status == 'pending' %}
+                                        <span class="badge badge-warning badge-xs">procesando</span>
+                                    {% endif %}
+                                </div>
+                                <div class="text-[11px] text-base-content/60 truncate font-mono mt-0.5">
+                                    {% if item.video_url %}{{ item.video_url }}{% elif item.video_file %}{{ item.video_file.name }}{% else %}Video{% endif %}
+                                </div>
+                                <div class="text-[10px] text-base-content/40 font-mono mt-0.5" data-timestamp="{{ item.created_at|date:'U' }}000">
+                                    {{ item.created_at|date:"d M Y, H:i" }}
+                                </div>
                             </div>
                         </div>
 
-                        <!-- Título y Origen -->
-                        <h3 class="font-bold text-sm text-base-content truncate mb-1">
-                            Prompt #{{ item.id }}
-                        </h3>
-
-                        {% if item.video_url %}
-                        <div class="text-xs text-primary font-mono truncate flex items-center gap-1.5 mb-1.5 opacity-90" title="{{ item.video_url }}">
-                            <i data-lucide="link" class="w-3.5 h-3.5 shrink-0"></i>
-                            <span class="truncate">{{ item.video_url }}</span>
+                        <!-- Acciones -->
+                        <div class="flex items-center gap-1 shrink-0" onclick="event.stopPropagation()">
+                            <button type="button" class="btn btn-ghost btn-square btn-xs rounded-lg text-base-content/60 hover:text-primary" title="Ver Prompt" onclick="openPromptModal({{ item.id }})">
+                                <i data-lucide="eye" class="w-3.5 h-3.5"></i>
+                            </button>
+                            <button type="button" class="btn btn-ghost btn-square btn-xs rounded-lg text-base-content/60 hover:text-error" title="Eliminar" onclick="openDeleteModal({{ item.id }})">
+                                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                            </button>
                         </div>
-                        {% else %}
-                        <div class="text-xs text-base-content/60 flex items-center gap-1.5 mb-1.5">
-                            <i data-lucide="upload-cloud" class="w-3.5 h-3.5 shrink-0"></i>
-                            <span>Archivo Local</span>
+                    </div>
+                    {% empty %}
+                    <div id="noHistoryMsg" class="p-8 text-center text-base-content/50 border border-dashed border-base-300 rounded-xl">
+                        <i data-lucide="clapperboard" class="w-8 h-8 mx-auto mb-2 opacity-30"></i>
+                        <p class="text-xs font-semibold">Aún no hay prompts en tu historial.</p>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                {% if user.role == 'superadmin' %}
+                <!-- Lista de Otros Usuarios (Superadmin) -->
+                <div id="allPromptsContainer" class="hidden flex flex-col gap-2.5 max-h-[580px] overflow-y-auto pr-1">
+                    {% for item in all_history %}
+                    <div class="history-card group p-2.5 rounded-xl border border-base-300 bg-base-200/40 hover:bg-base-200 hover:border-primary/40 transition cursor-pointer flex items-center justify-between gap-3"
+                         id="history-item-{{ item.id }}"
+                         data-title="Prompt #{{ item.id }} @{{ item.user.username }}"
+                         onclick="openPromptModal({{ item.id }})">
+                        
+                        <div class="flex items-center gap-3 min-w-0 flex-1">
+                            <div class="w-12 h-12 rounded-lg bg-base-300 overflow-hidden shrink-0 relative flex items-center justify-center border border-base-300">
+                                {% if item.thumbnail %}
+                                    <img src="{{ item.thumbnail.url }}" alt="Thumb" class="w-full h-full object-cover">
+                                {% else %}
+                                    <i data-lucide="film" class="w-5 h-5 text-base-content/40"></i>
+                                {% endif %}
+                            </div>
+                            <div class="min-w-0 flex-1">
+                                <div class="flex items-center gap-1.5">
+                                    <h3 class="font-bold text-xs text-base-content truncate">Prompt #{{ item.id }}</h3>
+                                    <span class="badge badge-neutral badge-xs">@{{ item.user.username }}</span>
+                                </div>
+                                <div class="text-[11px] text-base-content/60 truncate font-mono mt-0.5">
+                                    {% if item.video_url %}{{ item.video_url }}{% else %}Archivo Local{% endif %}
+                                </div>
+                                <div class="text-[10px] text-base-content/40 font-mono mt-0.5">
+                                    {{ item.created_at|date:"d M Y, H:i" }}
+                                </div>
+                            </div>
                         </div>
-                        {% endif %}
 
-                        <p class="text-[11px] text-base-content/50 font-mono mb-3">{{ item.created_at|date:"d M Y, H:i" }}</p>
+                        <div class="flex items-center gap-1 shrink-0" onclick="event.stopPropagation()">
+                            <button type="button" class="btn btn-ghost btn-square btn-xs rounded-lg text-base-content/60 hover:text-primary" onclick="openPromptModal({{ item.id }})">
+                                <i data-lucide="eye" class="w-3.5 h-3.5"></i>
+                            </button>
+                            <button type="button" class="btn btn-ghost btn-square btn-xs rounded-lg text-base-content/60 hover:text-error" onclick="openDeleteModal({{ item.id }})">
+                                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                            </button>
+                        </div>
                     </div>
+                    {% empty %}
+                    <div class="p-8 text-center text-base-content/50 border border-dashed border-base-300 rounded-xl">
+                        <p class="text-xs font-semibold">No hay prompts de otros usuarios.</p>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
 
-                    <!-- Acciones Rápidas -->
-                    <div class="flex items-center justify-between pt-3 border-t border-base-300/70">
-                        <span class="text-xs font-bold text-primary inline-flex items-center gap-1 hover:underline">
-                            Ver Prompt <i data-lucide="arrow-right" class="w-3 h-3"></i>
-                        </span>
-                        <button type="button" class="btn btn-ghost btn-square btn-xs border border-base-300 hover:border-error hover:bg-error/10 hover:text-error rounded-lg h-7 w-7 text-base-content/60 transition-all" title="Eliminar" onclick="event.stopPropagation(); openDeleteModal({{ item.id }})">
-                            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-                        </button>
-                    </div>
-                </div>
-                {% empty %}
-                <div class="card bg-base-100 border border-base-300 rounded-2xl col-span-full text-center p-12 text-base-content/50">
-                    <i data-lucide="users" class="w-10 h-10 mx-auto mb-3 opacity-30 text-base-content"></i>
-                    <p class="text-sm font-semibold">Aún no hay prompts generados por otros usuarios.</p>
-                </div>
-                {% endfor %}
             </div>
         </div>
-        {% endif %}
+
     </div>
 
 </div>
 
-<!-- ═════════ 3. MODAL: VISOR DE PROMPT COMPLETO ═════════ -->
+<!-- ═════════ MODAL: VISOR DE PROMPT (CALCADO A CAPTURA 2) ═════════ -->
 <div id="promptModal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-md hidden items-center justify-center p-4">
     <div class="card bg-base-100 shadow-2xl border border-base-300 w-full max-w-4xl max-h-[90vh] flex flex-col rounded-2xl overflow-hidden p-0">
         
         <!-- Modal Header -->
         <div class="p-5 lg:px-6 border-b border-base-300 flex justify-between items-center shrink-0">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl bg-warning/10 border border-warning/20 flex items-center justify-center text-warning shrink-0">
-                    <i data-lucide="clapperboard" class="w-5 h-5"></i>
+            <div class="flex items-center gap-3.5 min-w-0">
+                <div id="modalThumbContainer" class="w-12 h-12 rounded-xl bg-base-300 overflow-hidden shrink-0 border border-base-300 flex items-center justify-center">
+                    <img id="modalThumbImg" src="" alt="Thumbnail" class="w-full h-full object-cover hidden">
+                    <i data-lucide="clapperboard" id="modalThumbIcon" class="w-5 h-5 text-warning"></i>
                 </div>
-                <div>
-                    <h3 id="modalPromptTitle" class="text-base font-bold text-base-content m-0">Prompt de Video</h3>
-                    <div class="flex items-center gap-2 mt-0.5">
-                        <span id="modalPromptStatus" class="badge badge-success badge-md font-bold text-xs text-white">Completado</span>
-                        <span id="modalPromptDate" class="text-xs text-base-content/60 font-mono"></span>
+                <div class="min-w-0">
+                    <h3 id="modalPromptTitle" class="text-base font-bold text-base-content m-0 truncate">Prompt de Video</h3>
+                    <div class="flex items-center gap-2 mt-0.5 text-xs">
+                        <span id="modalPromptStatus" class="badge badge-success badge-sm font-bold text-white">Completado</span>
+                        <span id="modalPromptDate" class="text-base-content/60 font-mono"></span>
                     </div>
                 </div>
             </div>
 
             <div class="flex items-center gap-2">
-                <button type="button" class="btn btn-primary btn-sm text-xs font-semibold rounded-xl gap-1.5 text-primary-content shadow-xs" onclick="copyFullPrompt()">
-                    <i data-lucide="copy" id="copyIcon" class="w-3.5 h-3.5"></i>
-                    <span id="copyText">Copiar Markdown</span>
-                </button>
-                <button type="button" class="btn btn-ghost btn-square btn-xs rounded-lg text-base-content/60 hover:text-base-content" onclick="closePromptModal()">
+                <button type="button" class="btn btn-ghost btn-square btn-sm rounded-xl text-base-content/60 hover:text-base-content" onclick="closePromptModal()">
                     <i data-lucide="x" class="w-4 h-4"></i>
                 </button>
             </div>
@@ -419,7 +441,7 @@
         <div id="modalVideoSource" class="p-3 px-6 bg-base-200/50 border-b border-base-300 flex items-center justify-between flex-wrap gap-2 text-xs">
             <div class="flex items-center gap-2 min-w-0 flex-1">
                 <i data-lucide="link" class="w-3.5 h-3.5 text-primary shrink-0"></i>
-                <span class="text-base-content/60 shrink-0">Enlace del Video:</span>
+                <span class="text-base-content/60 shrink-0">Fuente:</span>
                 <span id="modalVideoUrlText" class="text-base-content font-mono font-bold truncate"></span>
             </div>
             <div class="flex items-center gap-2">
@@ -437,29 +459,28 @@
                     <i data-lucide="film" class="w-3.5 h-3.5"></i>
                     Ficha y Escenas
                 </button>
-                <button type="button" id="tabStatsBtn" class="tab tab-sm rounded-lg text-xs font-semibold gap-1.5 transition-all text-base-content/70 hover:text-base-content" onclick="switchPromptView('stats')">
-                    <i data-lucide="bar-chart-2" class="w-3.5 h-3.5"></i>
-                    Stats del Reel
-                </button>
                 <button type="button" id="tabRawBtn" class="tab tab-sm rounded-lg text-xs font-semibold gap-1.5 transition-all text-base-content/70 hover:text-base-content" onclick="switchPromptView('raw')">
                     <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
                     Markdown Completo
                 </button>
+                <button type="button" id="tabStatsBtn" class="tab tab-sm rounded-lg text-xs font-semibold gap-1.5 transition-all text-base-content/70 hover:text-base-content" onclick="switchPromptView('stats')">
+                    <i data-lucide="bar-chart-2" class="w-3.5 h-3.5"></i>
+                    Stats del Video
+                </button>
             </div>
         </div>
 
-        <!-- Modal Body con Scroll Independiente -->
+        <!-- Modal Body con Scroll -->
         <div class="p-6 overflow-y-auto flex-1">
 
             <!-- Vista 1: Estructurada (Cards) -->
             <div id="structuredView">
-                <!-- Fichas de Estilo y Cinematografía -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                     <!-- Estilo -->
                     <div class="card bg-base-200/50 border border-base-300 rounded-xl p-4">
                         <h4 class="text-xs font-bold uppercase tracking-wider text-primary m-0 mb-3 flex items-center gap-1.5">
                             <i data-lucide="palette" class="w-4 h-4"></i>
-                            Estilo Visual
+                            Style
                         </h4>
                         <div id="styleList" class="text-xs text-base-content/75 flex flex-col gap-2 leading-relaxed"></div>
                     </div>
@@ -468,139 +489,97 @@
                     <div class="card bg-base-200/50 border border-base-300 rounded-xl p-4">
                         <h4 class="text-xs font-bold uppercase tracking-wider text-warning m-0 mb-3 flex items-center gap-1.5">
                             <i data-lucide="camera" class="w-4 h-4"></i>
-                            Cinematografía
+                            Cinematography
                         </h4>
                         <div id="cinematographyList" class="text-xs text-base-content/75 flex flex-col gap-2 leading-relaxed"></div>
                     </div>
                 </div>
 
-                <!-- Desglose de Escenas -->
                 <h4 class="text-sm font-bold text-base-content m-0 mb-4 flex items-center gap-2">
                     <i data-lucide="layers" class="w-4 h-4 text-warning"></i>
-                    Desglose Escena por Escena
+                    Scene Breakdown
                 </h4>
                 <div id="scenesContainer" class="flex flex-col gap-3.5"></div>
             </div>
 
-            <!-- Vista 2: Stats del Reel (Métricas) -->
-            <div id="statsView" class="hidden">
-                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-                    
-                    <!-- Vistas -->
-                    <div class="card bg-base-200/50 border border-base-300 rounded-xl p-4 text-center">
-                        <div class="text-[10px] text-base-content/60 uppercase font-bold flex items-center justify-center gap-1 mb-1">
-                            <i data-lucide="eye" class="w-3 h-3 text-warning"></i>
-                            Vistas
-                        </div>
-                        <div id="statViews" class="text-xl font-extrabold font-mono text-base-content">--</div>
-                    </div>
-
-                    <!-- Likes -->
-                    <div class="card bg-base-200/50 border border-base-300 rounded-xl p-4 text-center">
-                        <div class="text-[10px] text-base-content/60 uppercase font-bold flex items-center justify-center gap-1 mb-1">
-                            <i data-lucide="heart" class="w-3 h-3 text-error"></i>
-                            Me Gusta
-                        </div>
-                        <div id="statLikes" class="text-xl font-extrabold font-mono text-error">--</div>
-                    </div>
-
-                    <!-- Comentarios -->
-                    <div class="card bg-base-200/50 border border-base-300 rounded-xl p-4 text-center">
-                        <div class="text-[10px] text-base-content/60 uppercase font-bold flex items-center justify-center gap-1 mb-1">
-                            <i data-lucide="message-circle" class="w-3 h-3 text-success"></i>
-                            Comentarios
-                        </div>
-                        <div id="statComments" class="text-xl font-extrabold font-mono text-success">--</div>
-                    </div>
-
-                    <!-- Duración -->
-                    <div class="card bg-base-200/50 border border-base-300 rounded-xl p-4 text-center">
-                        <div class="text-[10px] text-base-content/60 uppercase font-bold flex items-center justify-center gap-1 mb-1">
-                            <i data-lucide="clock" class="w-3 h-3 text-warning"></i>
-                            Duración
-                        </div>
-                        <div id="statDuration" class="text-xl font-extrabold font-mono text-base-content">--</div>
-                    </div>
-
-                </div>
-
-                <!-- Detalles adicionales -->
-                <div class="card bg-base-200/50 border border-base-300 rounded-xl p-5 flex flex-col gap-3 text-xs">
-                    <div class="flex justify-between items-center pb-2.5 border-b border-base-300">
-                        <span class="text-base-content/60 flex items-center gap-1.5">
-                            <i data-lucide="calendar" class="w-3.5 h-3.5 text-warning"></i>
-                            Fecha de Publicación Original:
-                        </span>
-                        <strong id="statUploadDate" class="text-base-content font-mono font-bold">--</strong>
-                    </div>
-
-                    <div class="flex justify-between items-center pb-2.5 border-b border-base-300">
-                        <span class="text-base-content/60 flex items-center gap-1.5">
-                            <i data-lucide="user" class="w-3.5 h-3.5 text-primary"></i>
-                            Canal / Creador:
-                        </span>
-                        <strong id="statUploader" class="text-base-content font-bold">--</strong>
-                    </div>
-
-                    <div class="flex justify-between items-center">
-                        <span class="text-base-content/60 flex items-center gap-1.5">
-                            <i data-lucide="cpu" class="w-3.5 h-3.5 text-success"></i>
-                            Modelo de Análisis:
-                        </span>
-                        <strong class="text-success font-bold font-mono">Gemini 2.5 Flash</strong>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Vista 3: Código Fuente Markdown -->
+            <!-- Vista 2: Markdown Completo -->
             <div id="rawView" class="hidden -m-6 mt-0">
                 <div class="flex items-center justify-between p-3 px-6 border-b border-base-300 bg-base-200/60 flex-wrap gap-2">
-                    <div class="flex items-center gap-3">
-                        <span class="flex items-center gap-1.5 text-xs text-base-content/60 font-bold uppercase tracking-wider">
-                            <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
-                            <span>Markdown Completo</span>
-                        </span>
-                        <div class="join border border-base-300 rounded-lg p-0.5 bg-base-100 shadow-2xs">
-                            <button type="button" id="btnMdPreview" class="join-item btn btn-xs btn-ghost rounded-md text-[11px] h-6 px-2.5 font-bold tab-active bg-primary/10 text-primary transition" onclick="switchMarkdownSubTab('preview')">
-                                Vista Formateada
-                            </button>
-                            <button type="button" id="btnMdSource" class="join-item btn btn-xs btn-ghost rounded-md text-[11px] h-6 px-2.5 font-medium text-base-content/60 transition" onclick="switchMarkdownSubTab('source')">
-                                Código Raw
-                            </button>
-                        </div>
+                    <div class="join border border-base-300 rounded-lg p-0.5 bg-base-100 shadow-2xs">
+                        <button type="button" id="btnMdPreview" class="join-item btn btn-xs btn-ghost rounded-md text-[11px] h-6 px-2.5 font-bold tab-active bg-primary/10 text-primary transition" onclick="switchMarkdownSubTab('preview')">
+                            Vista Renderizada
+                        </button>
+                        <button type="button" id="btnMdSource" class="join-item btn btn-xs btn-ghost rounded-md text-[11px] h-6 px-2.5 font-medium text-base-content/60 transition" onclick="switchMarkdownSubTab('source')">
+                            Código Fuente
+                        </button>
                     </div>
-                    <button type="button" class="btn btn-ghost btn-xs gap-1.5 border border-base-300 hover:border-primary hover:bg-primary/10 hover:text-primary rounded-xl text-xs font-semibold px-3 h-8 transition-all inline-flex items-center" onclick="copyFullPrompt()">
-                        <i data-lucide="copy" class="w-3.5 h-3.5"></i>
-                        <span>Copiar Markdown</span>
-                    </button>
                 </div>
                 
-                <!-- Subvista A: Vista Formateada (HTML Renderizado vía marked) -->
                 <div id="mdPreviewContainer" class="md-prose p-6 max-h-[500px] overflow-y-auto leading-relaxed text-sm text-base-content"></div>
 
-                <!-- Subvista B: Código Raw (Textarea con auto-wrap y saltos de línea) -->
                 <div id="mdSourceContainer" class="hidden">
                     <textarea id="rawMarkdownContent" readonly
                         class="textarea w-full h-[500px] p-6 font-mono text-xs text-base-content bg-base-100 border-none outline-none resize-none rounded-none leading-relaxed block whitespace-pre-wrap break-words overflow-y-auto"></textarea>
                 </div>
+            </div>
+
+            <!-- Vista 3: Stats -->
+            <div id="statsView" class="hidden">
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+                    <div class="card bg-base-200/50 border border-base-300 rounded-xl p-4 text-center">
+                        <div class="text-[10px] text-base-content/60 uppercase font-bold mb-1">Vistas</div>
+                        <div id="statViews" class="text-xl font-extrabold font-mono text-base-content">--</div>
+                    </div>
+                    <div class="card bg-base-200/50 border border-base-300 rounded-xl p-4 text-center">
+                        <div class="text-[10px] text-base-content/60 uppercase font-bold mb-1">Likes</div>
+                        <div id="statLikes" class="text-xl font-extrabold font-mono text-error">--</div>
+                    </div>
+                    <div class="card bg-base-200/50 border border-base-300 rounded-xl p-4 text-center">
+                        <div class="text-[10px] text-base-content/60 uppercase font-bold mb-1">Comentarios</div>
+                        <div id="statComments" class="text-xl font-extrabold font-mono text-success">--</div>
+                    </div>
+                    <div class="card bg-base-200/50 border border-base-300 rounded-xl p-4 text-center">
+                        <div class="text-[10px] text-base-content/60 uppercase font-bold mb-1">Duración</div>
+                        <div id="statDuration" class="text-xl font-extrabold font-mono text-base-content">--</div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Modal Footer: Botones Copy, Download, Save, Generate (Captura 2) -->
+        <div class="p-4 px-6 border-t border-base-300 bg-base-200/40 flex items-center justify-between flex-wrap gap-2 shrink-0">
+            <div class="flex items-center gap-2">
+                <button type="button" class="btn btn-ghost btn-sm rounded-xl text-xs font-semibold gap-1.5 border border-base-300" onclick="copyFullPrompt()">
+                    <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                    <span id="copyBtnLabel">Copy</span>
+                </button>
+                <button type="button" class="btn btn-ghost btn-sm rounded-xl text-xs font-semibold gap-1.5 border border-base-300" onclick="downloadPromptMarkdown()">
+                    <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                    Download
+                </button>
+            </div>
+            <div>
+                <button type="button" class="btn btn-primary btn-sm rounded-xl text-xs font-semibold gap-1.5 text-primary-content bg-gradient-to-r from-primary to-secondary" onclick="closePromptModal()">
+                    <i data-lucide="check" class="w-3.5 h-3.5"></i>
+                    Listo
+                </button>
             </div>
         </div>
 
     </div>
 </div>
 
-<!-- ═════════ 4. MODAL: CONFIRMAR ELIMINACIÓN ═════════ -->
+<!-- ═════════ MODAL: CONFIRMAR ELIMINACIÓN ═════════ -->
 <div id="deleteConfirmModal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-md hidden items-center justify-center p-4">
     <div class="card bg-base-100 shadow-2xl border border-base-300 w-full max-w-sm p-6 rounded-2xl text-center">
         <div class="w-12 h-12 rounded-2xl bg-error/10 text-error border border-error/20 flex items-center justify-center mx-auto mb-3.5">
             <i data-lucide="trash-2" class="w-5 h-5"></i>
         </div>
-
         <h3 class="text-base font-bold text-base-content mb-1">¿Eliminar este prompt?</h3>
         <p class="text-xs text-base-content/60 leading-relaxed mb-6">
-            Esta acción no se puede deshacer. Se eliminará el registro junto con sus escenas y ficha técnica.
+            Esta acción eliminará el registro y los archivos asociados permanentemente.
         </p>
-
         <div class="flex justify-end gap-2.5">
             <button type="button" class="btn btn-ghost btn-sm flex-1 rounded-xl border border-base-300 text-xs font-semibold" onclick="closeDeleteModal()">
                 Cancelar
@@ -617,17 +596,63 @@
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/marked@12/marked.min.js"></script>
 <script>
+// Estado Global
 let currentRawMarkdown = '';
+let currentPromptId = null;
 let promptIdToDelete = null;
+let selectedFiles = [];
+let activePromptIds = new Set();
+let pollingInterval = null;
 
+// Inicializar prompts que ya estaban en procesamiento
+{% for item in my_history %}
+  {% if item.status == 'processing' or item.status == 'pending' %}
+    activePromptIds.add({{ item.id }});
+  {% endif %}
+{% endfor %}
+
+document.addEventListener('DOMContentLoaded', () => {
+    formatExistingTimestamps();
+    if (activePromptIds.size > 0) {
+        updateProcessingBanner();
+        startPolling();
+    }
+});
+
+// Helper de tiempo relativo seguro (elimina NaN)
+function timeAgo(timestamp) {
+    if (!timestamp) return 'Reciente';
+    const date = new Date(Number(timestamp));
+    if (isNaN(date.getTime())) return 'Reciente';
+    
+    const seconds = Math.floor((new Date() - date) / 1000);
+    if (seconds < 15) return 'Hace unos segundos';
+    if (seconds < 60) return `Hace ${seconds}s`;
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `Hace ${minutes} min`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `Hace ${hours}h`;
+    const days = Math.floor(hours / 24);
+    if (days < 30) return `Hace ${days}d`;
+    return date.toLocaleDateString();
+}
+
+function formatExistingTimestamps() {
+    document.querySelectorAll('[data-timestamp]').forEach(el => {
+        const ts = el.getAttribute('data-timestamp');
+        if (ts) {
+            el.innerText = timeAgo(ts);
+        }
+    });
+}
+
+// Conmutar pestañas Add Link vs Upload File
 function switchTab(type) {
     const isUpload = type === 'upload';
     document.getElementById('inputTypeInput').value = isUpload ? 'file' : 'link';
     
-    const uploadSec = document.getElementById('uploadSection');
-    const urlSec = document.getElementById('urlSection');
-    if (uploadSec) uploadSec.classList.toggle('hidden', !isUpload);
-    if (urlSec) urlSec.classList.toggle('hidden', isUpload);
+    document.getElementById('uploadSection')?.classList.toggle('hidden', !isUpload);
+    document.getElementById('urlSection')?.classList.toggle('hidden', isUpload);
     
     const tabUploadBtn = document.getElementById('tabUploadBtn');
     const tabUrlBtn = document.getElementById('tabUrlBtn');
@@ -648,444 +673,516 @@ function switchTab(type) {
         tabUrlBtn.classList.toggle('font-bold', !isUpload);
         tabUrlBtn.classList.toggle('text-base-content/70', isUpload);
     }
+    updateSubmitButton();
 }
 
-function handleFileSelected(input) {
-    if (input.files && input.files[0]) {
-        document.getElementById('fileLabel').innerText = input.files[0].name;
+// Contador reactivo para URLs pegadas
+document.getElementById('videoUrlsInput')?.addEventListener('input', function() {
+    updateSubmitButton();
+});
+
+function getParsedUrls() {
+    const text = document.getElementById('videoUrlsInput')?.value || '';
+    return text.split(/[\r\n,]+/).map(u => u.trim()).filter(u => u.length > 0);
+}
+
+function updateSubmitButton() {
+    const inputType = document.getElementById('inputTypeInput')?.value || 'link';
+    const btnText = document.getElementById('submitBtnText');
+    const urlBadge = document.getElementById('urlCountBadge');
+    const fileBadge = document.getElementById('fileCountBadge');
+    
+    if (inputType === 'link') {
+        const urls = getParsedUrls();
+        const count = urls.length || 1;
+        if (urlBadge) {
+            urlBadge.innerText = `${urls.length} enlace${urls.length === 1 ? '' : 's'}`;
+            urlBadge.classList.toggle('hidden', urls.length === 0);
+        }
+        if (btnText) {
+            btnText.innerText = urls.length > 1 ? `Generate (${urls.length} videos)` : `Generate (1 video)`;
+        }
+    } else {
+        const count = selectedFiles.length || 1;
+        if (fileBadge) {
+            fileBadge.innerText = `${selectedFiles.length} archivo${selectedFiles.length === 1 ? '' : 's'}`;
+            fileBadge.classList.toggle('hidden', selectedFiles.length === 0);
+        }
+        if (btnText) {
+            btnText.innerText = selectedFiles.length > 1 ? `Generate (${selectedFiles.length} videos)` : `Generate (1 video)`;
+        }
     }
 }
 
-function switchPromptView(view) {
-    const structuredView = document.getElementById('structuredView');
-    const statsView = document.getElementById('statsView');
-    const rawView = document.getElementById('rawView');
+// Manejo de archivos múltiples
+function handleFilesSelected(input) {
+    if (input.files && input.files.length > 0) {
+        for (let i = 0; i < input.files.length; i++) {
+            selectedFiles.push(input.files[i]);
+        }
+        renderSelectedFiles();
+        updateSubmitButton();
+    }
+}
 
-    if (structuredView) structuredView.classList.toggle('hidden', view !== 'structured');
-    if (statsView) statsView.classList.toggle('hidden', view !== 'stats');
-    if (rawView) rawView.classList.toggle('hidden', view !== 'raw');
+function removeSelectedFile(index) {
+    selectedFiles.splice(index, 1);
+    renderSelectedFiles();
+    updateSubmitButton();
+}
 
-    ['tabStructuredBtn', 'tabStatsBtn', 'tabRawBtn'].forEach(btnId => {
-        const btn = document.getElementById(btnId);
-        if (!btn) return;
-        const isActive = (btnId === 'tabStructuredBtn' && view === 'structured') ||
-                         (btnId === 'tabStatsBtn' && view === 'stats') ||
-                         (btnId === 'tabRawBtn' && view === 'raw');
-        btn.classList.toggle('tab-active', isActive);
-        btn.classList.toggle('bg-base-100', isActive);
-        btn.classList.toggle('shadow-sm', isActive);
-        btn.classList.toggle('text-primary', isActive);
-        btn.classList.toggle('font-bold', isActive);
-        btn.classList.toggle('text-base-content/70', !isActive);
+function renderSelectedFiles() {
+    const queue = document.getElementById('selectedFilesQueue');
+    if (!queue) return;
+    queue.innerHTML = '';
+    
+    selectedFiles.forEach((file, idx) => {
+        const sizeMb = (file.size / (1024 * 1024)).toFixed(1);
+        const item = document.createElement('div');
+        item.className = 'flex items-center justify-between p-2 px-3 rounded-xl bg-base-200/60 border border-base-300 text-xs';
+        item.innerHTML = `
+            <div class="flex items-center gap-2 truncate flex-1 min-w-0">
+                <i data-lucide="film" class="w-3.5 h-3.5 text-primary shrink-0"></i>
+                <span class="font-medium text-base-content truncate">${file.name}</span>
+                <span class="text-[10px] text-base-content/50 font-mono shrink-0">(${sizeMb} MB)</span>
+            </div>
+            <button type="button" class="btn btn-ghost btn-square btn-xs text-base-content/50 hover:text-error" onclick="removeSelectedFile(${idx})">
+                <i data-lucide="x" class="w-3.5 h-3.5"></i>
+            </button>
+        `;
+        queue.appendChild(item);
+    });
+    if (window.lucide) lucide.createIcons();
+}
+
+// Drag & Drop
+const dropZone = document.getElementById('dropZone');
+if (dropZone) {
+    ['dragenter', 'dragover'].forEach(name => {
+        dropZone.addEventListener(name, (e) => {
+            e.preventDefault();
+            dropZone.classList.add('border-primary', 'bg-primary/5');
+        });
+    });
+    ['dragleave', 'drop'].forEach(name => {
+        dropZone.addEventListener(name, (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('border-primary', 'bg-primary/5');
+        });
+    });
+    dropZone.addEventListener('drop', (e) => {
+        if (e.dataTransfer && e.dataTransfer.files.length > 0) {
+            for (let i = 0; i < e.dataTransfer.files.length; i++) {
+                selectedFiles.push(e.dataTransfer.files[i]);
+            }
+            renderSelectedFiles();
+            updateSubmitButton();
+        }
     });
 }
 
-function formatMarkdownContent(rawMd, promptData) {
-    if (rawMd && typeof rawMd === 'string') {
-        let text = rawMd;
-        if (!text.includes('\n') || text.split('\n').length < 5) {
-            text = text
-                .replace(/\s*###\s+/g, '\n\n### ')
-                .replace(/\s*---\s*/g, '\n\n---\n\n')
-                .replace(/\s*\*\s+\*\*/g, '\n* **')
-                .replace(/\s*\*\*(Scene\s+\d+[^*]*?)\*\*\s*/gi, '\n\n**$1**\n')
-                .replace(/\s*\*\*Actions:?\*\*\s*/gi, '\n\n**Actions:**\n')
-                .replace(/\s*\*\*Dialogue:?\*\*\s*/gi, '\n\n**Dialogue:**\n')
-                .replace(/\s*\*\*Background Sound:?\*\*\s*/gi, '\n\n**Background Sound:**\n')
-                .trim();
-        }
-        return text;
-    }
-    
-    // Fallback if rawMd is missing: format from promptData
-    if (promptData) {
-        let md = '';
-        if (promptData.style) {
-            md += '### Style\n';
-            md += `* **Visual Texture:** ${promptData.style.visual_texture || ''}\n`;
-            md += `* **Lighting Quality:** ${promptData.style.lighting_quality || ''}\n`;
-            md += `* **Color Palette:** ${promptData.style.color_palette || ''}\n`;
-            md += `* **Atmosphere:** ${promptData.style.atmosphere || ''}\n\n`;
-        }
-        if (promptData.cinematography) {
-            md += '### Cinematography\n';
-            md += `* **Camera:** ${promptData.cinematography.camera || ''}\n`;
-            md += `* **Lens:** ${promptData.cinematography.lens || ''}\n`;
-            md += `* **Lighting:** ${promptData.cinematography.lighting || ''}\n`;
-            md += `* **Mood:** ${promptData.cinematography.mood || ''}\n\n`;
-        }
-        if (promptData.scenes && promptData.scenes.length > 0) {
-            md += '---\n\n### Scene Breakdown\n\n';
-            promptData.scenes.forEach(sc => {
-                md += `**Scene ${sc.scene_number || ''} (${sc.timestamp || (sc.start_time + ' - ' + sc.end_time)}):**\n`;
-                if (sc.description || sc.action_description) md += `${sc.description || sc.action_description}\n\n`;
-                if (sc.actions && sc.actions.length > 0) {
-                    md += '**Actions:**\n';
-                    sc.actions.forEach(a => {
-                        md += `* **${a.character || ''}:** ${a.action || ''}\n`;
-                    });
-                    md += '\n';
-                }
-                if (sc.dialogue && sc.dialogue.length > 0) {
-                    md += '**Dialogue:**\n';
-                    sc.dialogue.forEach(d => {
-                        md += `* **${d.speaker || ''}** (${d.tone || ''}): "${d.text || ''}"\n`;
-                    });
-                    md += '\n';
-                }
-                if (sc.background_sound) {
-                    md += `**Background Sound:**\n${sc.background_sound}\n\n`;
-                }
-            });
-        }
-        return md.trim();
-    }
-    return '';
-}
-
-function switchMarkdownSubTab(mode) {
-    const isPreview = mode === 'preview';
-    const previewEl = document.getElementById('mdPreviewContainer');
-    const sourceEl = document.getElementById('mdSourceContainer');
-    const btnPreview = document.getElementById('btnMdPreview');
-    const btnSource = document.getElementById('btnMdSource');
-
-    if (previewEl) previewEl.classList.toggle('hidden', !isPreview);
-    if (sourceEl) sourceEl.classList.toggle('hidden', isPreview);
-
-    if (btnPreview) {
-        btnPreview.classList.toggle('bg-primary/10', isPreview);
-        btnPreview.classList.toggle('text-primary', isPreview);
-        btnPreview.classList.toggle('font-bold', isPreview);
-        btnPreview.classList.toggle('text-base-content/60', !isPreview);
-    }
-    if (btnSource) {
-        btnSource.classList.toggle('bg-primary/10', !isPreview);
-        btnSource.classList.toggle('text-primary', !isPreview);
-        btnSource.classList.toggle('font-bold', !isPreview);
-        btnSource.classList.toggle('text-base-content/60', isPreview);
-    }
-}
-
-// Envío del formulario
-document.getElementById('videoPromptForm').addEventListener('submit', async function(e) {
+// Enviar formulario (Batch o Single)
+document.getElementById('videoPromptForm')?.addEventListener('submit', async function(e) {
     e.preventDefault();
-    const form = e.target;
-    const formData = new FormData(form);
     const submitBtn = document.getElementById('submitBtn');
-    
-    submitBtn.disabled = true;
-    const procCard = document.getElementById('processingCard');
-    if (procCard) procCard.classList.remove('hidden');
-    const progBar = document.getElementById('progressBar');
-    if (progBar) progBar.style.width = '20%';
+    const inputType = document.getElementById('inputTypeInput')?.value || 'link';
+
+    const formData = new FormData(this);
+
+    // Ajustar archivos si se usó la cola interactiva
+    if (inputType === 'file') {
+        if (selectedFiles.length === 0) {
+            alert('Por favor selecciona al menos un archivo de video.');
+            return;
+        }
+        formData.delete('video_files');
+        selectedFiles.forEach(f => formData.append('video_files', f));
+    } else {
+        const urls = getParsedUrls();
+        if (urls.length === 0) {
+            alert('Por favor ingresa al menos un enlace de video.');
+            return;
+        }
+    }
+
+    if (submitBtn) submitBtn.disabled = true;
 
     try {
         const response = await fetch("{% url 'videoprompt:generate_prompt_ajax' %}", {
             method: 'POST',
             body: formData,
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            }
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
         });
         
         const data = await response.json();
         if (response.ok && data.status === 'success') {
-            startPolling(data.prompt_id);
+            const ids = data.prompt_ids || (data.prompt_id ? [data.prompt_id] : []);
+            ids.forEach(id => {
+                activePromptIds.add(id);
+                prependProcessingPlaceholder(id);
+            });
+            
+            // Limpiar inputs
+            if (inputType === 'link') {
+                document.getElementById('videoUrlsInput').value = '';
+            } else {
+                selectedFiles = [];
+                renderSelectedFiles();
+            }
+            updateSubmitButton();
+            updateProcessingBanner();
+            startPolling();
         } else {
-            resetForm();
-            const errMsg = data.message || 'Error al iniciar el análisis.';
-            alert(errMsg);
+            alert(data.message || 'Error al iniciar el análisis.');
         }
     } catch (err) {
-        resetForm();
-        alert('Error al conectar con el servidor. Por favor verificá tu conexión.');
+        alert('Error al conectar con el servidor.');
+    } finally {
+        if (submitBtn) submitBtn.disabled = false;
     }
 });
 
-function startPolling(promptId) {
-    let progress = 35;
-    const procCard = document.getElementById('processingCard');
-    const procTitle = document.getElementById('processingTitle');
-    const procSub = document.getElementById('processingSub');
-    const progBar = document.getElementById('progressBar');
-    
-    const interval = setInterval(async () => {
-        try {
-            const res = await fetch(`/video-prompt/status-ajax/${promptId}/`);
-            const data = await res.json();
-            
-            if (data.status === 'processing' || data.status === 'pending') {
-                if (progress < 90) {
-                    progress += 8;
-                    if (progBar) progBar.style.width = progress + '%';
-                }
-            } else if (data.status === 'completed') {
-                clearInterval(interval);
-                if (progBar) {
-                    progBar.style.width = '100%';
-                    progBar.className = 'h-full bg-success transition-all duration-300';
-                }
-                if (procTitle) procTitle.innerHTML = '<span class="text-success">¡Análisis Completado con Éxito!</span>';
-                if (procSub) procSub.innerText = 'Abriendo prompt cinematográfico...';
-                
-                setTimeout(() => {
-                    resetForm();
-                    openPromptModalData(data);
-                    
-                    let existingItem = document.getElementById('history-item-' + data.id);
-                    if (!existingItem) {
-                        const historyGrid = document.getElementById('historyGrid');
-                        const noHist = document.getElementById('noHistoryMsg');
-                        if (noHist) noHist.remove();
-                        
-                        const thumbImg = data.thumbnail_url 
-                            ? `<img src="${data.thumbnail_url}" alt="Miniatura Video" class="w-full h-full object-cover">` 
-                            : `<i data-lucide="film" class="w-9 h-9 text-base-content/30"></i>`;
-                        
-                        const linkInfo = data.video_url 
-                            ? `<div class="text-xs text-primary font-mono truncate flex items-center gap-1.5 mb-1.5 opacity-90" title="${data.video_url}">
-                                   <i data-lucide="link" class="w-3.5 h-3.5 shrink-0"></i>
-                                   <span class="truncate">${data.video_url}</span>
-                               </div>`
-                            : `<div class="text-xs text-base-content/60 flex items-center gap-1.5 mb-1.5">
-                                   <i data-lucide="upload-cloud" class="w-3.5 h-3.5 shrink-0"></i>
-                                   <span>Archivo Local</span>
-                               </div>`;
-                        
-                        const newCardHtml = `
-                        <div class="card bg-base-100 shadow-sm border border-base-300 rounded-2xl p-4 hover:border-primary/50 transition cursor-pointer flex flex-col justify-between" id="history-item-${data.id}" onclick="openPromptModal(${data.id})">
-                            <div>
-                                <div class="w-full h-36 rounded-xl bg-base-200 border border-base-300 overflow-hidden relative mb-3 flex items-center justify-center">
-                                    ${thumbImg}
-                                    <div class="absolute bottom-2 left-2">
-                                        <span class="badge badge-success text-white badge-md font-bold text-xs px-2.5">
-                                            ${data.status_display}
-                                        </span>
-                                    </div>
-                                </div>
-                                <h3 class="font-bold text-sm text-base-content truncate mb-1">
-                                    Prompt #${data.id}
-                                </h3>
-                                ${linkInfo}
-                                <p class="text-[11px] text-base-content/50 font-mono mb-3">${data.created_at}</p>
-                            </div>
-                            <div class="flex items-center justify-between pt-3 border-t border-base-300/70">
-                                <span class="text-xs font-bold text-primary inline-flex items-center gap-1 hover:underline">
-                                    Ver Prompt <i data-lucide="arrow-right" class="w-3 h-3"></i>
-                                </span>
-                                <button type="button" class="btn btn-ghost btn-square btn-xs border border-base-300 hover:border-error hover:bg-error/10 hover:text-error rounded-lg h-7 w-7 text-base-content/60 transition-all" title="Eliminar" onclick="event.stopPropagation(); openDeleteModal(${data.id})">
-                                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-                                </button>
-                            </div>
-                        </div>`;
-                        if (historyGrid) historyGrid.insertAdjacentHTML('afterbegin', newCardHtml);
-                        if (window.lucide) lucide.createIcons();
-                    }
-                }, 800);
-            } else if (data.status === 'failed') {
-                clearInterval(interval);
-                if (procTitle) procTitle.innerHTML = '<span class="text-error">Fallo en el Análisis</span>';
-                if (procSub) procSub.innerText = data.error_message || 'Error al procesar el video.';
-                setTimeout(() => {
-                    resetForm();
-                    alert(data.error_message || 'Error desconocido al procesar el video.');
-                }, 1000);
-            }
-        } catch (err) {
-            console.error('Polling error', err);
-        }
-    }, 2500);
+// Prepend placeholder en la lista de historial
+function prependProcessingPlaceholder(id) {
+    const container = document.getElementById('myPromptsContainer');
+    const noHist = document.getElementById('noHistoryMsg');
+    if (noHist) noHist.remove();
+
+    if (document.getElementById('history-item-' + id)) return;
+
+    const html = `
+    <div class="history-card group p-2.5 rounded-xl border border-base-300 bg-base-200/40 transition flex items-center justify-between gap-3 animate-pulse"
+         id="history-item-${id}">
+        <div class="flex items-center gap-3 min-w-0 flex-1">
+            <div class="w-12 h-12 rounded-lg bg-base-300 overflow-hidden shrink-0 relative flex items-center justify-center border border-base-300">
+                <span class="loading loading-spinner loading-xs text-primary"></span>
+            </div>
+            <div class="min-w-0 flex-1">
+                <div class="flex items-center gap-1.5">
+                    <h3 class="font-bold text-xs text-base-content truncate">Prompt #${id}</h3>
+                    <span class="badge badge-warning badge-xs">procesando</span>
+                </div>
+                <div class="text-[11px] text-primary truncate font-medium mt-0.5">Analizando con Gemini...</div>
+                <div class="text-[10px] text-base-content/40 font-mono mt-0.5">En progreso</div>
+            </div>
+        </div>
+    </div>`;
+    container?.insertAdjacentHTML('afterbegin', html);
+    if (window.lucide) lucide.createIcons();
 }
 
-function resetForm() {
-    const submitBtn = document.getElementById('submitBtn');
-    if (submitBtn) submitBtn.disabled = false;
-    const procCard = document.getElementById('processingCard');
-    if (procCard) procCard.classList.add('hidden');
-    const procTitle = document.getElementById('processingTitle');
-    if (procTitle) procTitle.innerText = 'Procesando video...';
-    const procSub = document.getElementById('processingSub');
-    if (procSub) procSub.innerText = 'Analizando cinematografía y escenas';
-    const progBar = document.getElementById('progressBar');
-    if (progBar) {
-        progBar.style.width = '0%';
-        progBar.className = 'h-full bg-primary transition-all duration-300';
+function updateProcessingBanner() {
+    const banner = document.getElementById('processingBanner');
+    const countEl = document.getElementById('processingQueueCount');
+    if (!banner) return;
+    
+    if (activePromptIds.size > 0) {
+        banner.classList.remove('hidden');
+        if (countEl) countEl.innerText = activePromptIds.size;
+    } else {
+        banner.classList.add('hidden');
     }
 }
 
-function formatNumber(num) {
-    if (num === null || num === undefined) return 'No disponible';
-    if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
-    if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
-    return num.toLocaleString();
+// Polling de prompts activos
+function startPolling() {
+    if (pollingInterval) return;
+    
+    pollingInterval = setInterval(async () => {
+        if (activePromptIds.size === 0) {
+            clearInterval(pollingInterval);
+            pollingInterval = null;
+            updateProcessingBanner();
+            return;
+        }
+
+        const idsArray = Array.from(activePromptIds);
+        try {
+            const res = await fetch(`/video-prompt/batch-status-ajax/?ids=${idsArray.join(',')}`);
+            const data = await res.json();
+            
+            if (data.status === 'success' && data.items) {
+                data.items.forEach(item => {
+                    if (item.status === 'completed' || item.status === 'failed') {
+                        activePromptIds.delete(item.id);
+                        updateHistoryItemCard(item);
+                    }
+                });
+                
+                // Actualizar cuota si viene en respuesta
+                if (data.quota && document.getElementById('quotaUsedText')) {
+                    document.getElementById('quotaUsedText').innerText = data.quota.used_today;
+                }
+            }
+        } catch (e) {
+            console.error('Batch polling error:', e);
+        }
+        
+        updateProcessingBanner();
+    }, 3000);
 }
 
+function updateHistoryItemCard(item) {
+    let card = document.getElementById('history-item-' + item.id);
+    if (!card) return;
+
+    card.classList.remove('animate-pulse');
+    card.onclick = () => openPromptModal(item.id);
+
+    const isSuccess = item.status === 'completed';
+    const thumbHtml = item.thumbnail_url 
+        ? `<img src="${item.thumbnail_url}" alt="Thumb" class="w-full h-full object-cover">`
+        : `<i data-lucide="film" class="w-5 h-5 text-base-content/40"></i>`;
+    
+    const badgeHtml = isSuccess 
+        ? `<span class="badge badge-success badge-xs text-white">ok</span>`
+        : `<span class="badge badge-error badge-xs text-white">err</span>`;
+
+    const subtext = item.video_url || item.video_file_name || 'Video procesado';
+    const timeText = timeAgo(item.created_timestamp);
+
+    card.innerHTML = `
+        <div class="flex items-center gap-3 min-w-0 flex-1">
+            <div class="w-12 h-12 rounded-lg bg-base-300 overflow-hidden shrink-0 relative flex items-center justify-center border border-base-300">
+                ${thumbHtml}
+            </div>
+            <div class="min-w-0 flex-1">
+                <div class="flex items-center gap-1.5">
+                    <h3 class="font-bold text-xs text-base-content truncate">Prompt #${item.id}</h3>
+                    ${badgeHtml}
+                </div>
+                <div class="text-[11px] text-base-content/60 truncate font-mono mt-0.5">${subtext}</div>
+                <div class="text-[10px] text-base-content/40 font-mono mt-0.5">${timeText}</div>
+            </div>
+        </div>
+        <div class="flex items-center gap-1 shrink-0" onclick="event.stopPropagation()">
+            <button type="button" class="btn btn-ghost btn-square btn-xs rounded-lg text-base-content/60 hover:text-primary" onclick="openPromptModal(${item.id})">
+                <i data-lucide="eye" class="w-3.5 h-3.5"></i>
+            </button>
+            <button type="button" class="btn btn-ghost btn-square btn-xs rounded-lg text-base-content/60 hover:text-error" onclick="openDeleteModal(${item.id})">
+                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+            </button>
+        </div>
+    `;
+    if (window.lucide) lucide.createIcons();
+}
+
+// Filtro en vivo del historial
+function filterHistoryItems(term) {
+    const q = (term || '').toLowerCase().trim();
+    document.querySelectorAll('.history-card').forEach(card => {
+        const text = (card.getAttribute('data-title') || card.innerText).toLowerCase();
+        card.style.display = text.includes(q) ? '' : 'none';
+    });
+}
+
+// Conmutar vistas del modal
+function switchPromptView(view) {
+    document.getElementById('structuredView')?.classList.toggle('hidden', view !== 'structured');
+    document.getElementById('rawView')?.classList.toggle('hidden', view !== 'raw');
+    document.getElementById('statsView')?.classList.toggle('hidden', view !== 'stats');
+
+    ['tabStructuredBtn', 'tabRawBtn', 'tabStatsBtn'].forEach(id => {
+        const btn = document.getElementById(id);
+        if (!btn) return;
+        const active = (id === 'tabStructuredBtn' && view === 'structured') ||
+                       (id === 'tabRawBtn' && view === 'raw') ||
+                       (id === 'tabStatsBtn' && view === 'stats');
+        btn.classList.toggle('tab-active', active);
+        btn.classList.toggle('bg-base-100', active);
+        btn.classList.toggle('shadow-sm', active);
+        btn.classList.toggle('text-primary', active);
+        btn.classList.toggle('font-bold', active);
+        btn.classList.toggle('text-base-content/70', !active);
+    });
+}
+
+function switchMarkdownSubTab(sub) {
+    const isPrev = sub === 'preview';
+    document.getElementById('mdPreviewContainer')?.classList.toggle('hidden', !isPrev);
+    document.getElementById('mdSourceContainer')?.classList.toggle('hidden', isPrev);
+    
+    document.getElementById('btnMdPreview')?.classList.toggle('bg-primary/10', isPrev);
+    document.getElementById('btnMdPreview')?.classList.toggle('text-primary', isPrev);
+    document.getElementById('btnMdPreview')?.classList.toggle('font-bold', isPrev);
+
+    document.getElementById('btnMdSource')?.classList.toggle('bg-primary/10', !isPrev);
+    document.getElementById('btnMdSource')?.classList.toggle('text-primary', !isPrev);
+    document.getElementById('btnMdSource')?.classList.toggle('font-bold', !isPrev);
+}
+
+// Abrir modal de inspección
 async function openPromptModal(id) {
     try {
         const res = await fetch(`/video-prompt/status-ajax/${id}/`);
         const data = await res.json();
-        openPromptModalData(data);
-    } catch (e) {
-        alert('No se pudo cargar el prompt.');
-    }
-}
+        currentPromptId = data.id;
 
-function openPromptModalData(data) {
-    document.getElementById('modalPromptTitle').innerText = `Prompt #${data.id}`;
-    document.getElementById('modalPromptDate').innerText = data.created_at;
-    
-    const badge = document.getElementById('modalPromptStatus');
-    badge.innerText = data.status_display;
-    badge.className = data.status === 'completed' ? 'badge badge-success text-white badge-md font-bold' : 'badge badge-warning badge-md font-bold';
+        document.getElementById('modalPromptTitle').innerText = `Prompt #${data.id}`;
+        document.getElementById('modalPromptDate').innerText = data.created_at;
 
-    const sourceBlock = document.getElementById('modalVideoSource');
-    const urlText = document.getElementById('modalVideoUrlText');
-    const urlBtn = document.getElementById('modalVideoUrlBtn');
-    
-    if (data.video_url) {
-        sourceBlock.classList.remove('hidden');
-        sourceBlock.classList.add('flex');
-        urlText.innerText = data.video_url;
-        urlText.title = data.video_url;
-        urlBtn.href = data.video_url;
-    } else if (data.video_file_url) {
-        sourceBlock.classList.remove('hidden');
-        sourceBlock.classList.add('flex');
-        urlText.innerText = 'Archivo subido localmente';
-        urlBtn.href = data.video_file_url;
-    } else {
-        sourceBlock.classList.add('hidden');
-        sourceBlock.classList.remove('flex');
-    }
-
-    if (data.stats) {
-        const sv = document.getElementById('statViews');
-        if (sv) sv.innerText = formatNumber(data.stats.views);
-        const sl = document.getElementById('statLikes');
-        if (sl) sl.innerText = formatNumber(data.stats.likes);
-        const sc = document.getElementById('statComments');
-        if (sc) sc.innerText = formatNumber(data.stats.comments);
-        const sd = document.getElementById('statDuration');
-        if (sd) sd.innerText = data.stats.duration ? `${data.stats.duration}s` : 'N/A';
-        const sud = document.getElementById('statUploadDate');
-        if (sud) sud.innerText = data.stats.upload_date || 'No disponible';
-        const su = document.getElementById('statUploader');
-        if (su) su.innerText = data.stats.uploader || 'Creador original';
-    }
-
-    if (!data.prompt_data) return;
-
-    currentRawMarkdown = formatMarkdownContent(data.prompt_data.full_prompt_markdown, data.prompt_data);
-    const rawTextarea = document.getElementById('rawMarkdownContent');
-    if (rawTextarea) rawTextarea.value = currentRawMarkdown;
-
-    const previewContainer = document.getElementById('mdPreviewContainer');
-    if (previewContainer) {
-        if (typeof marked !== 'undefined' && marked.parse) {
-            previewContainer.innerHTML = marked.parse(currentRawMarkdown);
-        } else {
-            previewContainer.innerHTML = `<pre class="whitespace-pre-wrap font-mono text-xs text-base-content leading-relaxed">${currentRawMarkdown}</pre>`;
+        const badge = document.getElementById('modalPromptStatus');
+        if (badge) {
+            badge.innerText = data.status_display;
+            badge.className = data.status === 'completed' 
+                ? 'badge badge-success text-white badge-sm font-bold' 
+                : 'badge badge-warning badge-sm font-bold';
         }
-    }
-    switchMarkdownSubTab('preview');
 
-    const styleList = document.getElementById('styleList');
-    styleList.innerHTML = '';
-    if (data.prompt_data.style) {
-        const s = data.prompt_data.style;
-        styleList.innerHTML = `
-            <div><strong class="text-base-content">Textura Visual:</strong> ${s.visual_texture || 'N/A'}</div>
-            <div><strong class="text-base-content">Iluminación:</strong> ${s.lighting_quality || 'N/A'}</div>
-            <div><strong class="text-base-content">Paleta de Color:</strong> ${s.color_palette || 'N/A'}</div>
-            <div><strong class="text-base-content">Atmósfera:</strong> ${s.atmosphere || 'N/A'}</div>
-        `;
-    }
+        const thumbImg = document.getElementById('modalThumbImg');
+        const thumbIcon = document.getElementById('modalThumbIcon');
+        if (data.thumbnail_url) {
+            thumbImg.src = data.thumbnail_url;
+            thumbImg.classList.remove('hidden');
+            thumbIcon?.classList.add('hidden');
+        } else {
+            thumbImg?.classList.add('hidden');
+            thumbIcon?.classList.remove('hidden');
+        }
 
-    const cineList = document.getElementById('cinematographyList');
-    cineList.innerHTML = '';
-    if (data.prompt_data.cinematography) {
-        const c = data.prompt_data.cinematography;
-        cineList.innerHTML = `
-            <div><strong class="text-base-content">Cámara:</strong> ${c.camera || 'N/A'}</div>
-            <div><strong class="text-base-content">Lentes:</strong> ${c.lens || 'N/A'}</div>
-            <div><strong class="text-base-content">Luces:</strong> ${c.lighting || 'N/A'}</div>
-            <div><strong class="text-base-content">Mood:</strong> ${c.mood || 'N/A'}</div>
-        `;
-    }
+        const sourceBlock = document.getElementById('modalVideoSource');
+        const urlText = document.getElementById('modalVideoUrlText');
+        const urlBtn = document.getElementById('modalVideoUrlBtn');
+        if (data.video_url) {
+            sourceBlock?.classList.remove('hidden');
+            if (urlText) urlText.innerText = data.video_url;
+            if (urlBtn) { urlBtn.href = data.video_url; urlBtn.classList.remove('hidden'); }
+        } else if (data.video_file_url) {
+            sourceBlock?.classList.remove('hidden');
+            if (urlText) urlText.innerText = data.video_file_name || 'Archivo local';
+            if (urlBtn) { urlBtn.href = data.video_file_url; urlBtn.classList.remove('hidden'); }
+        } else {
+            sourceBlock?.classList.add('hidden');
+        }
 
-    const scenesContainer = document.getElementById('scenesContainer');
-    scenesContainer.innerHTML = '';
-    if (data.prompt_data.scenes && data.prompt_data.scenes.length > 0) {
-        data.prompt_data.scenes.forEach((sc, idx) => {
-            let dialogsHtml = '';
-            if (sc.dialogue && sc.dialogue.length > 0) {
-                dialogsHtml = `
-                    <div class="mt-2.5 pt-2.5 border-t border-base-300">
-                        <strong class="text-[11px] font-bold uppercase text-base-content/50">Diálogo:</strong>
-                        <ul class="mt-1 pl-4 text-xs text-base-content/75 flex flex-col gap-1 list-disc">
-                            ${sc.dialogue.map(d => `<li><strong class="text-base-content">${d.speaker}</strong> (${d.tone}): "${d.text}"</li>`).join('')}
-                        </ul>
-                    </div>
+        // Stats
+        if (data.stats) {
+            document.getElementById('statViews').innerText = data.stats.views ? data.stats.views.toLocaleString() : '--';
+            document.getElementById('statLikes').innerText = data.stats.likes ? data.stats.likes.toLocaleString() : '--';
+            document.getElementById('statComments').innerText = data.stats.comments ? data.stats.comments.toLocaleString() : '--';
+            document.getElementById('statDuration').innerText = data.stats.duration ? `${data.stats.duration}s` : '--';
+        }
+
+        // Prompt data & Markdown
+        if (data.prompt_data) {
+            const p = data.prompt_data;
+            currentRawMarkdown = p.full_prompt_markdown || '';
+            document.getElementById('rawMarkdownContent').value = currentRawMarkdown;
+
+            const prev = document.getElementById('mdPreviewContainer');
+            if (prev) {
+                if (typeof marked !== 'undefined' && marked.parse) {
+                    prev.innerHTML = marked.parse(currentRawMarkdown);
+                } else {
+                    prev.innerHTML = `<pre class="whitespace-pre-wrap">${currentRawMarkdown}</pre>`;
+                }
+            }
+
+            // Structured cards
+            const styleList = document.getElementById('styleList');
+            if (styleList && p.style) {
+                styleList.innerHTML = `
+                    <div><strong class="text-base-content">Visual Texture:</strong> ${p.style.visual_texture || 'N/A'}</div>
+                    <div><strong class="text-base-content">Lighting Quality:</strong> ${p.style.lighting_quality || 'N/A'}</div>
+                    <div><strong class="text-base-content">Color Palette:</strong> ${p.style.color_palette || 'N/A'}</div>
+                    <div><strong class="text-base-content">Atmosphere:</strong> ${p.style.atmosphere || 'N/A'}</div>
                 `;
             }
 
-            const card = document.createElement('div');
-            card.className = 'card bg-base-200/50 border border-base-300 rounded-xl p-4';
-            card.innerHTML = `
-                <div class="flex justify-between items-center mb-2">
-                    <span class="font-bold text-sm text-base-content">Escena ${idx + 1}</span>
-                    <span class="badge badge-neutral badge-md font-mono font-bold text-xs">${sc.start_time} - ${sc.end_time}</span>
-                </div>
-                <p class="text-xs text-base-content/80 leading-relaxed mb-2">${sc.action_description}</p>
-                ${dialogsHtml}
-                ${sc.background_sound ? `<div class="text-[11px] text-base-content/60 mt-2 font-mono"><strong>Sonido de fondo:</strong> ${sc.background_sound}</div>` : ''}
-            `;
-            scenesContainer.appendChild(card);
-        });
-    } else {
-        scenesContainer.innerHTML = '<p class="text-xs text-base-content/50">No se desglosaron escenas individuales.</p>';
-    }
+            const cineList = document.getElementById('cinematographyList');
+            if (cineList && p.cinematography) {
+                cineList.innerHTML = `
+                    <div><strong class="text-base-content">Camera:</strong> ${p.cinematography.camera || 'N/A'}</div>
+                    <div><strong class="text-base-content">Lens:</strong> ${p.cinematography.lens || 'N/A'}</div>
+                    <div><strong class="text-base-content">Lighting:</strong> ${p.cinematography.lighting || 'N/A'}</div>
+                    <div><strong class="text-base-content">Mood:</strong> ${p.cinematography.mood || 'N/A'}</div>
+                `;
+            }
 
-    switchPromptView('structured');
+            const scenesContainer = document.getElementById('scenesContainer');
+            if (scenesContainer) {
+                if (p.scenes && p.scenes.length > 0) {
+                    scenesContainer.innerHTML = p.scenes.map((sc, idx) => `
+                        <div class="p-3.5 rounded-xl bg-base-200/50 border border-base-300">
+                            <div class="flex justify-between items-center mb-1.5">
+                                <span class="font-bold text-xs text-base-content">Scene ${sc.scene_number || idx + 1}</span>
+                                <span class="badge badge-neutral badge-xs font-mono">${sc.start_time || '0:00'} - ${sc.end_time || '0:05'}</span>
+                            </div>
+                            <p class="text-xs text-base-content/80 mb-2 leading-relaxed">${sc.action_description || sc.description || ''}</p>
+                            ${sc.dialogue && sc.dialogue.length ? `
+                                <div class="mt-2 pt-2 border-t border-base-300/60 text-xs">
+                                    <strong class="text-[10px] uppercase text-base-content/50">Dialogue:</strong>
+                                    ${sc.dialogue.map(d => `<div class="mt-0.5">• <strong>${d.speaker}:</strong> "${d.text}"</div>`).join('')}
+                                </div>
+                            ` : ''}
+                        </div>
+                    `).join('');
+                } else {
+                    scenesContainer.innerHTML = '<p class="text-xs text-base-content/50">Revisa la pestaña de Markdown Completo para ver el desglose total.</p>';
+                }
+            }
+        }
 
-    const modal = document.getElementById('promptModal');
-    if (modal) {
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
+        switchPromptView('structured');
+        switchMarkdownSubTab('preview');
+
+        const modal = document.getElementById('promptModal');
+        modal?.classList.remove('hidden');
+        modal?.classList.add('flex');
         document.body.style.overflow = 'hidden';
         if (window.lucide) lucide.createIcons();
+    } catch (e) {
+        alert('No se pudo cargar el detalle del prompt.');
     }
 }
 
 function closePromptModal() {
     const modal = document.getElementById('promptModal');
-    if (modal) {
-        modal.classList.add('hidden');
-        modal.classList.remove('flex');
-        document.body.style.overflow = 'auto';
-    }
+    modal?.classList.add('hidden');
+    modal?.classList.remove('flex');
+    document.body.style.overflow = 'auto';
 }
 
+function copyFullPrompt() {
+    if (!currentRawMarkdown) return;
+    navigator.clipboard.writeText(currentRawMarkdown).then(() => {
+        const lbl = document.getElementById('copyBtnLabel');
+        if (lbl) {
+            lbl.innerText = 'Copied!';
+            setTimeout(() => { lbl.innerText = 'Copy'; }, 2000);
+        }
+    });
+}
+
+function downloadPromptMarkdown() {
+    if (!currentRawMarkdown) return;
+    const blob = new Blob([currentRawMarkdown], { type: 'text/markdown;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `prompt_${currentPromptId || 'video'}.md`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+// Modal de eliminación
 function openDeleteModal(id) {
     promptIdToDelete = id;
     const modal = document.getElementById('deleteConfirmModal');
-    if (modal) {
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
-        document.body.style.overflow = 'hidden';
-        if (window.lucide) lucide.createIcons();
-    }
+    modal?.classList.remove('hidden');
+    modal?.classList.add('flex');
+    document.body.style.overflow = 'hidden';
+    if (window.lucide) lucide.createIcons();
 }
 
 function closeDeleteModal() {
     promptIdToDelete = null;
     const modal = document.getElementById('deleteConfirmModal');
-    if (modal) {
-        modal.classList.add('hidden');
-        modal.classList.remove('flex');
-        document.body.style.overflow = 'auto';
-    }
+    modal?.classList.add('hidden');
+    modal?.classList.remove('flex');
+    document.body.style.overflow = 'auto';
 }
 
 async function executeDeletePrompt() {
@@ -1102,8 +1199,9 @@ async function executeDeletePrompt() {
             }
         });
         if (res.ok) {
-            const item = document.getElementById('history-item-' + promptIdToDelete);
-            if (item) item.remove();
+            document.getElementById('history-item-' + promptIdToDelete)?.remove();
+            activePromptIds.delete(promptIdToDelete);
+            updateProcessingBanner();
             closeDeleteModal();
         } else {
             alert('No se pudo eliminar el prompt.');
@@ -1115,6 +1213,22 @@ async function executeDeletePrompt() {
     }
 }
 
+function switchHistoryTab(tab) {
+    const isMy = tab === 'my';
+    document.getElementById('myPromptsContainer')?.classList.toggle('hidden', !isMy);
+    document.getElementById('allPromptsContainer')?.classList.toggle('hidden', isMy);
+    
+    document.getElementById('tabMyPromptsBtn')?.classList.toggle('tab-active', isMy);
+    document.getElementById('tabMyPromptsBtn')?.classList.toggle('bg-base-100', isMy);
+    document.getElementById('tabMyPromptsBtn')?.classList.toggle('text-primary', isMy);
+    
+    document.getElementById('tabAllPromptsBtn')?.classList.toggle('tab-active', !isMy);
+    document.getElementById('tabAllPromptsBtn')?.classList.toggle('bg-base-100', !isMy);
+    document.getElementById('tabAllPromptsBtn')?.classList.toggle('text-primary', !isMy);
+    if (window.lucide) lucide.createIcons();
+}
+
+// Esc closing
 window.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
         closePromptModal();
@@ -1127,47 +1241,5 @@ document.getElementById('promptModal')?.addEventListener('click', (e) => {
 document.getElementById('deleteConfirmModal')?.addEventListener('click', (e) => {
     if (e.target.id === 'deleteConfirmModal') closeDeleteModal();
 });
-
-function switchHistoryTab(tab) {
-    const isMy = tab === 'my';
-    const mySection = document.getElementById('myPromptsSection');
-    const allSection = document.getElementById('allPromptsSection');
-    const tabMyBtn = document.getElementById('tabMyPromptsBtn');
-    const tabAllBtn = document.getElementById('tabAllPromptsBtn');
-
-    if (mySection) mySection.classList.toggle('hidden', !isMy);
-    if (allSection) allSection.classList.toggle('hidden', isMy);
-
-    if (tabMyBtn) {
-        tabMyBtn.classList.toggle('tab-active', isMy);
-        tabMyBtn.classList.toggle('bg-base-100', isMy);
-        tabMyBtn.classList.toggle('shadow-sm', isMy);
-        tabMyBtn.classList.toggle('text-primary', isMy);
-        tabMyBtn.classList.toggle('font-bold', isMy);
-        tabMyBtn.classList.toggle('text-base-content/70', !isMy);
-    }
-    if (tabAllBtn) {
-        tabAllBtn.classList.toggle('tab-active', !isMy);
-        tabAllBtn.classList.toggle('bg-base-100', !isMy);
-        tabAllBtn.classList.toggle('shadow-sm', !isMy);
-        tabAllBtn.classList.toggle('text-primary', !isMy);
-        tabAllBtn.classList.toggle('font-bold', !isMy);
-        tabAllBtn.classList.toggle('text-base-content/70', isMy);
-    }
-    if (window.lucide) lucide.createIcons();
-}
-
-function copyFullPrompt() {
-    if (!currentRawMarkdown) return;
-    navigator.clipboard.writeText(currentRawMarkdown).then(() => {
-        const copyText = document.getElementById('copyText');
-        if (copyText) {
-            copyText.innerText = '¡Copiado!';
-            setTimeout(() => {
-                copyText.innerText = 'Copiar Markdown';
-            }, 2000);
-        }
-    });
-}
 </script>
 {% endblock %}
