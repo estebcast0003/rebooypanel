@@ -13,3 +13,11 @@ media/
 *.log
 .vscode/
 .idea/
+odd/
+.atl/
+.codegraph/
+cookies*.txt
+*.cookie
+exported_*.txt
+*.log
+
