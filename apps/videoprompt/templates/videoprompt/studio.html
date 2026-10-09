@@ -237,17 +237,17 @@
             <div class="card bg-base-100 shadow-sm border border-base-300 rounded-2xl p-5">
                 
                 <!-- Encabezado de Historial -->
-                <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
-                    <div class="flex items-center gap-2">
+                <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
+                    <div class="flex items-center gap-2.5">
                         <h2 class="text-base font-bold text-base-content m-0">History</h2>
                         <span id="historyCountBadge" class="badge badge-neutral badge-sm font-bold font-mono px-2">{{ history_count }}</span>
                     </div>
 
-                    <!-- Buscador en tiempo real -->
-                    <div class="relative w-44 sm:w-52">
-                        <i data-lucide="search" class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-base-content/40"></i>
-                        <input type="text" id="historySearchInput" placeholder="Search..." oninput="filterHistoryItems(this.value)"
-                               class="input input-bordered input-xs w-full pl-8 pr-2 rounded-lg bg-base-200/40 border-base-300 text-xs focus:border-primary">
+                    <!-- Buscador idéntico al del extractor -->
+                    <div class="relative w-full sm:w-64 max-w-xs">
+                        <i data-lucide="search" class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-base-content/40 pointer-events-none"></i>
+                        <input type="text" id="historySearchInput" placeholder="Buscar por nombre o enlace..." oninput="filterHistoryItems(this.value)"
+                               class="input input-bordered input-sm w-full pl-10 pr-4 rounded-xl bg-base-100 border-base-300 text-xs focus:border-primary focus:outline-none placeholder:text-base-content/40 h-10 shadow-2xs" />
                     </div>
                 </div>
 
