@@ -58,3 +58,16 @@ class ExtractorViewsTestCase(TestCase):
         self.assertEqual(data['deleted_count'], 2)
         self.assertFalse(FacebookPage.objects.filter(id__in=[p1.id, p2.id]).exists())
         self.assertTrue(FacebookPage.objects.filter(id=p3.id).exists())
+
+    def test_start_extraction_duplicate_url_rejected(self):
+        FacebookPage.objects.create(user=self.user, url='https://facebook.com/existing_page', name='Existing', followers=100)
+        response = self.client.post(
+            '/extractor/api/extract/',
+            data=json.dumps({'urls': 'https://facebook.com/existing_page'}),
+            content_type='application/json'
+        )
+        self.assertEqual(response.status_code, 409)
+        data = response.json()
+        self.assertEqual(data.get("status"), "duplicate")
+        self.assertEqual(data.get("duplicate_count"), 1)
+        self.assertIn("duplicate_items", data)

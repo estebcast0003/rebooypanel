@@ -9,7 +9,6 @@
 
 {% block content %}
 <div id="dashboardApp" class="flex flex-col gap-6 pb-12">
-    {% csrf_token %}
 
     <!-- ═════════ HEADER ═════════ -->
     <div class="flex flex-wrap items-center justify-between gap-4">
@@ -22,18 +21,17 @@
             </p>
         </div>
 
-        <!-- Acciones Rápidas Header -->
-        <div class="flex items-center gap-2.5 flex-wrap">
-            <button type="button" class="btn btn-primary gap-2 shadow-sm rounded-xl text-xs font-semibold px-4 h-11 min-h-11" onclick="openExtractionModal()">
-                <i data-lucide="plus" class="w-4 h-4"></i>
-                Extraer Nuevas URLs
-            </button>
+        <div class="flex items-center gap-2">
+            <span class="badge badge-success/15 text-success border border-success/30 font-semibold gap-1.5 py-3 px-3 text-xs">
+                <span class="w-2 h-2 rounded-full bg-success animate-pulse"></span>
+                Centro Analítico Activo
+            </span>
         </div>
     </div>
 
-    <!-- ═════════ TARJETAS KPI (DAISYUI STATS CON ICON BADGES) ═════════ -->
+    <!-- ═════════ TARJETAS KPI PRINCIPALES (DAISYUI STATS) ═════════ -->
     <div class="stats stats-vertical lg:stats-horizontal shadow-sm bg-base-100 border border-base-300 w-full rounded-2xl divide-y lg:divide-y-0 lg:divide-x divide-base-300">
-        <!-- Total Fanpages Monitoreadas -->
+        <!-- 1. Fanpages Monitoreadas -->
         <div class="stat p-5 lg:p-6">
             <div class="stat-figure">
                 <div class="w-12 h-12 rounded-2xl bg-warning/10 text-warning border border-warning/20 flex items-center justify-center shadow-xs">
@@ -42,13 +40,13 @@
             </div>
             <div class="stat-title text-[11px] font-bold uppercase tracking-wider text-base-content/50">Fanpages Monitoreadas</div>
             <div class="stat-value text-3xl font-extrabold tracking-tight font-mono text-base-content mt-1 flex items-baseline gap-2.5">
-                <span id="metricTotalPages">{{ total_pages }}</span>
+                <span>{{ total_pages }}</span>
                 <span class="badge badge-neutral badge-md font-bold px-3 text-xs">activas</span>
             </div>
             <div class="stat-desc text-xs text-base-content/60 mt-1">Páginas registradas</div>
         </div>
 
-        <!-- Total Audiencia -->
+        <!-- 2. Total Audiencia -->
         <div class="stat p-5 lg:p-6">
             <div class="stat-figure">
                 <div class="w-12 h-12 rounded-2xl bg-success/10 text-success border border-success/20 flex items-center justify-center shadow-xs">
@@ -57,13 +55,13 @@
             </div>
             <div class="stat-title text-[11px] font-bold uppercase tracking-wider text-base-content/50">Total Audiencia</div>
             <div class="stat-value text-3xl font-extrabold tracking-tight font-mono text-success mt-1 flex items-baseline gap-2.5" title="{{ total_followers|floatformat:0 }} seguidores">
-                <span id="metricTotalFollowers">{{ formatted_total_followers }}</span>
+                <span>{{ formatted_total_followers }}</span>
                 <span class="badge badge-success badge-md font-bold px-3 text-white text-xs">acumulados</span>
             </div>
             <div class="stat-desc text-xs text-base-content/60 mt-1">Seguidores alcanzados</div>
         </div>
 
-        <!-- Prompts IA Generados -->
+        <!-- 3. Prompts IA Generados -->
         <div class="stat p-5 lg:p-6">
             <div class="stat-figure">
                 <div class="w-12 h-12 rounded-2xl bg-warning/10 text-warning border border-warning/20 flex items-center justify-center shadow-xs">
@@ -78,7 +76,7 @@
             <div class="stat-desc text-xs text-base-content/60 mt-1">Video to Prompt</div>
         </div>
 
-        <!-- Fanpages IA Creadas -->
+        <!-- 4. Fanpages IA Creadas -->
         <div class="stat p-5 lg:p-6">
             <div class="stat-figure">
                 <div class="w-12 h-12 rounded-2xl bg-warning/10 text-warning border border-warning/20 flex items-center justify-center shadow-xs">
@@ -94,761 +92,400 @@
         </div>
     </div>
 
-    <!-- ═════════ FILTROS SEGMENTADOS & BUSCADOR ═════════ -->
-    <div class="flex flex-wrap items-center justify-between gap-4">
-        <!-- Segmented Tabs -->
-        <div class="tabs tabs-boxed bg-base-200/80 border border-base-300/60 p-1 rounded-xl">
-            <button type="button" class="tab tab-sm rounded-lg text-xs font-semibold gap-1.5 transition-all tab-active bg-base-100 shadow-sm text-primary font-bold pill-tab active" onclick="filterTableCategory('all', this)">
-                <i data-lucide="layout-grid" class="w-3.5 h-3.5"></i>
-                Todos
-            </button>
-            <button type="button" class="tab tab-sm rounded-lg text-xs font-semibold gap-1.5 transition-all text-base-content/70 hover:text-base-content pill-tab" onclick="filterTableCategory('growth', this)">
-                <i data-lucide="trending-up" class="w-3.5 h-3.5 text-success"></i>
-                Con Crecimiento
-            </button>
-            <button type="button" class="tab tab-sm rounded-lg text-xs font-semibold gap-1.5 transition-all text-base-content/70 hover:text-base-content pill-tab" onclick="filterTableCategory('major', this)">
-                <i data-lucide="zap" class="w-3.5 h-3.5 text-warning"></i>
-                Audiencia (+100K)
-            </button>
-        </div>
-
-        <!-- Search Bar -->
-        <div class="relative w-full max-w-xs">
-            <i data-lucide="search" class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-base-content/40 pointer-events-none"></i>
-            <input type="text" id="tableSearchInput" placeholder="Buscar por nombre o enlace..."
-                   class="input input-bordered input-sm w-full pl-10 pr-4 rounded-xl bg-base-100 border-base-300 text-xs focus:border-primary focus:outline-none placeholder:text-base-content/40 h-10" />
-        </div>
-    </div>
-
-    <!-- ═════════ TABLA DE RESULTADOS & MONITOREO ═════════ -->
-    <div class="card bg-base-100 shadow-sm border border-base-300 rounded-2xl overflow-hidden">
-        
-        <!-- Table Header Info Bar -->
-        <div class="p-4 lg:px-6 border-b border-base-300/70 flex justify-between items-center flex-wrap gap-3 bg-base-200/30">
-            <div class="flex items-center gap-2.5">
-                <h2 class="text-sm font-bold text-base-content m-0">
-                    Registro de Fanpages Monitoreadas
-                </h2>
-                <span id="tableCountBadge" class="badge badge-neutral badge-md font-mono font-bold px-2.5">{{ pages.count }}</span>
+    <!-- ═════════ FILA 2: KPIS OPERATIVOS DE NEGOCIO ═════════ -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <!-- Crecimiento Neto -->
+        <div class="card bg-base-100 border border-base-300 shadow-sm rounded-2xl p-5 flex flex-col justify-between">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-bold uppercase tracking-wider text-base-content/50">Crecimiento Neto</span>
+                <div class="w-8 h-8 rounded-xl {% if total_net_growth >= 0 %}bg-success/10 text-success{% else %}bg-error/10 text-error{% endif %} flex items-center justify-center">
+                    <i data-lucide="{% if total_net_growth >= 0 %}trending-up{% else %}trending-down{% endif %}" class="w-4 h-4"></i>
+                </div>
             </div>
-
-            <div class="flex items-center gap-2">
-                <button type="button" class="btn btn-ghost btn-xs gap-1.5 border border-base-300 hover:border-primary rounded-lg font-medium text-xs h-8 px-2.5 text-base-content/75" onclick="openExtractionModal()">
-                    <i data-lucide="plus" class="w-3.5 h-3.5 text-primary"></i>
-                    Agregar URLs
-                </button>
+            <div class="mt-3">
+                <div class="text-2xl font-extrabold font-mono {% if total_net_growth >= 0 %}text-success{% else %}text-error{% endif %}">
+                    {{ formatted_net_growth }}
+                    <span class="text-xs font-semibold ml-1.5 opacity-80">({{ formatted_growth_percentage }})</span>
+                </div>
+                <div class="text-xs text-base-content/60 mt-1 flex items-center gap-1.5">
+                    <i data-lucide="activity" class="w-3.5 h-3.5 text-primary"></i>
+                    <span>{{ growing_pages_count }} fanpages en crecimiento activo</span>
+                </div>
             </div>
         </div>
 
-        <!-- Live Progress Bar (Hidden por defecto) -->
-        <div id="liveProgressContainer" class="liveProgressContainer p-3 lg:px-6 bg-primary/10 border-b border-primary/20 hidden">
-            <div class="flex justify-between items-center text-xs text-primary mb-1.5 font-medium">
-                <span class="progressStatusLabel flex items-center gap-2">
-                    <i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i>
-                    <span>Extrayendo fanpages en tiempo real...</span>
-                </span>
-                <span class="progressCounterLabel font-mono font-bold">0 / 0 (0%)</span>
+        <!-- Tráfico Web WordPress -->
+        <div class="card bg-base-100 border border-base-300 shadow-sm rounded-2xl p-5 flex flex-col justify-between">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-bold uppercase tracking-wider text-base-content/50">Tráfico en Enlaces Web</span>
+                <div class="w-8 h-8 rounded-xl bg-info/10 text-info flex items-center justify-center">
+                    <i data-lucide="mouse-pointer-click" class="w-4 h-4"></i>
+                </div>
             </div>
-            <div class="w-full h-1.5 bg-base-300/50 rounded-full overflow-hidden">
-                <div class="progressBarFill h-full bg-primary transition-all duration-300" style="width:0%;"></div>
+            <div class="mt-3">
+                <div class="text-2xl font-extrabold font-mono text-base-content">
+                    {{ formatted_wp_clicks }} <span class="text-xs font-normal text-base-content/50">clics</span>
+                    <span class="text-xs font-semibold text-info ml-2">({{ formatted_wp_unique }} únicos)</span>
+                </div>
+                <div class="text-xs text-base-content/60 mt-1 flex items-center gap-1.5">
+                    <i data-lucide="globe" class="w-3.5 h-3.5 text-info"></i>
+                    <span>{{ wp_posts_count }} artículos publicados en WordPress</span>
+                </div>
             </div>
         </div>
 
-        <!-- Table Container -->
-        <div class="overflow-x-auto max-h-[600px] overflow-y-auto">
-            <table class="table table-zebra w-full">
-                <thead>
-                    <tr class="bg-base-200/50 border-b border-base-300 text-[11px] font-bold uppercase tracking-wider text-base-content/50">
-                        <th class="w-12 text-center py-4 pl-4">#</th>
-                        <th>Fanpage</th>
-                        <th class="text-right">Seguidores</th>
-                        <th class="text-center">Crecimiento</th>
-                        <th class="text-center">Estado</th>
-                        <th class="text-center pr-6 w-36">Acciones</th>
-                    </tr>
-                </thead>
-                <tbody id="pagesTableBody" class="text-sm">
-                    {% for page in pages %}
-                    <tr id="row-page-{{ page.id }}" class="fanpage-row hover:bg-base-200/30 transition-colors" data-followers="{{ page.followers }}" data-has-growth="{% if page.growth_data.is_positive %}true{% else %}false{% endif %}">
-                        <td class="text-center font-mono text-xs text-base-content/50 pl-4">{{ page.id }}</td>
-                        <td class="py-3.5">
-                            <div class="font-bold text-sm text-base-content tracking-tight">{{ page.name }}</div>
-                            <a href="{{ page.url }}" target="_blank" rel="noopener noreferrer" class="text-xs text-primary hover:underline font-mono opacity-80 inline-flex items-center gap-1 transition">
-                                {{ page.url }}
-                                <i data-lucide="external-link" class="w-3 h-3 opacity-60"></i>
-                            </a>
-                        </td>
-                        <td class="text-right font-mono font-bold text-sm text-base-content" title="{{ page.followers|floatformat:0 }} seguidores">
-                            <span class="inline-flex items-center px-2 py-0.5 rounded-lg bg-base-200 border border-base-300 text-xs">
-                                {{ page.formatted_followers }}
-                            </span>
-                        </td>
-                        <td class="text-center font-mono text-xs">
-                            {% with growth=page.growth_data %}
-                                {% if growth.is_positive %}
-                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-success/10 text-success border border-success/20" title="Crecimiento: {{ growth.delta|floatformat:0 }} seguidores">
-                                        <i data-lucide="trending-up" class="w-3 h-3"></i>
-                                        +{{ growth.formatted_delta }} ({{ growth.formatted_pct }})
-                                    </span>
-                                {% elif growth.is_negative %}
-                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-error/10 text-error border border-error/20">
-                                        <i data-lucide="trending-down" class="w-3 h-3"></i>
-                                        {{ growth.formatted_delta }}
-                                    </span>
-                                {% else %}
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs text-base-content/50 bg-base-200 border border-base-300">
-                                        0 (0%)
-                                    </span>
-                                {% endif %}
-                            {% endwith %}
-                        </td>
-                        <td class="text-center">
-                            {% if page.followers > 0 %}
-                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-success/10 text-success border border-success/20">
-                                <i data-lucide="check" class="w-3 h-3"></i> Activa
-                            </span>
-                            {% else %}
-                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-warning/10 text-warning border border-warning/20" title="{{ page.status }}">
-                                <i data-lucide="alert-triangle" class="w-3 h-3"></i> {{ page.status|truncatechars:14 }}
-                            </span>
-                            {% endif %}
-                        </td>
-                        <td class="text-center pr-6">
-                            <div class="inline-flex items-center gap-1.5 justify-center">
-                                <button type="button" class="btn btn-ghost btn-xs gap-1 border border-base-300 hover:border-primary hover:bg-primary/10 hover:text-primary rounded-lg text-xs h-8 px-2 text-base-content/75 transition-all" onclick="openGrowthModal({{ page.id }})" title="Ver evolución de seguidores">
-                                    <i data-lucide="line-chart" class="w-3.5 h-3.5 text-success"></i>
-                                    Historial
-                                </button>
-                                <a href="{{ page.url }}" target="_blank" rel="noopener noreferrer" class="btn btn-ghost btn-square btn-xs border border-base-300 hover:border-primary hover:bg-primary/10 hover:text-primary rounded-lg h-8 w-8 text-base-content/75 transition-all" title="Abrir en Facebook">
-                                    <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
-                                </a>
-                                <button type="button" onclick="openDeleteModal({{ page.id }}, '{{ page.name|escapejs }}')" class="btn btn-ghost btn-square btn-xs border border-base-300 hover:border-error hover:bg-error/10 hover:text-error rounded-lg h-8 w-8 text-base-content/75 transition-all" title="Eliminar fila">
-                                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr id="emptyTableMessage">
-                        <td colspan="6" class="p-16 text-center text-base-content/50">
-                            <div class="flex flex-col items-center justify-center gap-2.5">
-                                <i data-lucide="inbox" class="w-12 h-12 text-base-content/30 mb-1"></i>
-                                <div class="text-sm font-bold text-base-content">No hay fanpages registradas todavía</div>
-                                <div class="text-xs text-base-content/60">Hacé clic en <strong>Extraer Nuevas URLs</strong> para iniciar el rastreo.</div>
-                                <button type="button" class="btn btn-primary btn-sm gap-2 rounded-xl text-xs font-semibold mt-2" onclick="openExtractionModal()">
-                                    <i data-lucide="plus" class="w-4 h-4"></i> Extraer Primeras URLs
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-    <!-- ═════════ RIBBON INFERIOR DE RENDIMIENTO & SERVICIOS ═════════ -->
-    <div class="card bg-base-100 shadow-sm border border-base-300 rounded-2xl p-5 lg:p-6">
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl bg-warning/10 text-warning border border-warning/20 flex items-center justify-center shrink-0">
-                    <i data-lucide="shield-check" class="w-5 h-5"></i>
-                </div>
-                <div>
-                    <div class="text-xs font-bold text-base-content">Circuit Breaker</div>
-                    <div class="text-[11px] text-base-content/60">Protección y cooldown automático</div>
+        <!-- Cuota Diaria de IA -->
+        <div class="card bg-base-100 border border-base-300 shadow-sm rounded-2xl p-5 flex flex-col justify-between">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-bold uppercase tracking-wider text-base-content/50">Cuota Diaria de Prompts IA</span>
+                <div class="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+                    <i data-lucide="zap" class="w-4 h-4"></i>
                 </div>
             </div>
-
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl bg-warning/10 text-warning border border-warning/20 flex items-center justify-center shrink-0">
-                    <i data-lucide="activity" class="w-5 h-5"></i>
+            <div class="mt-3">
+                <div class="text-2xl font-extrabold font-mono text-base-content flex items-baseline justify-between">
+                    <span>
+                        {% if is_unlimited_prompts %}
+                        Ilimitada
+                        {% else %}
+                        {{ prompts_used_today }} <span class="text-xs font-normal text-base-content/50">/ {{ prompts_limit }}</span>
+                        {% endif %}
+                    </span>
+                    <span class="text-xs font-bold text-primary">
+                        {% if is_unlimited_prompts %}
+                        Superadmin
+                        {% else %}
+                        {{ prompts_remaining_today }} restantes
+                        {% endif %}
+                    </span>
                 </div>
-                <div>
-                    <div class="text-xs font-bold text-base-content">Motor REST API</div>
-                    <div class="text-[11px] text-base-content/60">Sincronización en tiempo real</div>
+                {% if not is_unlimited_prompts %}
+                <progress class="progress progress-primary w-full mt-2 h-1.5" value="{{ prompts_used_today }}" max="{{ prompts_limit }}"></progress>
+                {% else %}
+                <div class="text-xs text-base-content/60 mt-1 flex items-center gap-1.5">
+                    <i data-lucide="shield-check" class="w-3.5 h-3.5 text-success"></i>
+                    <span>Acceso completo sin límite de generación</span>
                 </div>
-            </div>
-
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl bg-warning/10 text-warning border border-warning/20 flex items-center justify-center shrink-0">
-                    <i data-lucide="cpu" class="w-5 h-5"></i>
-                </div>
-                <div>
-                    <div class="text-xs font-bold text-base-content">Async Workers</div>
-                    <div class="text-[11px] text-base-content/60">Hilos resilientes en paralelo</div>
-                </div>
-            </div>
-
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl bg-warning/10 text-warning border border-warning/20 flex items-center justify-center shrink-0">
-                    <i data-lucide="smartphone" class="w-5 h-5"></i>
-                </div>
-                <div>
-                    <div class="text-xs font-bold text-base-content">Seguridad Activa</div>
-                    <div class="text-[11px] text-base-content/60">Monitoreo y revocación remota</div>
-                </div>
+                {% endif %}
             </div>
         </div>
     </div>
 
-</div>
-
-<!-- ═════════ MODAL: EXTRAER NUEVAS URLS ═════════ -->
-<div id="newExtractionModal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-md hidden items-center justify-center p-4">
-    <div class="card bg-base-100 shadow-2xl border border-base-300 w-full max-w-lg p-6 lg:p-7 rounded-2xl relative">
-        
-        <!-- Modal Header -->
-        <div class="flex justify-between items-center mb-5">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
-                    <i data-lucide="list-plus" class="w-5 h-5"></i>
-                </div>
+    <!-- ═════════ FILA 3: GRÁFICAS ANALÍTICAS (CHART.JS) ═════════ -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <!-- Gráfica A: Evolución Histórica de Audiencia (Línea con Gradiente) -->
+        <div class="card bg-base-100 border border-base-300 shadow-sm rounded-2xl p-5 lg:p-6 lg:col-span-8 flex flex-col justify-between">
+            <div class="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-base-200">
                 <div>
-                    <h3 class="text-base font-bold text-base-content m-0">
-                        Extraer Nuevas URLs
-                    </h3>
-                    <p class="text-xs text-base-content/60 m-0">
-                        Pegá URLs de Facebook o cargá un archivo .txt
+                    <h2 class="text-base font-bold text-base-content flex items-center gap-2">
+                        <i data-lucide="line-chart" class="w-4 h-4 text-success"></i>
+                        Evolución Histórica de Audiencia
+                    </h2>
+                    <p class="text-xs text-base-content/60 mt-0.5">
+                        Trayectoria acumulada de seguidores capturados en snapshots
+                    </p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="badge badge-sm badge-outline text-xs font-mono font-semibold">{{ total_pages }} Fanpages</span>
+                </div>
+            </div>
+
+            <div class="w-full pt-4 relative min-h-[280px] flex items-center justify-center">
+                {% if total_followers > 0 %}
+                <canvas id="audienceTimelineCanvas" class="w-full h-72 max-h-72"></canvas>
+                {% else %}
+                <!-- Empty State -->
+                <div class="text-center py-10 px-4 max-w-sm">
+                    <div class="w-12 h-12 rounded-2xl bg-base-200 text-base-content/40 flex items-center justify-center mx-auto mb-3">
+                        <i data-lucide="bar-chart-2" class="w-6 h-6"></i>
+                    </div>
+                    <p class="text-sm font-bold text-base-content">Aún no hay historial de métricas</p>
+                    <p class="text-xs text-base-content/60 mt-1">Registrá fanpages en el Extractor para comenzar a graficar la evolución de tus seguidores.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Gráfica B: Distribución por Fanpage (Doughnut) -->
+        <div class="card bg-base-100 border border-base-300 shadow-sm rounded-2xl p-5 lg:p-6 lg:col-span-4 flex flex-col justify-between">
+            <div class="flex items-center justify-between gap-3 pb-4 border-b border-base-200">
+                <div>
+                    <h2 class="text-base font-bold text-base-content flex items-center gap-2">
+                        <i data-lucide="pie-chart" class="w-4 h-4 text-warning"></i>
+                        Distribución de Audiencia
+                    </h2>
+                    <p class="text-xs text-base-content/60 mt-0.5">
+                        Concentración en top fanpages
                     </p>
                 </div>
             </div>
-            <button type="button" class="btn btn-ghost btn-square btn-xs rounded-lg text-base-content/60 hover:text-base-content" onclick="closeExtractionModal()">
-                <i data-lucide="x" class="w-4 h-4"></i>
-            </button>
-        </div>
 
-        <!-- Drag & Drop Zone -->
-        <div id="dropZone" class="border-2 border-dashed border-base-300 rounded-xl p-4 text-center cursor-pointer bg-base-200/50 hover:bg-primary/5 hover:border-primary transition mb-3.5">
-            <input type="file" id="fileInput" accept=".txt" class="hidden">
-            <div class="flex items-center justify-center gap-2 text-xs text-base-content/75">
-                <i data-lucide="upload-cloud" class="w-4 h-4 text-primary"></i>
-                <span>Arrastrá un archivo <strong class="text-base-content font-bold">.txt</strong> o hacé clic para cargar</span>
-            </div>
-        </div>
-
-        <!-- URLs Textarea -->
-        <div class="relative mb-4">
-            <div class="flex justify-between items-center mb-1.5">
-                <label class="text-[11px] font-bold uppercase tracking-wider text-base-content/60">
-                    Lista de Enlaces (Una por línea)
-                </label>
-                <span id="urlCountBadge" class="badge badge-neutral badge-md font-mono px-2.5">0 líneas</span>
-            </div>
-            <textarea 
-                id="urlsTextarea" 
-                rows="6" 
-                placeholder="https://www.facebook.com/pagina1&#10;https://www.facebook.com/pagina2&#10;facebook.com/pagina3..."
-                class="textarea textarea-bordered w-full rounded-xl bg-base-200/40 border-base-300 text-xs font-mono focus:border-primary focus:outline-none resize-y p-3 leading-relaxed"
-            >{{ cached_urls }}</textarea>
-            <div id="cacheSaveIndicator" class="absolute bottom-3 right-3 text-[10px] text-base-content/50 opacity-0 transition-opacity">
-                Guardado
-            </div>
-        </div>
-
-        <!-- Live Progress Container in Modal -->
-        <div id="liveProgressContainerModal" class="p-3 bg-primary/10 border border-primary/20 rounded-xl mb-4 hidden">
-            <div class="flex justify-between items-center text-xs text-primary mb-1.5 font-medium">
-                <span id="progressStatusLabel" class="flex items-center gap-2">
-                    <i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i>
-                    <span>Extrayendo datos en tiempo real...</span>
-                </span>
-                <span id="progressCounterLabel" class="font-mono font-bold">0 / 0 (0%)</span>
-            </div>
-            <div class="w-full h-1.5 bg-base-300/50 rounded-full overflow-hidden">
-                <div id="progressBarFill" class="h-full bg-primary transition-all duration-300" style="width:0%;"></div>
-            </div>
-        </div>
-
-        <!-- Modal Actions -->
-        <div class="flex justify-between items-center gap-2.5">
-            <button type="button" id="btnClearUrls" class="btn btn-ghost btn-sm text-xs text-error hover:bg-error/10 gap-1.5 rounded-xl">
-                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-                Limpiar
-            </button>
-            <div class="flex gap-2">
-                <button type="button" class="btn btn-ghost btn-sm text-xs rounded-xl border border-base-300" onclick="closeExtractionModal()">Cerrar</button>
-                <button type="button" id="btnStartExtraction" class="btn btn-primary btn-sm text-xs gap-1.5 rounded-xl text-primary-content font-semibold shadow-xs">
-                    <i data-lucide="play" id="btnStartIcon" class="w-3.5 h-3.5"></i>
-                    <span id="btnStartText">Iniciar Extracción</span>
-                </button>
+            <div class="w-full pt-4 relative min-h-[280px] flex items-center justify-center">
+                {% if total_followers > 0 %}
+                <canvas id="audienceDistributionCanvas" class="w-full h-72 max-h-72"></canvas>
+                {% else %}
+                <div class="text-center py-10 px-4 max-w-xs">
+                    <div class="w-12 h-12 rounded-2xl bg-base-200 text-base-content/40 flex items-center justify-center mx-auto mb-3">
+                        <i data-lucide="pie-chart" class="w-6 h-6"></i>
+                    </div>
+                    <p class="text-sm font-bold text-base-content">Sin distribución</p>
+                    <p class="text-xs text-base-content/60 mt-1">Registrá páginas activas para ver el porcentaje de audiencia de cada una.</p>
+                </div>
+                {% endif %}
             </div>
         </div>
     </div>
-</div>
 
-<!-- ═════════ MODAL: HISTORIAL DE CRECIMIENTO ═════════ -->
-<div id="growthHistoryModal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-md hidden items-center justify-center p-4">
-    <div class="card bg-base-100 shadow-2xl border border-base-300 w-full max-w-2xl max-h-[85vh] flex flex-col rounded-2xl overflow-hidden p-0">
-        
-        <!-- Modal Header -->
-        <div class="p-5 lg:px-6 border-b border-base-300 flex justify-between items-center">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl bg-success/10 border border-success/20 flex items-center justify-center text-success shrink-0">
-                    <i data-lucide="trending-up" class="w-5 h-5"></i>
-                </div>
+    <!-- ═════════ FILA 4: RANKING DE CRECIMIENTO & ACCESOS RÁPIDOS ═════════ -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <!-- 🏆 Top Fanpages con Mayor Crecimiento -->
+        <div class="card bg-base-100 border border-base-300 shadow-sm rounded-2xl p-5 lg:p-6 lg:col-span-7">
+            <div class="flex items-center justify-between pb-4 border-b border-base-200">
                 <div>
-                    <h3 id="growthModalTitle" class="text-base font-bold text-base-content m-0">Evolución de Seguidores</h3>
-                    <span id="growthModalUrl" class="text-xs text-base-content/60 font-mono block"></span>
+                    <h2 class="text-base font-bold text-base-content flex items-center gap-2">
+                        <i data-lucide="award" class="w-4 h-4 text-warning"></i>
+                        Top Fanpages en Crecimiento
+                    </h2>
+                    <p class="text-xs text-base-content/60 mt-0.5">
+                        Páginas que registraron incremento positivo en seguidores
+                    </p>
                 </div>
+                <a href="{% url 'extractor:dashboard' %}" class="btn btn-ghost btn-xs text-primary gap-1 font-semibold">
+                    Ver todas
+                    <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+                </a>
             </div>
-            <button type="button" class="btn btn-ghost btn-square btn-xs rounded-lg text-base-content/60 hover:text-base-content" onclick="closeGrowthModal()">
-                <i data-lucide="x" class="w-4 h-4"></i>
-            </button>
-        </div>
 
-        <!-- Growth Summary Highlights -->
-        <div class="p-4 lg:px-6 bg-base-200/50 border-b border-base-300 grid grid-cols-3 gap-3">
-            <div class="text-center p-2.5 bg-base-100 rounded-xl border border-base-300">
-                <div class="text-[10px] text-base-content/60 uppercase font-bold">Iniciales</div>
-                <div id="growthModalInitial" class="text-base font-bold text-base-content font-mono mt-0.5">-</div>
-            </div>
-            <div class="text-center p-2.5 bg-base-100 rounded-xl border border-base-300">
-                <div class="text-[10px] text-base-content/60 uppercase font-bold">Actuales</div>
-                <div id="growthModalCurrent" class="text-base font-bold text-success font-mono mt-0.5">-</div>
-            </div>
-            <div class="text-center p-2.5 bg-base-100 rounded-xl border border-base-300">
-                <div class="text-[10px] text-base-content/60 uppercase font-bold">Crecimiento</div>
-                <div id="growthModalTotalDelta" class="text-base font-bold text-success font-mono mt-0.5">-</div>
-            </div>
-        </div>
-
-        <!-- Interactive Chart Visualizer -->
-        <div class="p-4 lg:p-5 border-b border-base-300 bg-base-100">
-            <div class="flex justify-between items-center mb-2">
-                <span class="text-[11px] font-bold uppercase tracking-wider text-base-content/60">Curva de Evolución</span>
-                <span class="badge badge-success badge-md font-mono font-bold text-white px-2.5">Tendencia</span>
-            </div>
-            <div style="height: 160px; min-height: 160px; position: relative; width: 100%;">
-                <canvas id="growthChartCanvas"></canvas>
-            </div>
-        </div>
-
-        <!-- Snapshots Table with Scroll -->
-        <div class="overflow-y-auto max-h-52 flex-1 p-0">
-            <table class="table table-zebra table-xs w-full">
-                <thead>
-                    <tr class="bg-base-200/40 text-[10px] uppercase font-bold text-base-content/50">
-                        <th class="py-2.5 pl-5">Fecha & Hora</th>
-                        <th class="text-right">Seguidores</th>
-                        <th class="text-right pr-5">Variación</th>
-                    </tr>
-                </thead>
-                <tbody id="growthSnapshotsBody">
-                    <tr>
-                        <td colspan="3" class="text-center py-8 text-base-content/50">
-                            <div class="flex items-center justify-center gap-2 text-xs">
-                                <i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i>
-                                <span>Cargando datos del gráfico...</span>
+            <div class="mt-4 flex flex-col divide-y divide-base-200">
+                {% if top_growing_pages %}
+                    {% for page in top_growing_pages %}
+                    <div class="py-3 flex items-center justify-between gap-3">
+                        <div class="flex items-center gap-3 min-w-0">
+                            <div class="w-9 h-9 rounded-xl bg-success/10 text-success border border-success/20 flex items-center justify-center shrink-0 font-bold text-xs font-mono">
+                                #{{ forloop.counter }}
                             </div>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+                            <div class="min-w-0">
+                                <a href="{{ page.url }}" target="_blank" rel="noopener noreferrer" class="text-sm font-bold text-base-content hover:text-primary transition-colors truncate block">
+                                    {{ page.name }}
+                                </a>
+                                <span class="text-xs text-base-content/50 font-mono">{{ page.formatted_followers }} seguidores</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2 shrink-0">
+                            <span class="badge badge-success badge-sm font-mono font-bold text-white px-2 py-2">
+                                {{ page.formatted_delta }}
+                            </span>
+                            <span class="text-[11px] font-mono text-success font-semibold hidden sm:inline">
+                                ({{ page.formatted_pct }})
+                            </span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center py-8">
+                        <div class="w-10 h-10 rounded-xl bg-base-200 text-base-content/40 flex items-center justify-center mx-auto mb-2">
+                            <i data-lucide="trending-up" class="w-5 h-5"></i>
+                        </div>
+                        <p class="text-xs text-base-content/60">Aún no se detectaron fanpages con crecimiento positivo reciente.</p>
+                        <a href="{% url 'extractor:dashboard' %}" class="btn btn-primary btn-xs rounded-lg mt-3 gap-1">
+                            Monitorear en Fan Extractor
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
         </div>
 
-        <!-- Modal Footer -->
-        <div class="p-3.5 lg:px-6 border-t border-base-300 flex justify-end bg-base-200/30">
-            <button type="button" class="btn btn-ghost btn-sm text-xs rounded-xl border border-base-300 px-4" onclick="closeGrowthModal()">Cerrar</button>
+        <!-- ⚡ Accesos Rápidos del Ecosistema -->
+        <div class="card bg-base-100 border border-base-300 shadow-sm rounded-2xl p-5 lg:p-6 lg:col-span-5 flex flex-col justify-between">
+            <div class="pb-4 border-b border-base-200">
+                <h2 class="text-base font-bold text-base-content flex items-center gap-2">
+                    <i data-lucide="compass" class="w-4 h-4 text-primary"></i>
+                    Herramientas de Operación
+                </h2>
+                <p class="text-xs text-base-content/60 mt-0.5">
+                    Acceso directo a las herramientas principales del panel
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
+                <!-- Fan Extractor -->
+                <a href="{% url 'extractor:dashboard' %}" class="p-3.5 rounded-xl border border-base-200 hover:border-primary/40 hover:bg-base-200/40 transition-all flex flex-col justify-between gap-2 group">
+                    <div class="w-8 h-8 rounded-lg bg-warning/10 text-warning flex items-center justify-center group-hover:scale-105 transition-transform">
+                        <i data-lucide="activity" class="w-4 h-4"></i>
+                    </div>
+                    <div>
+                        <div class="text-xs font-bold text-base-content group-hover:text-primary transition-colors">Fan Extractor</div>
+                        <div class="text-[11px] text-base-content/50">Métricas y URLs en vivo</div>
+                    </div>
+                </a>
+
+                <!-- Video to Prompt -->
+                <a href="{% url 'videoprompt:studio' %}" class="p-3.5 rounded-xl border border-base-200 hover:border-primary/40 hover:bg-base-200/40 transition-all flex flex-col justify-between gap-2 group">
+                    <div class="w-8 h-8 rounded-lg bg-warning/10 text-warning flex items-center justify-center group-hover:scale-105 transition-transform">
+                        <i data-lucide="clapperboard" class="w-4 h-4"></i>
+                    </div>
+                    <div>
+                        <div class="text-xs font-bold text-base-content group-hover:text-primary transition-colors">Video to Prompt</div>
+                        <div class="text-[11px] text-base-content/50">Generador de Prompts IA</div>
+                    </div>
+                </a>
+
+                <!-- Fanpage Creator -->
+                <a href="{% url 'fanpages:studio' %}" class="p-3.5 rounded-xl border border-base-200 hover:border-primary/40 hover:bg-base-200/40 transition-all flex flex-col justify-between gap-2 group">
+                    <div class="w-8 h-8 rounded-lg bg-warning/10 text-warning flex items-center justify-center group-hover:scale-105 transition-transform">
+                        <i data-lucide="sparkles" class="w-4 h-4"></i>
+                    </div>
+                    <div>
+                        <div class="text-xs font-bold text-base-content group-hover:text-primary transition-colors">Fanpage Creator</div>
+                        <div class="text-[11px] text-base-content/50">Perfiles e identidades IA</div>
+                    </div>
+                </a>
+
+                <!-- IG Downloader -->
+                <a href="{% url 'igdownloader:index' %}" class="p-3.5 rounded-xl border border-base-200 hover:border-primary/40 hover:bg-base-200/40 transition-all flex flex-col justify-between gap-2 group">
+                    <div class="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center group-hover:scale-105 transition-transform">
+                        <i data-lucide="download" class="w-4 h-4"></i>
+                    </div>
+                    <div>
+                        <div class="text-xs font-bold text-base-content group-hover:text-primary transition-colors">IG Downloader</div>
+                        <div class="text-[11px] text-base-content/50">Reels y artículos WP</div>
+                    </div>
+                </a>
+            </div>
         </div>
     </div>
+
 </div>
 
-<!-- ═════════ MODAL: CONFIRMAR ELIMINACIÓN INDIVIDUAL ═════════ -->
-<div id="deleteConfirmModal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-md hidden items-center justify-center p-4">
-    <div class="card bg-base-100 shadow-2xl border border-base-300 w-full max-w-sm p-6 rounded-2xl text-center">
-        
-        <div class="w-12 h-12 rounded-2xl bg-error/10 text-error border border-error/20 flex items-center justify-center mx-auto mb-3.5">
-            <i data-lucide="trash-2" class="w-5 h-5"></i>
-        </div>
-        
-        <h3 class="text-base font-bold text-base-content mb-1">¿Eliminar Fanpage?</h3>
-        <p id="deleteModalTargetText" class="text-xs text-base-content/75 font-semibold mb-2">Fanpage seleccionada</p>
-        <p class="text-xs text-base-content/60 leading-relaxed mb-6">
-            Esta acción eliminará el registro y su historial de métricas de forma permanente.
-        </p>
-
-        <div class="flex justify-end gap-2.5">
-            <button type="button" class="btn btn-ghost btn-sm flex-1 rounded-xl border border-base-300 text-xs font-semibold" onclick="closeDeleteModal()">Cancelar</button>
-            <button type="button" id="confirmDeleteBtn" class="btn btn-error btn-sm text-white flex-1 rounded-xl text-xs font-semibold gap-1.5 shadow-xs" onclick="executeDeletePage()">
-                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-                <span id="confirmDeleteText">Eliminar</span>
-            </button>
-        </div>
-    </div>
-</div>
-
-<!-- Toast Container Flotante -->
-<div id="toastContainer" class="toast toast-bottom toast-end z-50 pointer-events-none p-4"></div>
-{% endblock %}
-
-{% block extra_js %}
+<!-- ═════════ INICIALIZACIÓN DE GRÁFICAS CHART.JS ═════════ -->
 <script>
-    window.EXTRACTOR_API_BASE = '/extractor';
+document.addEventListener('DOMContentLoaded', () => {
+    // 1. Gráfica de Línea: Evolución de Audiencia
+    const timelineCanvas = document.getElementById('audienceTimelineCanvas');
+    if (timelineCanvas && typeof Chart !== 'undefined') {
+        const labels = {{ timeline_labels_json|safe }};
+        const values = {{ timeline_values_json|safe }};
 
-    // Modal: Extraer Nuevas URLs
-    function openExtractionModal() {
-        const modal = document.getElementById('newExtractionModal');
-        if (modal) {
-            modal.style.display = 'flex';
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-            document.body.style.overflow = 'hidden';
-            if (window.lucide) lucide.createIcons();
-        }
-    }
+        if (labels.length > 0 && values.length > 0) {
+            const ctx = timelineCanvas.getContext('2d');
+            const gradient = ctx.createLinearGradient(0, 0, 0, 260);
+            gradient.addColorStop(0, 'rgba(34, 197, 94, 0.35)');
+            gradient.addColorStop(1, 'rgba(34, 197, 94, 0.0)');
 
-    function closeExtractionModal() {
-        const modal = document.getElementById('newExtractionModal');
-        if (modal) {
-            modal.style.display = 'none';
-            modal.classList.add('hidden');
-            modal.classList.remove('flex');
-            document.body.style.overflow = 'auto';
-        }
-    }
-
-    // Modal: Historial de Crecimiento
-    let activeGrowthChart = null;
-
-    function renderGrowthChart(historyList, pageName) {
-        const canvas = document.getElementById('growthChartCanvas');
-        if (!canvas || typeof Chart === 'undefined') return;
-
-        if (activeGrowthChart) {
-            activeGrowthChart.destroy();
-            activeGrowthChart = null;
-        }
-
-        if (!historyList || historyList.length === 0) return;
-
-        const sorted = [...historyList].sort((a, b) => (a.id || 0) - (b.id || 0));
-        const labels = sorted.map(item => {
-            return item.date.length > 10 ? item.date.substring(0, 5) + ' ' + item.date.substring(11, 16) : item.date;
-        });
-        const values = sorted.map(item => item.followers);
-
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return;
-        const gradient = ctx.createLinearGradient(0, 0, 0, 150);
-        gradient.addColorStop(0, 'rgba(34, 197, 94, 0.35)');
-        gradient.addColorStop(1, 'rgba(34, 197, 94, 0.0)');
-
-        try {
-            activeGrowthChart = new Chart(ctx, {
+            new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: labels,
                     datasets: [{
-                        label: 'Seguidores',
+                        label: 'Seguidores Acumulados',
                         data: values,
                         borderColor: '#22c55e',
                         backgroundColor: gradient,
                         fill: true,
                         tension: 0.35,
-                        borderWidth: 2,
-                        pointRadius: values.length === 1 ? 6 : (values.length > 15 ? 2 : 4),
+                        borderWidth: 2.5,
+                        pointRadius: values.length === 1 ? 6 : (values.length > 10 ? 3 : 4),
                         pointBackgroundColor: '#22c55e',
+                        pointHoverRadius: 6,
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                        legend: { display: false }
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                            padding: 10,
+                            cornerRadius: 8,
+                            callbacks: {
+                                label: (context) => {
+                                    const val = context.parsed.y;
+                                    return ` Audiencia: ${val.toLocaleString('es-ES')} seguidores`;
+                                }
+                            }
+                        }
                     },
                     scales: {
                         x: {
-                            grid: { color: 'rgba(0, 0, 0, 0.05)' },
-                            ticks: { color: '#888888', font: { size: 10 } }
+                            grid: { display: false },
+                            ticks: { font: { size: 11 }, color: 'rgba(150, 150, 150, 0.7)' }
                         },
                         y: {
-                            grid: { color: 'rgba(0, 0, 0, 0.05)' },
-                            ticks: { color: '#888888', font: { size: 10 } }
+                            grid: { color: 'rgba(200, 200, 200, 0.15)' },
+                            ticks: {
+                                font: { size: 11 },
+                                color: 'rgba(150, 150, 150, 0.7)',
+                                callback: function(value) {
+                                    if (value >= 1000000) return (value / 1000000).toFixed(1) + 'M';
+                                    if (value >= 1000) return (value / 1000).toFixed(0) + 'K';
+                                    return value;
+                                }
+                            }
                         }
                     }
                 }
             });
-            window.activeGrowthChart = activeGrowthChart;
-        } catch (chartErr) {
-            console.warn('Error rendering chart:', chartErr);
         }
     }
 
-    async function openGrowthModal(pageId) {
-        const modal = document.getElementById('growthHistoryModal');
-        const tbody = document.getElementById('growthSnapshotsBody') || document.getElementById('growthHistoryTableBody');
-        if (modal) {
-            modal.style.display = 'flex';
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-            document.body.style.overflow = 'hidden';
-            if (window.lucide) lucide.createIcons();
-        }
+    // 2. Gráfica Doughnut: Distribución por Fanpage
+    const distCanvas = document.getElementById('audienceDistributionCanvas');
+    if (distCanvas && typeof Chart !== 'undefined') {
+        const distLabels = {{ dist_labels_json|safe }};
+        const distValues = {{ dist_values_json|safe }};
 
-        if (!tbody) return;
+        if (distLabels.length > 0 && distValues.length > 0) {
+            const ctxDist = distCanvas.getContext('2d');
+            const colors = ['#22c55e', '#3b82f6', '#f59e0b', '#ec4899', '#8b5cf6', '#94a3b8'];
 
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="3" class="text-center py-8 text-base-content/50">
-                    <div class="flex items-center justify-center gap-2 text-xs">
-                        <i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i>
-                        <span>Cargando historial de seguidores...</span>
-                    </div>
-                </td>
-            </tr>
-        `;
-        if (window.lucide) lucide.createIcons();
-
-        try {
-            const apiBase = window.EXTRACTOR_API_BASE || '/extractor';
-            const res = await fetch(`${apiBase}/api/page/${pageId}/history/`);
-            const data = await res.json();
-
-            if (data.status === 'ok') {
-                const titleEl = document.getElementById('growthModalTitle');
-                const urlEl = document.getElementById('growthModalUrl');
-                if (titleEl) titleEl.textContent = data.page_name || 'Historial de Fanpage';
-                if (urlEl) urlEl.textContent = data.page_url || '';
-
-                const initialFmt = Number(data.growth?.initial ?? data.current_followers).toLocaleString();
-                const currentFmt = Number(data.current_followers).toLocaleString();
-                const deltaFmt = data.growth?.formatted_delta || '0';
-                const pctFmt = data.growth?.formatted_pct || '0%';
-
-                const initEl = document.getElementById('growthModalInitial');
-                const currEl = document.getElementById('growthModalCurrent');
-                const deltaEl = document.getElementById('growthModalTotalDelta');
-
-                if (initEl) initEl.textContent = initialFmt;
-                if (currEl) currEl.textContent = currentFmt;
-                if (deltaEl) {
-                    deltaEl.textContent = `${deltaFmt} (${pctFmt})`;
-                    if (data.growth?.is_positive) {
-                        deltaEl.className = 'text-base font-bold text-success font-mono mt-0.5';
-                    } else if (data.growth?.is_negative) {
-                        deltaEl.className = 'text-base font-bold text-error font-mono mt-0.5';
-                    } else {
-                        deltaEl.className = 'text-base font-bold text-base-content font-mono mt-0.5';
+            new Chart(ctxDist, {
+                type: 'doughnut',
+                data: {
+                    labels: distLabels,
+                    datasets: [{
+                        data: distValues,
+                        backgroundColor: colors.slice(0, distLabels.length),
+                        borderWidth: 2,
+                        borderColor: 'transparent',
+                        hoverOffset: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '68%',
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                boxWidth: 12,
+                                padding: 12,
+                                font: { size: 11 },
+                                color: 'rgba(150, 150, 150, 0.85)'
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                            padding: 10,
+                            cornerRadius: 8,
+                            callbacks: {
+                                label: (context) => {
+                                    const val = context.parsed;
+                                    return ` ${context.label}: ${val.toLocaleString('es-ES')}`;
+                                }
+                            }
+                        }
                     }
                 }
-
-                if (data.history && data.history.length > 0) {
-                    tbody.innerHTML = data.history.map(item => `
-                        <tr class="hover:bg-base-200/30 transition-colors">
-                            <td class="font-mono text-xs text-base-content/70 pl-5 py-2.5">${item.date}</td>
-                            <td class="text-right font-mono font-bold text-xs text-base-content">${Number(item.followers).toLocaleString()}</td>
-                            <td class="text-right pr-5">
-                                ${item.is_positive ? `
-                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-success/10 text-success border border-success/20">
-                                        <i data-lucide="trending-up" class="w-3 h-3"></i>
-                                        ${item.formatted_delta}
-                                    </span>
-                                ` : item.is_negative ? `
-                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-error/10 text-error border border-error/20">
-                                        <i data-lucide="trending-down" class="w-3 h-3"></i>
-                                        ${item.formatted_delta}
-                                    </span>
-                                ` : `
-                                    <span class="text-base-content/40 text-xs font-mono">0</span>
-                                `}
-                            </td>
-                        </tr>
-                    `).join('');
-                } else {
-                    tbody.innerHTML = `
-                        <tr>
-                            <td colspan="3" class="text-center py-6 text-xs text-base-content/50">
-                                No hay registros adicionales aún.
-                            </td>
-                        </tr>
-                    `;
-                }
-
-                setTimeout(() => renderGrowthChart(data.history, data.page_name), 60);
-            } else {
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="3" class="text-center py-6 text-xs text-error">
-                            ${data.message || 'Error al cargar el historial.'}
-                        </td>
-                    </tr>
-                `;
-            }
-            if (window.lucide) lucide.createIcons();
-        } catch (err) {
-            console.error('Error fetching growth history:', err);
-            tbody.innerHTML = `
-                <tr>
-                    <td colspan="3" class="text-center py-6 text-xs text-error">
-                        Error de conexión al cargar el historial.
-                    </td>
-                </tr>
-            `;
-            if (window.lucide) lucide.createIcons();
-        }
-    }
-
-    function closeGrowthModal() {
-        const modal = document.getElementById('growthHistoryModal');
-        if (modal) {
-            modal.style.display = 'none';
-            modal.classList.add('hidden');
-            modal.classList.remove('flex');
-            document.body.style.overflow = 'auto';
-        }
-        if (window.activeGrowthChart) {
-            window.activeGrowthChart.destroy();
-            window.activeGrowthChart = null;
-        }
-    }
-
-    // Modal: Confirmar Eliminación
-    let currentDeletePageId = null;
-
-    function openDeleteModal(pageId, pageName) {
-        currentDeletePageId = pageId;
-        const targetLabel = document.getElementById('deleteModalTargetText');
-        if (targetLabel) {
-            targetLabel.textContent = pageName || ('Fanpage #' + pageId);
-        }
-        const modal = document.getElementById('deleteConfirmModal');
-        if (modal) {
-            modal.style.display = 'flex';
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-            document.body.style.overflow = 'hidden';
-            if (window.lucide) lucide.createIcons();
-        }
-    }
-
-    function closeDeleteModal() {
-        currentDeletePageId = null;
-        const modal = document.getElementById('deleteConfirmModal');
-        if (modal) {
-            modal.style.display = 'none';
-            modal.classList.add('hidden');
-            modal.classList.remove('flex');
-            document.body.style.overflow = 'auto';
-        }
-    }
-
-    async function executeDeletePage() {
-        if (!currentDeletePageId) return;
-
-        const btn = document.getElementById('confirmDeleteBtn');
-        const text = document.getElementById('confirmDeleteText');
-        if (btn) btn.disabled = true;
-        if (text) text.textContent = 'Eliminando...';
-
-        try {
-            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
-            const res = await fetch(`/extractor/api/page/${currentDeletePageId}/delete/`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': csrfToken,
-                }
             });
-            const data = await res.json();
-            if (data.status === 'ok') {
-                const row = document.getElementById(`row-page-${currentDeletePageId}`);
-                if (row) {
-                    row.remove();
-                    if (typeof checkEmptyTable === 'function') checkEmptyTable();
-                }
-                if (typeof refreshGlobalMetrics === 'function') refreshGlobalMetrics();
-                closeDeleteModal();
-                showToast('Fanpage eliminada correctamente', 'success');
-            } else {
-                showToast(data.message || 'Error al eliminar fanpage', 'error');
-            }
-        } catch (err) {
-            showToast('Error de conexión al eliminar', 'error');
-        } finally {
-            if (btn) btn.disabled = false;
-            if (text) text.textContent = 'Eliminar';
         }
     }
 
-    // Filtros Píldora de Categoría
-    function filterTableCategory(category, btn) {
-        document.querySelectorAll('.pill-tab').forEach(el => {
-            el.classList.remove('tab-active', 'bg-base-100', 'shadow-sm', 'text-primary', 'font-bold');
-            el.classList.add('text-base-content/70');
-        });
-        if (btn) {
-            btn.classList.add('tab-active', 'bg-base-100', 'shadow-sm', 'text-primary', 'font-bold');
-            btn.classList.remove('text-base-content/70');
-        }
-
-        const rows = document.querySelectorAll('.fanpage-row');
-        rows.forEach(row => {
-            const followers = parseFloat(row.getAttribute('data-followers')) || 0;
-            const hasGrowth = row.getAttribute('data-has-growth') === 'true';
-
-            if (category === 'all') {
-                row.style.display = '';
-            } else if (category === 'growth') {
-                row.style.display = hasGrowth ? '' : 'none';
-            } else if (category === 'major') {
-                row.style.display = followers >= 100000 ? '' : 'none';
-            }
-        });
+    // Inicializar Lucide icons
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
     }
-
-    // Toast DaisyUI Flotante
-    function showToast(message, type = 'info') {
-        const container = document.getElementById('toastContainer');
-        if (!container) return;
-
-        const alert = document.createElement('div');
-        const alertClass = type === 'success' ? 'alert-success text-white' :
-                           type === 'error' ? 'alert-error text-white' :
-                           type === 'warning' ? 'alert-warning text-zinc-900' :
-                           'alert-info text-white';
-
-        alert.className = `alert ${alertClass} text-xs shadow-xl rounded-xl p-3 flex items-center gap-2 pointer-events-auto border border-base-300`;
-        const iconName = type === 'success' ? 'check-circle-2' : type === 'error' ? 'alert-circle' : type === 'warning' ? 'alert-triangle' : 'info';
-        alert.innerHTML = `<i data-lucide="${iconName}" class="w-4 h-4 shrink-0"></i> <span>${message}</span>`;
-        container.appendChild(alert);
-        if (window.lucide) lucide.createIcons();
-
-        setTimeout(() => {
-            alert.style.opacity = '0';
-            alert.style.transition = 'opacity 0.25s ease';
-            setTimeout(() => alert.remove(), 260);
-        }, 3500);
-    }
-
-    // Modal listeners
-    window.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') {
-            closeExtractionModal();
-            closeDeleteModal();
-            closeGrowthModal();
-        }
-    });
-
-    document.getElementById('newExtractionModal')?.addEventListener('click', (e) => {
-        if (e.target.id === 'newExtractionModal') closeExtractionModal();
-    });
-    document.getElementById('deleteConfirmModal')?.addEventListener('click', (e) => {
-        if (e.target.id === 'deleteConfirmModal') closeDeleteModal();
-    });
-    document.getElementById('growthHistoryModal')?.addEventListener('click', (e) => {
-        if (e.target.id === 'growthHistoryModal') closeGrowthModal();
-    });
-
-    window.openGrowthModal = openGrowthModal;
-    window.closeGrowthModal = closeGrowthModal;
-    window.openDeleteModal = openDeleteModal;
-    window.closeDeleteModal = closeDeleteModal;
-    window.executeDeletePage = executeDeletePage;
-    window.openExtractionModal = openExtractionModal;
-    window.closeExtractionModal = closeExtractionModal;
-    window.filterTableCategory = filterTableCategory;
-    window.showToast = showToast;
+});
 </script>
-<script src="{% static 'extractor/js/dashboard.js' %}?v=3.0"></script>
 {% endblock %}

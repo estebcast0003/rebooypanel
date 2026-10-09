@@ -4,7 +4,7 @@ from accounts.models import CustomUser
 from extractor.models import FacebookPage
 from videoprompt.models import VideoPrompt
 from fanpages.models import FanpageProfile
-from dashboard.views import format_compact_number
+from core.utils import format_compact_number
 
 
 class DashboardHelpersTests(TestCase):
@@ -88,15 +88,36 @@ class DashboardViewTests(TestCase):
         self.assertEqual(response.context["total_prompts"], 0)
         self.assertEqual(response.context["total_fanpages"], 0)
 
-    def test_start_extraction_duplicate_url_rejected(self):
+    def test_dashboard_empty_user_state(self):
+        empty_user = CustomUser.objects.create_user(username="empty_user", password="password123")
+        self.client.login(username="empty_user", password="password123")
+        response = self.client.get(reverse("dashboard"))
+        self.assertEqual(response.status_code, 200)
+
+        self.assertEqual(response.context["total_pages"], 0)
+        self.assertEqual(response.context["total_followers"], 0)
+        self.assertEqual(response.context["formatted_total_followers"], "0")
+        self.assertEqual(response.context["total_prompts"], 0)
+        self.assertEqual(response.context["total_fanpages"], 0)
+        self.assertEqual(response.context["total_net_growth"], 0)
+        self.assertEqual(response.context["wp_posts_count"], 0)
+        self.assertEqual(response.context["wp_total_clicks"], 0)
+        self.assertEqual(response.context["timeline_labels_json"], "[]")
+        self.assertEqual(response.context["dist_labels_json"], "[]")
+
+    def test_dashboard_analytics_charts_and_growth(self):
+        from extractor.models import PageGrowthSnapshot
+        page = FacebookPage.objects.get(url="https://facebook.com/page_a")
+        PageGrowthSnapshot.objects.create(page=page, followers=1200)
+        PageGrowthSnapshot.objects.create(page=page, followers=1500)
+
         self.client.login(username="user_a", password="password123")
-        # user_a already has https://facebook.com/page_a
-        response = self.client.post(
-            reverse("extractor:start_extraction"),
-            {"urls": "https://facebook.com/page_a"},
-        )
-        self.assertEqual(response.status_code, 409)
-        data = response.json()
-        self.assertEqual(data.get("status"), "duplicate")
-        self.assertEqual(data.get("duplicate_count"), 1)
-        self.assertIn("duplicate_items", data)
+        response = self.client.get(reverse("dashboard"))
+        self.assertEqual(response.status_code, 200)
+
+        self.assertIn("timeline_labels_json", response.context)
+        self.assertIn("timeline_values_json", response.context)
+        self.assertIn("dist_labels_json", response.context)
+        self.assertIn("dist_values_json", response.context)
+        self.assertEqual(response.context["total_net_growth"], 300)
+        self.assertEqual(len(response.context["top_growing_pages"]), 1)
