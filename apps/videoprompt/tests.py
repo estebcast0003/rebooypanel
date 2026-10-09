@@ -60,7 +60,7 @@ class VideoStudioViewsTests(TestCase):
         self.assertIn("quota", response.context)
         self.assertEqual(response.context["quota"]["limit"], 1)
         self.assertContains(response, 'id="videoUrlsInput"')
-        self.assertContains(response, 'id="videoFilesInput"')
+        self.assertContains(response, 'id="videoDropzone"')
         self.assertContains(response, 'id="processingBanner"')
         self.assertContains(response, 'id="myPromptsContainer"')
         self.assertContains(response, 'id="promptModal"')
