@@ -585,7 +585,7 @@ document.addEventListener('DOMContentLoaded', () => {
             acceptedFiles: 'video/*',
             previewsContainer: '#dropzonePreviews',
             previewTemplate: dropzonePreviewTemplate,
-            dictFileTooBig: 'Archivo muy grande ({{filesize}}MB). Máx: {{maxFilesize}}MB.',
+            dictFileTooBig: 'Archivo muy grande. El tamaño máximo permitido es 50MB.',
             dictInvalidFileType: 'Formato no permitido. Solo se aceptan videos.',
             init: function() {
                 this.on('addedfile', function() {
@@ -744,20 +744,6 @@ document.getElementById('videoPromptForm')?.addEventListener('submit', async fun
                 document.getElementById('videoUrlsInput').value = '';
             } else if (videoDropzone) {
                 videoDropzone.removeAllFiles();
-            }
-            updateSubmitButton();
-            updateProcessingBanner();
-            startPolling();
-        } else {
-            alert(data.message || 'Error al iniciar el análisis.');
-        }
-    } catch (err) {
-        alert('Error al conectar con el servidor.');
-    } finally {
-        if (submitBtn) submitBtn.disabled = false;
-    }
-});
-                renderSelectedFiles();
             }
             updateSubmitButton();
             updateProcessingBanner();
