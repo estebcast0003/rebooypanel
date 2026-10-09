@@ -122,6 +122,13 @@ class ExtractionJob(models.Model):
     failed_urls = models.PositiveIntegerField(default=0)
     raw_input = models.TextField(blank=True)
     error_message = models.TextField(blank=True)
+    celery_task_id = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        db_index=True,
+        help_text="Task ID en Celery / django-celery-results para trazabilidad",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     completed_at = models.DateTimeField(null=True, blank=True)
 
@@ -175,3 +182,61 @@ class ExtractorSetting(models.Model):
 
     def __str__(self):
         return self.key
+
+
+class UserExtractorPreference(models.Model):
+    """Configuración individual de automatización y frecuencia por usuario."""
+
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="extractor_preference",
+        db_index=True,
+    )
+    auto_refresh_enabled = models.BooleanField(
+        default=True,
+        help_text="Indica si la extracción automática diaria está activa para este usuario.",
+    )
+    refresh_interval_minutes = models.PositiveIntegerField(
+        default=1440,
+        help_text="Intervalo de actualización en minutos (1, 5, 15, 30, 60, 1440, etc.).",
+    )
+    refresh_interval_hours = models.PositiveIntegerField(
+        default=24,
+        help_text="Intervalo de actualización en horas (por defecto 24 horas al cambio de día).",
+    )
+    last_refresh_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Última fecha y hora en que se ejecutó la actualización automática para este usuario.",
+    )
+    next_refresh_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Próxima fecha programada para la ejecución automática.",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Preferencia de Extractor de Usuario"
+        verbose_name_plural = "Preferencias de Extractor de Usuarios"
+
+    def __str__(self):
+        estado = "Activo" if self.auto_refresh_enabled else "Pausado"
+        mins = self.refresh_interval_minutes or (self.refresh_interval_hours * 60)
+        return f"Preferencia de {self.user.username} ({estado} - cada {mins}m)"
+
+    @classmethod
+    def get_or_create_for_user(cls, user) -> "UserExtractorPreference":
+        """Helper seguro para obtener o crear la preferencia por defecto de un usuario."""
+        pref, _ = cls.objects.get_or_create(
+            user=user,
+            defaults={
+                "auto_refresh_enabled": True,
+                "refresh_interval_minutes": 1440,
+                "refresh_interval_hours": 24,
+            },
+        )
+        return pref
+

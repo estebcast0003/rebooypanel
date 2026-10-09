@@ -275,7 +275,10 @@ def start_extraction_job(
         if getattr(settings, "USE_CELERY", False):
             try:
                 from extractor.tasks import run_extraction_job_task
-                run_extraction_job_task.delay(str(job.id), clean_urls, proxy_url)
+                task_res = run_extraction_job_task.delay(str(job.id), clean_urls, proxy_url)
+                if hasattr(task_res, "id"):
+                    job.celery_task_id = str(task_res.id)
+                    job.save(update_fields=["celery_task_id"])
                 return job
             except Exception as celery_err:
                 logger.warning(f"Celery dispatch failed ({celery_err}), using local thread worker...")

@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import ExtractionItem, ExtractionJob, ExtractorSetting, FacebookPage
+from .models import ExtractionItem, ExtractionJob, ExtractorSetting, FacebookPage, UserExtractorPreference
 
 
 @admin.register(FacebookPage)
@@ -51,3 +51,11 @@ class ExtractionJobAdmin(admin.ModelAdmin):
 class ExtractorSettingAdmin(admin.ModelAdmin):
     list_display = ("key", "updated_at")
     search_fields = ("key",)
+
+
+@admin.register(UserExtractorPreference)
+class UserExtractorPreferenceAdmin(admin.ModelAdmin):
+    list_display = ("user", "auto_refresh_enabled", "refresh_interval_minutes", "refresh_interval_hours", "last_refresh_at", "next_refresh_at")
+    list_filter = ("auto_refresh_enabled", "refresh_interval_minutes")
+    search_fields = ("user__username",)
+

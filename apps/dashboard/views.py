@@ -48,7 +48,7 @@ def dashboard_view(request):
     cached_urls_obj = ExtractorSetting.objects.filter(key=cache_key).first()
     cached_urls = cached_urls_obj.value if cached_urls_obj else ""
 
-    scheduler_status = scheduler.load_settings()
+    scheduler_status = scheduler.load_settings(user=request.user)
 
     context = {
         'pages': pages,

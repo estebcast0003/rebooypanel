@@ -5,6 +5,12 @@ set -e
 export DJANGO_SETTINGS_MODULE="${DJANGO_SETTINGS_MODULE:-config.django.production}"
 echo "=== Configuración activa: $DJANGO_SETTINGS_MODULE ==="
 
+# Si se pasa un comando personalizado (ej. worker de celery, beat o shell)
+if [ "$#" -gt 0 ]; then
+    echo "=== Ejecutando comando personalizado: $@ ==="
+    exec "$@"
+fi
+
 echo "=== Verificando conexión a la base de datos ==="
 python - << 'EOF'
 import os, sys, time

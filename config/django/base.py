@@ -17,6 +17,9 @@ INSTALLED_APPS = [
     'whitenoise.runserver_nostatic',
     'django.contrib.staticfiles',
 
+    # Third-party apps
+    'django_celery_results',
+
     # Local apps
     'core',
     'accounts',

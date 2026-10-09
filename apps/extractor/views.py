@@ -86,7 +86,7 @@ def dashboard_view(request):
 
     recent_jobs = ExtractionJob.objects.filter(user=request.user)[:5]
 
-    scheduler_status = scheduler.load_settings()
+    scheduler_status = scheduler.load_settings(user=request.user)
 
     context = {
         "pages": pages,
@@ -418,18 +418,44 @@ def job_status_api_view(request, job_id):
 @login_required
 @require_http_methods(["GET"])
 def get_scheduler_status_api_view(request):
-    """Returns current auto-refresh scheduler state and countdown."""
+    """Returns current auto-refresh scheduler state and countdown for request.user.
+    If the scheduled time has arrived (next_run <= now) and auto_refresh is enabled,
+    it automatically triggers the extraction job (active sync when user visits or countdown ends).
+    """
     if not _has_extractor_access(request.user):
         return JsonResponse({"status": "error", "message": "Acceso denegado."}, status=403)
 
-    status_data = scheduler.load_settings()
-    return JsonResponse({"status": "ok", "scheduler": status_data})
+    from datetime import timedelta
+    from django.utils import timezone
+    from .models import UserExtractorPreference
+
+    pref = UserExtractorPreference.get_or_create_for_user(request.user)
+    job_id = None
+    now = timezone.now()
+
+    # Si está activo y ya se cumplió el tiempo programado
+    if pref.auto_refresh_enabled and pref.next_refresh_at and pref.next_refresh_at <= now:
+        interval_minutes = pref.refresh_interval_minutes or (pref.refresh_interval_hours * 60 if pref.refresh_interval_hours else 1440)
+        pref.last_refresh_at = now
+        pref.next_refresh_at = now + timedelta(minutes=interval_minutes)
+        pref.save(update_fields=["last_refresh_at", "next_refresh_at", "updated_at"])
+
+        # Disparar la extracción inmediatamente
+        job_id = scheduler.trigger_now(user=request.user)
+
+    status_data = scheduler.load_settings(user=request.user)
+    return JsonResponse({
+        "status": "ok",
+        "scheduler": status_data,
+        "triggered": bool(job_id),
+        "job_id": job_id,
+    })
 
 
 @login_required
 @require_http_methods(["POST"])
 def update_scheduler_api_view(request):
-    """Updates auto-refresh scheduler interval and enabled status."""
+    """Updates auto-refresh scheduler interval and enabled status for request.user."""
     if not _has_extractor_access(request.user):
         return JsonResponse({"status": "error", "message": "Acceso denegado."}, status=403)
 
@@ -440,21 +466,20 @@ def update_scheduler_api_view(request):
             else request.POST
         )
         enabled = bool(data.get("enabled", False))
-        interval_minutes = int(data.get("interval_minutes", 60))
-
+        interval_minutes = int(data.get("interval_minutes", 1440))
         if interval_minutes < 1:
             interval_minutes = 1
 
-        scheduler.save_settings(enabled=enabled, interval_minutes=interval_minutes)
-        scheduler.start_background_loop()
-
-        updated_status = scheduler.load_settings()
+        scheduler.save_settings(enabled=enabled, interval_minutes=interval_minutes, user=request.user)
+        updated_status = scheduler.load_settings(user=request.user)
+        mins = updated_status.get('interval_minutes', 1440)
+        time_desc = f"{mins} min" if mins < 60 else f"{round(mins/60)}h"
         return JsonResponse(
             {
                 "status": "ok",
                 "message": (
-                    f"Programador {'activado' if enabled else 'pausado'} "
-                    f"(cada {interval_minutes} min)."
+                    f"Actualización automática {'activada' if enabled else 'pausada'} "
+                    f"(cada {time_desc})."
                 ),
                 "scheduler": updated_status,
             }
@@ -466,7 +491,7 @@ def update_scheduler_api_view(request):
 @login_required
 @require_http_methods(["POST"])
 def trigger_scheduler_now_api_view(request):
-    """Triggers an immediate update of fanpages in DB."""
+    """Triggers an immediate update of fanpages in DB for request.user."""
     if not _has_extractor_access(request.user):
         return JsonResponse({"status": "error", "message": "Acceso denegado."}, status=403)
 
@@ -484,7 +509,7 @@ def trigger_scheduler_now_api_view(request):
             )
 
         job = ExtractionJob.objects.get(id=job_id)
-        updated_status = scheduler.load_settings()
+        updated_status = scheduler.load_settings(user=request.user)
         return JsonResponse(
             {
                 "status": "ok",

@@ -20,7 +20,7 @@ db.sqlite3-wal
 cookies.txt
 cookies_*.txt
 *.cookie
-tests/
+/tests/
 
 
 # IDE & Editor

@@ -1,4 +1,13 @@
 services:
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
   web:
     build: .
     restart: unless-stopped
@@ -9,10 +18,53 @@ services:
       - DEBUG=False
       - ALLOWED_HOSTS=*
       - SQLITE_PATH=/app/data/db.sqlite3
+      - USE_CELERY=True
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=django-db
     volumes:
       - media_volume:/app/media
       - db_volume:/app/data
+    depends_on:
+      - redis
+
+  celery_worker:
+    build: .
+    restart: unless-stopped
+    command: celery -A config worker --loglevel=info --concurrency=2
+    environment:
+      - DJANGO_SETTINGS_MODULE=config.django.production
+      - DEBUG=False
+      - ALLOWED_HOSTS=*
+      - SQLITE_PATH=/app/data/db.sqlite3
+      - USE_CELERY=True
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=django-db
+    volumes:
+      - media_volume:/app/media
+      - db_volume:/app/data
+    depends_on:
+      - redis
+      - web
+
+  celery_beat:
+    build: .
+    restart: unless-stopped
+    command: celery -A config beat --loglevel=info
+    environment:
+      - DJANGO_SETTINGS_MODULE=config.django.production
+      - DEBUG=False
+      - ALLOWED_HOSTS=*
+      - SQLITE_PATH=/app/data/db.sqlite3
+      - USE_CELERY=True
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=django-db
+    volumes:
+      - db_volume:/app/data
+    depends_on:
+      - redis
+      - web
 
 volumes:
   media_volume:
   db_volume:
+  redis_data:

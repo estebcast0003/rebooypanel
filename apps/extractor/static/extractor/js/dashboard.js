@@ -40,10 +40,35 @@ function getCsrfToken() {
     return cookieValue || '';
 }
 
+function ensureIntervalOptions() {
+    const intervalSelect = document.getElementById('schedulerIntervalSelect');
+    if (!intervalSelect) return;
+    const hasOneMin = Array.from(intervalSelect.options).some(o => o.value === '1');
+    if (!hasOneMin) {
+        const options = [
+            { value: '1', text: 'Cada 1 min (Pruebas)' },
+            { value: '5', text: 'Cada 5 min (Pruebas)' },
+            { value: '15', text: 'Cada 15 min' },
+            { value: '30', text: 'Cada 30 min' },
+            { value: '60', text: 'Cada 1 hora' },
+            { value: '120', text: 'Cada 2 horas' },
+            { value: '360', text: 'Cada 6 horas' },
+            { value: '720', text: 'Cada 12 horas' },
+            { value: '1440', text: 'Cada 24 horas (Recomendado)' },
+        ];
+        const currentVal = intervalSelect.value;
+        intervalSelect.innerHTML = options.map(o => 
+            `<option value="${o.value}">${o.text}</option>`
+        ).join('');
+        if (currentVal) intervalSelect.value = currentVal;
+    }
+}
+
 // ----------------------------------------------------
 // Auto-Refresh Scheduler Controls
 // ----------------------------------------------------
 function initSchedulerControls() {
+    ensureIntervalOptions();
     const toggle = document.getElementById('schedulerToggle');
     const intervalSelect = document.getElementById('schedulerIntervalSelect');
     const btnTriggerNow = document.getElementById('btnTriggerScheduledNow');
@@ -111,7 +136,7 @@ async function saveSchedulerConfig() {
     const intervalSelect = document.getElementById('schedulerIntervalSelect');
 
     const enabled = toggle?.checked || false;
-    const intervalMinutes = parseInt(intervalSelect?.value || '60', 10);
+    const intervalMinutes = parseInt(intervalSelect?.value || '1440', 10);
 
     try {
         const res = await fetch(`${API_BASE}/api/scheduler/update/`, {
@@ -145,6 +170,10 @@ async function syncSchedulerStatus() {
             const data = await res.json();
             if (data.scheduler) {
                 updateSchedulerUI(data.scheduler);
+            }
+            if (data.triggered && data.job_id) {
+                showToast('Actualización automática iniciada', 'info');
+                coordinateJobMonitoring(data.job_id, 0);
             }
         }
     } catch (err) {
@@ -182,6 +211,15 @@ function updateSchedulerUI(sched) {
     } else {
         renderCountdownText();
     }
+
+    const lastRunEl = document.getElementById('schedulerLastRun');
+    if (lastRunEl && sched.last_run) {
+        try {
+            const dateStr = sched.last_run.substring(0, 16).replace('T', ' ');
+            lastRunEl.textContent = `• Última: ${dateStr}`;
+            lastRunEl.classList.remove('hidden');
+        } catch (_) {}
+    }
 }
 
 function startSchedulerCountdownTimer() {
@@ -198,8 +236,13 @@ function startSchedulerCountdownTimer() {
             schedulerRemainingSeconds--;
             renderCountdownText();
         } else {
-            // Check if scheduler triggered
-            syncSchedulerStatus();
+            // El contador llegó a 0: consultar el servidor para activar/sincronizar la extracción
+            clearInterval(schedulerCountdownInterval);
+            const countdownEl = document.getElementById('schedulerCountdown');
+            if (countdownEl) countdownEl.textContent = 'Ejecutando...';
+            syncSchedulerStatus().finally(() => {
+                startSchedulerCountdownTimer();
+            });
         }
     }, 1000);
 }
@@ -209,7 +252,7 @@ function renderCountdownText() {
     if (!countdownEl) return;
 
     if (schedulerRemainingSeconds <= 0) {
-        countdownEl.textContent = 'En ejecución...';
+        countdownEl.textContent = 'Programada en servidor';
         return;
     }
 
@@ -217,7 +260,11 @@ function renderCountdownText() {
     const minutes = Math.floor((schedulerRemainingSeconds % 3600) / 60);
     const seconds = schedulerRemainingSeconds % 60;
 
-    if (hours > 0) {
+    if (hours >= 24) {
+        const days = Math.floor(hours / 24);
+        const remHours = hours % 24;
+        countdownEl.textContent = `${days}d ${remHours}h`;
+    } else if (hours > 0) {
         countdownEl.textContent = `${hours}h ${minutes.toString().padStart(2, '0')}m`;
     } else {
         countdownEl.textContent = `${minutes}:${seconds.toString().padStart(2, '0')} min`;
