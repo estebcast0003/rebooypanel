@@ -10,7 +10,6 @@ from igdownloader.models import InstagramDownload, PostTrackingLink
 from panel_admin.views import (
     format_compact_number,
     parse_cookie_file,
-    get_cookie_file_path,
 )
 
 

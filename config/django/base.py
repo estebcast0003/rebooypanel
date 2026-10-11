@@ -1,8 +1,7 @@
 """Configuración base común de Django para el proyecto rebooypanel."""
 
 import sys
-from pathlib import Path
-from config.env import env, BASE_DIR
+from config.env import BASE_DIR
 
 # Registrar carpeta apps/ en el path de búsqueda de Python
 sys.path.insert(0, str(BASE_DIR / 'apps'))

@@ -5,7 +5,6 @@ import re
 import requests
 from django.utils import timezone
 from django.utils.text import slugify
-from django.conf import settings
 
 from wordpress_manager.models import WordPressSite
 

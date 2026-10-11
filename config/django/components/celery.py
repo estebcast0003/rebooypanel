@@ -1,6 +1,5 @@
 """Configuración de Celery & Redis Background Workers."""
 
-from celery.schedules import crontab
 from config.env import env
 
 USE_CELERY = env.bool('USE_CELERY', default=True)

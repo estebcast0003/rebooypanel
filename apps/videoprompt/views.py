@@ -3,13 +3,12 @@ import json
 import logging
 import threading
 from django.conf import settings
-from django.shortcuts import render, get_object_or_404, redirect
+from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
-from django.contrib.auth.decorators import login_required, user_passes_test
-from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 from .models import VideoPrompt
-from .services.video_handler import handle_local_upload, VideoValidationError
+from .services.video_handler import VideoValidationError
 from .tasks import process_video_task, normalize_markdown_formatting
 
 logger = logging.getLogger(__name__)

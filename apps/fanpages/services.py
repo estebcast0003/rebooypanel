@@ -5,10 +5,8 @@ y OpenRouter API (Multi-modelo), configurable dinámicamente desde el panel.
 """
 
 import json
-import os
 import requests
 from django.conf import settings
-from google import genai
 from google.genai import types
 from google.genai.errors import APIError
 from pydantic import BaseModel

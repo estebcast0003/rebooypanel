@@ -4,7 +4,6 @@ from unittest.mock import patch, MagicMock
 import requests
 from django.test import TestCase, Client
 from django.urls import reverse
-from django.core.exceptions import PermissionDenied
 
 from accounts.models import CustomUser
 from wordpress_manager.models import WordPressSite

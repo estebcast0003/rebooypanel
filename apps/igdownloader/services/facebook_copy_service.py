@@ -4,11 +4,8 @@ import tempfile
 import logging
 import requests
 import yt_dlp
-from typing import Optional
 from django.utils import timezone
-from django.conf import settings
 from google.genai import types
-from google.genai.errors import APIError
 from pydantic import BaseModel, Field
 from core.services.cli_proxy import (
     get_cli_proxy_client,

@@ -44,7 +44,7 @@ def user_list_view(request):
 def user_statistics_view(request):
     """Superadmin analytics dashboard to view statistics and fanpages per user."""
     from django.db.models import Sum
-    from extractor.models import FacebookPage, ExtractionJob
+    from extractor.models import FacebookPage
     from videoprompt.models import VideoPrompt
     from fanpages.models import FanpageProfile
     from igdownloader.models import InstagramDownload, PostTrackingLink

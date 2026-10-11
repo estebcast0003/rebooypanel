@@ -1,6 +1,5 @@
 import requests
 from django.db import models
-from django.utils import timezone
 
 
 class WordPressSite(models.Model):

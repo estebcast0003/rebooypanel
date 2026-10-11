@@ -1,17 +1,14 @@
 import os
-import json
 import hashlib
 import requests
 from datetime import timedelta
 from django.utils import timezone
 from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse, StreamingHttpResponse, Http404, HttpResponse, HttpResponseRedirect
-from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.conf import settings
-from accounts.models import CustomUser
 from .models import InstagramDownload, PostTrackingLink
 from .services.cleanup_service import purge_expired_downloads_throttled
 from .services.instagram_service import (

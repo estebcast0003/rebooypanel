@@ -1,6 +1,6 @@
 from django.test import SimpleTestCase, TestCase
 from accounts.models import CustomUser
-from extractor.models import ExtractionJob, ExtractionItem, FacebookPage, PageGrowthSnapshot
+from extractor.models import ExtractionJob, FacebookPage, PageGrowthSnapshot
 from extractor.services.scraper import ExtractionResult, normalize_url, parse_follower_count, parse_html
 from extractor.services.runner import save_item_to_db
 

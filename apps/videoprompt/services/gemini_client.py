@@ -2,7 +2,6 @@ import os
 import time
 from typing import List, Optional
 from google.genai import types
-from google.genai.errors import APIError
 from pydantic import BaseModel
 from core.services.cli_proxy import (
     get_cli_proxy_client,

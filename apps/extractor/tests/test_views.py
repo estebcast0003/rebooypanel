@@ -1,5 +1,4 @@
 import json
-from unittest.mock import patch
 from django.test import TestCase, Client
 from django.contrib.auth import get_user_model
 from extractor.models import FacebookPage

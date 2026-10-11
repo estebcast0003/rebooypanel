@@ -1,6 +1,5 @@
 from functools import wraps
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.db.models import Sum
 from django.http import JsonResponse
