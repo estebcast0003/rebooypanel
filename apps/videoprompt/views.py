@@ -195,6 +195,11 @@ def check_prompt_status_ajax(request, pk):
             'remaining': request.user.get_prompts_remaining_today(),
             'can_generate': request.user.can_generate_prompt(),
         },
+        'wp_post_url': prompt_record.wp_post_url or '',
+        'wp_post_id': prompt_record.wp_post_id,
+        'wp_article_title': prompt_record.wp_article_title or '',
+        'wp_site_name': prompt_record.wp_site.name if prompt_record.wp_site else '',
+        'wp_category': prompt_record.wp_category or 'Entretenimiento',
         'prompt_data': None,
     }
     
@@ -312,4 +317,50 @@ def delete_prompt_ajax(request, pk):
             
     prompt_record.delete()
     return JsonResponse({'status': 'success', 'message': 'Registro eliminado correctamente.'})
+
+
+@login_required
+@require_POST
+def generate_wp_post_ajax(request, pk):
+    """
+    Genera un artículo de blog para WordPress on-demand a partir del análisis
+    cinematográfico guardado en VideoPrompt.
+    """
+    if request.user.role == 'superadmin':
+        prompt_record = get_object_or_404(VideoPrompt, pk=pk)
+    else:
+        prompt_record = get_object_or_404(VideoPrompt, pk=pk, user=request.user)
+
+    if prompt_record.status != 'completed':
+        return JsonResponse({
+            'success': False,
+            'error': 'El prompt aún no ha finalizado su análisis cinematográfico.'
+        }, status=400)
+
+    force_regenerate = request.POST.get('regenerate') == 'true'
+
+    try:
+        from .services.wp_article_service import generate_and_publish_wp_article
+        panel_url = request.build_absolute_uri('/')[:-1]
+        result = generate_and_publish_wp_article(
+            prompt_record,
+            force_regenerate=force_regenerate,
+            panel_url=panel_url
+        )
+        return JsonResponse({
+            'success': True,
+            'id': prompt_record.id,
+            'wp_post_url': result.get('post_url') or '',
+            'wp_post_id': result.get('post_id'),
+            'wp_site_name': result.get('site_name') or '',
+            'wp_article_title': result.get('article_title') or '',
+            'wp_category': result.get('category') or 'Entretenimiento',
+            'from_cache': result.get('from_cache', False),
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': f"Error al generar artículo para WordPress: {str(e)}"
+        }, status=400)
+
 

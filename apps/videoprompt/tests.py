@@ -344,3 +344,76 @@ class WPArticleServiceTests(TestCase):
         self.assertTrue(result["from_cache"])
         self.assertEqual(result["post_url"], "https://blog.example.com/ya-publicado/")
 
+
+class VideoPromptWPViewTests(TestCase):
+    """
+    Unit tests for WordPress generation AJAX view in videoprompt.
+    """
+
+    def setUp(self):
+        self.client = Client()
+        self.user = CustomUser.objects.create_user(username="wpuser", password="password123")
+        self.other_user = CustomUser.objects.create_user(username="otherwpuser", password="password123")
+        self.prompt = VideoPrompt.objects.create(
+            user=self.user,
+            video_url="https://example.com/reel.mp4",
+            status="completed",
+            generated_prompt=json.dumps({"scenes": []})
+        )
+
+    def test_generate_wp_post_ajax_unauthenticated_redirects(self):
+        response = self.client.post(reverse("videoprompt:generate_wp_post_ajax", kwargs={"pk": self.prompt.id}))
+        self.assertEqual(response.status_code, 302)
+
+    def test_generate_wp_post_ajax_not_found_for_other_user(self):
+        self.client.login(username="otherwpuser", password="password123")
+        response = self.client.post(reverse("videoprompt:generate_wp_post_ajax", kwargs={"pk": self.prompt.id}))
+        self.assertEqual(response.status_code, 404)
+
+    def test_generate_wp_post_ajax_not_completed_fails(self):
+        self.client.login(username="wpuser", password="password123")
+        pending_prompt = VideoPrompt.objects.create(
+            user=self.user,
+            video_url="https://example.com/pending.mp4",
+            status="processing"
+        )
+        response = self.client.post(reverse("videoprompt:generate_wp_post_ajax", kwargs={"pk": pending_prompt.id}))
+        self.assertEqual(response.status_code, 400)
+        data = response.json()
+        self.assertFalse(data["success"])
+        self.assertIn("aún no ha finalizado", data["error"])
+
+    @patch("videoprompt.services.wp_article_service.generate_and_publish_wp_article")
+    def test_generate_wp_post_ajax_success(self, mock_service):
+        self.client.login(username="wpuser", password="password123")
+        mock_service.return_value = {
+            "success": True,
+            "post_url": "https://blog.example.com/mi-articulo/",
+            "post_id": 101,
+            "site_name": "Blog Principal",
+            "article_title": "Mi Artículo de Cine",
+            "category": "Entretenimiento",
+            "from_cache": False,
+        }
+
+        response = self.client.post(reverse("videoprompt:generate_wp_post_ajax", kwargs={"pk": self.prompt.id}))
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertTrue(data["success"])
+        self.assertEqual(data["wp_post_url"], "https://blog.example.com/mi-articulo/")
+        self.assertEqual(data["wp_site_name"], "Blog Principal")
+        self.assertEqual(data["wp_article_title"], "Mi Artículo de Cine")
+
+    def test_check_prompt_status_ajax_includes_wp_fields(self):
+        self.client.login(username="wpuser", password="password123")
+        self.prompt.wp_post_url = "https://blog.example.com/articulo-test/"
+        self.prompt.wp_article_title = "Título del Test"
+        self.prompt.save()
+
+        response = self.client.get(reverse("videoprompt:check_prompt_status_ajax", kwargs={"pk": self.prompt.id}))
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data["wp_post_url"], "https://blog.example.com/articulo-test/")
+        self.assertEqual(data["wp_article_title"], "Título del Test")
+
+

@@ -9,5 +9,6 @@ urlpatterns = [
     path('generate-ajax/', views.generate_prompt_ajax, name='generate_prompt_ajax'),
     path('status-ajax/<int:pk>/', views.check_prompt_status_ajax, name='check_prompt_status_ajax'),
     path('batch-status-ajax/', views.batch_status_ajax, name='batch_status_ajax'),
+    path('generate-wp-post/<int:pk>/', views.generate_wp_post_ajax, name='generate_wp_post_ajax'),
     path('delete-ajax/<int:pk>/', views.delete_prompt_ajax, name='delete_prompt_ajax'),
 ]
