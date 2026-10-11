@@ -42,6 +42,22 @@ class VideoPrompt(models.Model):
 
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     error_message = models.TextField(blank=True, null=True)
+
+    # Publicación en WordPress
+    wp_post_url = models.URLField(max_length=500, blank=True, null=True, help_text="Permalink directo del artículo en WordPress")
+    wp_post_id = models.PositiveIntegerField(null=True, blank=True, help_text="ID del post en WordPress")
+    wp_site = models.ForeignKey(
+        'wordpress_manager.WordPressSite',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='video_prompts',
+        help_text="Sitio de WordPress donde se publicó"
+    )
+    wp_article_title = models.CharField(max_length=255, blank=True, null=True, help_text="Título del artículo en WordPress")
+    wp_article_content = models.TextField(blank=True, null=True, help_text="Contenido HTML del artículo en WordPress")
+    wp_category = models.CharField(max_length=100, blank=True, null=True, default="Entretenimiento", help_text="Categoría asignada en WordPress")
+    wp_published_at = models.DateTimeField(null=True, blank=True, help_text="Fecha de publicación en WordPress")
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

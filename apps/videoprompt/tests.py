@@ -262,3 +262,85 @@ class BatchStatusAjaxTests(TestCase):
         self.assertIn(p2.id, ids_returned)
         self.assertNotIn(p_other.id, ids_returned)
         self.assertEqual(len(data["items"]), 2)
+
+
+class WPArticleServiceTests(TestCase):
+    """
+    Unit tests for generate_and_publish_wp_article service in videoprompt.
+    """
+
+    def setUp(self):
+        from wordpress_manager.models import WordPressSite
+        self.user = CustomUser.objects.create_user(username="wpauthor", password="password123")
+        self.wp_site = WordPressSite.objects.create(
+            name="Mi Blog de Cine",
+            site_url="https://blog.example.com",
+            username="admin",
+            application_password="app-password-123",
+            is_active=True
+        )
+        self.prompt = VideoPrompt.objects.create(
+            user=self.user,
+            video_url="https://example.com/video.mp4",
+            status="completed",
+            generated_prompt=json.dumps({
+                "style": {"visual_texture": "Cinemático", "lighting_quality": "Neón"},
+                "cinematography": {"camera": "Paneo", "lens": "50mm"},
+                "scenes": [
+                    {"start_time": "00:00", "end_time": "00:05", "action_description": "Intro dramática"}
+                ],
+                "full_prompt_markdown": "Análisis del video..."
+            })
+        )
+
+    @patch("videoprompt.services.wp_article_service.publish_article_to_wordpress")
+    @patch("videoprompt.services.wp_article_service.get_cli_proxy_client")
+    @patch("videoprompt.services.wp_article_service.get_cli_proxy_model", return_value="gemini-3.7-flash-high")
+    def test_generate_and_publish_wp_article_success(self, mock_model, mock_client_factory, mock_publish):
+        mock_client = MagicMock()
+        mock_response = MagicMock()
+        mock_response.text = json.dumps({
+            "title": "Historia Oculta del Video de Prueba",
+            "category": "Dramas",
+            "article_content": "<p>Contenido completo y detallado del artículo SEO.</p>"
+        })
+        mock_client.models.generate_content.return_value = mock_response
+        mock_client_factory.return_value = mock_client
+
+        mock_publish.return_value = {
+            "success": True,
+            "post_id": 99,
+            "post_url": "https://blog.example.com/historia-oculta/",
+            "site_id": self.wp_site.id,
+            "site_name": self.wp_site.name,
+        }
+
+        from videoprompt.services.wp_article_service import generate_and_publish_wp_article
+        result = generate_and_publish_wp_article(self.prompt)
+
+        self.assertTrue(result["success"])
+        self.assertFalse(result["from_cache"])
+        self.assertEqual(result["post_url"], "https://blog.example.com/historia-oculta/")
+        self.assertEqual(result["article_title"], "Historia Oculta del Video de Prueba")
+        self.assertEqual(result["category"], "Dramas")
+
+        self.prompt.refresh_from_db()
+        self.assertEqual(self.prompt.wp_post_url, "https://blog.example.com/historia-oculta/")
+        self.assertEqual(self.prompt.wp_post_id, 99)
+        self.assertEqual(self.prompt.wp_article_title, "Historia Oculta del Video de Prueba")
+        self.assertEqual(self.prompt.wp_category, "Dramas")
+        self.assertIsNotNone(self.prompt.wp_published_at)
+
+    def test_generate_and_publish_wp_article_returns_cache(self):
+        self.prompt.wp_post_url = "https://blog.example.com/ya-publicado/"
+        self.prompt.wp_article_title = "Título Existente"
+        self.prompt.wp_category = "Comedia"
+        self.prompt.save()
+
+        from videoprompt.services.wp_article_service import generate_and_publish_wp_article
+        result = generate_and_publish_wp_article(self.prompt, force_regenerate=False)
+
+        self.assertTrue(result["success"])
+        self.assertTrue(result["from_cache"])
+        self.assertEqual(result["post_url"], "https://blog.example.com/ya-publicado/")
+
