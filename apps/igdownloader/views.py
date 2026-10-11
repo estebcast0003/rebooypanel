@@ -482,12 +482,14 @@ def generate_facebook_copy_ajax(request, pk):
         return JsonResponse({'error': 'No tenés permisos para interactuar con este video.'}, status=403)
 
     force_regenerate = request.POST.get('regenerate') == 'true'
+    generate_wp_post = request.POST.get('generate_wp_post', 'true').lower() in ('true', '1', 'on')
 
     try:
         from .services.facebook_copy_service import analyze_video_for_facebook
         result = analyze_video_for_facebook(
             item,
-            force_regenerate=force_regenerate
+            force_regenerate=force_regenerate,
+            generate_wp_post=generate_wp_post,
         )
         wp_site_name = result.get('wp_site_name')
         if not wp_site_name and item.wp_site_id:

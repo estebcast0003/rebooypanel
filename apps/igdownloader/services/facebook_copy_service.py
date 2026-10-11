@@ -110,7 +110,12 @@ def download_temp_video(record) -> str:
     return temp_path
 
 
-def analyze_video_for_facebook(record, force_regenerate: bool = False, panel_url: str = None) -> dict:
+def analyze_video_for_facebook(
+    record,
+    force_regenerate: bool = False,
+    panel_url: str = None,
+    generate_wp_post: bool = True,
+) -> dict:
     """
     Analiza el video con la API Proxy de Gemini enviándolo en memoria como bytes,
     genera el copy de estratega para Facebook, guarda el resultado y limpia archivos temporales.
@@ -319,49 +324,54 @@ def analyze_video_for_facebook(record, force_regenerate: bool = False, panel_url
         record.wp_article_content = parsed_data.article_content.strip()
         record.wp_category = assigned_category
 
-        # Publicar artículo en WordPress
+        # Publicar artículo en WordPress (si la opción está habilitada)
         wp_res = None
-        try:
-            get_or_refresh_direct_url(record)
-            thumb_path = None
+        if generate_wp_post:
             try:
-                if record.thumbnail and os.path.exists(record.thumbnail.path):
-                    thumb_path = record.thumbnail.path
-            except Exception:
+                get_or_refresh_direct_url(record)
                 thumb_path = None
+                try:
+                    if record.thumbnail and os.path.exists(record.thumbnail.path):
+                        thumb_path = record.thumbnail.path
+                except Exception:
+                    thumb_path = None
 
-            username = record.user.username if record.user else None
+                username = record.user.username if record.user else None
 
-            wp_res = publish_article_to_wordpress(
-                title=parsed_data.title.strip(),
-                content_html=parsed_data.article_content.strip(),
-                instagram_url=record.instagram_url,
-                thumbnail_path=thumb_path,
-                direct_video_url=record.direct_video_url,
-                username=username,
-                category=assigned_category,
-                download_id=record.id,
-                panel_url=panel_url,
-            )
-            if wp_res:
-                record.wp_post_url = wp_res.get("post_url")
-                record.wp_post_id = wp_res.get("post_id")
-                record.wp_site_id = wp_res.get("site_id")
-        except (ValueError, RuntimeError) as wp_err:
-            logger.warning(
-                "[FacebookCopy] No se pudo publicar en WordPress para #%s: %s",
-                record.id,
-                wp_err,
-            )
-            record.wp_post_url = None
-            record.wp_post_id = None
-            record.wp_site_id = None
-        except Exception as wp_err:
-            logger.error(
-                "[FacebookCopy] Error inesperado publicando en WordPress para #%s: %s",
-                record.id,
-                wp_err,
-            )
+                wp_res = publish_article_to_wordpress(
+                    title=parsed_data.title.strip(),
+                    content_html=parsed_data.article_content.strip(),
+                    instagram_url=record.instagram_url,
+                    thumbnail_path=thumb_path,
+                    direct_video_url=record.direct_video_url,
+                    username=username,
+                    category=assigned_category,
+                    download_id=record.id,
+                    panel_url=panel_url,
+                )
+                if wp_res:
+                    record.wp_post_url = wp_res.get("post_url")
+                    record.wp_post_id = wp_res.get("post_id")
+                    record.wp_site_id = wp_res.get("site_id")
+            except (ValueError, RuntimeError) as wp_err:
+                logger.warning(
+                    "[FacebookCopy] No se pudo publicar en WordPress para #%s: %s",
+                    record.id,
+                    wp_err,
+                )
+                record.wp_post_url = None
+                record.wp_post_id = None
+                record.wp_site_id = None
+            except Exception as wp_err:
+                logger.error(
+                    "[FacebookCopy] Error inesperado publicando en WordPress para #%s: %s",
+                    record.id,
+                    wp_err,
+                )
+                record.wp_post_url = None
+                record.wp_post_id = None
+                record.wp_site_id = None
+        else:
             record.wp_post_url = None
             record.wp_post_id = None
             record.wp_site_id = None

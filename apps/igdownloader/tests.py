@@ -176,6 +176,45 @@ class FacebookCopyServiceTests(TestCase):
         self.assertEqual(self.download.wp_article_title, "Aprende este tip increíble 🔥")
         self.assertEqual(self.download.wp_article_content, "<p>Contenido del artículo</p>")
 
+    @patch("igdownloader.services.facebook_copy_service.get_or_refresh_direct_url", return_value="https://video.example.com/direct.mp4")
+    @patch("igdownloader.services.facebook_copy_service.download_temp_video", return_value="mock_temp.mp4")
+    @patch("igdownloader.services.facebook_copy_service.create_video_part_from_file")
+    @patch("igdownloader.services.facebook_copy_service.get_cli_proxy_model", return_value="gemini-3.7-flash-high")
+    @patch("igdownloader.services.facebook_copy_service.get_cli_proxy_client")
+    @patch("igdownloader.services.facebook_copy_service.publish_article_to_wordpress")
+    @patch("os.path.exists", return_value=True)
+    @patch("os.remove")
+    def test_generate_facebook_copy_skips_wp_when_disabled(
+        self, mock_remove, mock_exists, mock_publish_wp, mock_get_client, mock_get_model, mock_create_part, mock_download, mock_get_direct_url
+    ):
+        mock_client = MagicMock()
+        mock_response = MagicMock()
+        mock_response.text = json.dumps({
+            "title": "Aprende este tip increíble 🔥",
+            "description": "Descubre cómo optimizar tu flujo de trabajo en minutos. Dale like y compartí!",
+            "article_content": "<p>Contenido del artículo</p>",
+            "hashtags": "#viral #reels"
+        })
+        mock_client.models.generate_content.return_value = mock_response
+        mock_get_client.return_value = mock_client
+
+        result = analyze_video_for_facebook(self.download, generate_wp_post=False)
+        self.assertTrue(result["success"])
+        self.assertIsNone(result["wp_post_url"])
+        self.assertEqual(result["wp_article_title"], "Aprende este tip increíble 🔥")
+        self.assertIsNone(result["wp_site_name"])
+
+        # Verificar que NO se intentó publicar en WordPress
+        mock_publish_wp.assert_not_called()
+
+        self.download.refresh_from_db()
+        self.assertEqual(self.download.fb_status, "completed")
+        self.assertEqual(self.download.fb_title, "Aprende este tip increíble 🔥")
+        self.assertIsNone(self.download.wp_post_url)
+        self.assertIsNone(self.download.wp_post_id)
+        self.assertIsNone(self.download.wp_site)
+
+
     def test_cached_facebook_copy_with_wp_fields(self):
         self.download.fb_status = "completed"
         self.download.fb_title = "Título en caché"
@@ -362,6 +401,32 @@ class InstagramDownloaderViewsTests(TestCase):
         self.assertEqual(data["wp_post_url"], "https://views.example.com/art-1/")
         self.assertEqual(data["wp_article_title"], "Nuevo Título")
         self.assertEqual(data["wp_site_name"], "Sitio View Test")
+
+    @patch("igdownloader.services.facebook_copy_service.analyze_video_for_facebook")
+    def test_generate_facebook_copy_ajax_respects_generate_wp_post_false(self, mock_analyze):
+        self.client.login(username="allowed_ig_user", password="password123")
+        mock_analyze.return_value = {
+            "success": True,
+            "title": "Nuevo Título",
+            "description": "Nueva Descripción",
+            "hashtags": "#nuevo",
+            "hashtags_source": "ai",
+            "generated_at": "23 Sep 2026, 15:30",
+            "from_cache": False,
+            "wp_post_url": None,
+            "wp_article_title": "Nuevo Título",
+            "wp_site_name": None,
+        }
+        response = self.client.post(
+            reverse("igdownloader:generate_facebook_copy_ajax", kwargs={"pk": self.download.id}),
+            data={"generate_wp_post": "false"}
+        )
+        self.assertEqual(response.status_code, 200)
+        mock_analyze.assert_called_once_with(
+            self.download,
+            force_regenerate=False,
+            generate_wp_post=False
+        )
 
     def test_index_template_contains_wp_article_link_block_and_buttons(self):
         self.client.login(username="allowed_ig_user", password="password123")
