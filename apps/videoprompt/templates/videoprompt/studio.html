@@ -489,7 +489,7 @@
 
         <!-- Modal Footer: Botones Copy, Download, Save, Generate (Captura 2) -->
         <div class="p-4 px-6 border-t border-base-300 bg-base-200/40 flex items-center justify-between flex-wrap gap-2 shrink-0">
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-2 flex-wrap">
                 <button type="button" class="btn btn-ghost btn-sm rounded-xl text-xs font-semibold gap-1.5 border border-base-300" onclick="copyFullPrompt()">
                     <i data-lucide="copy" class="w-3.5 h-3.5"></i>
                     <span id="copyBtnLabel">Copy</span>
@@ -498,6 +498,28 @@
                     <i data-lucide="download" class="w-3.5 h-3.5"></i>
                     Download
                 </button>
+
+                <!-- Grupo WordPress: Generar o Ver Post -->
+                <div id="modalWpGroup" class="flex items-center gap-2">
+                    <!-- Estado A: Botón Generar -->
+                    <button type="button" id="btnGenerateWpPost" class="btn btn-primary btn-sm rounded-xl text-xs font-semibold gap-1.5 text-primary-content shadow-xs" onclick="triggerGenerateWpPost()">
+                        <i data-lucide="globe" class="w-3.5 h-3.5"></i>
+                        <span id="btnGenerateWpPostLabel">Generate Post WP</span>
+                    </button>
+
+                    <!-- Estado B: Ya publicado en WP -->
+                    <div id="modalWpPublishedBox" class="hidden flex items-center gap-1.5 flex-wrap">
+                        <span id="modalWpSiteBadge" class="badge badge-primary badge-xs text-primary-content font-bold px-2 py-1.5 hidden"></span>
+                        <a id="modalWpVisitBtn" href="#" target="_blank" rel="noopener noreferrer" class="btn btn-ghost btn-sm rounded-xl text-xs font-semibold gap-1.5 border border-base-300 hover:border-primary hover:text-primary transition-all">
+                            <i data-lucide="external-link" class="w-3.5 h-3.5 text-primary"></i>
+                            <span>Ver Artículo</span>
+                        </a>
+                        <button type="button" id="modalWpCopyBtn" class="btn btn-ghost btn-sm rounded-xl text-xs font-semibold gap-1.5 border border-base-300" onclick="copyWpPostUrl(this)" title="Copiar enlace del artículo">
+                            <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                            <span>Copiar Enlace</span>
+                        </button>
+                    </div>
+                </div>
             </div>
             <div>
                 <button type="button" class="btn btn-primary btn-sm rounded-xl text-xs font-semibold gap-1.5 text-primary-content bg-gradient-to-r from-primary to-secondary" onclick="closePromptModal()">
@@ -1041,6 +1063,7 @@ async function openPromptModal(id) {
 
         switchPromptView('structured');
         switchMarkdownSubTab('preview');
+        updateWpModalSection(data);
 
         const modal = document.getElementById('promptModal');
         modal?.classList.remove('hidden');
@@ -1081,6 +1104,115 @@ function downloadPromptMarkdown() {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+}
+
+// Control UI y acción de WordPress
+function updateWpModalSection(data) {
+    const btnGen = document.getElementById('btnGenerateWpPost');
+    const pubBox = document.getElementById('modalWpPublishedBox');
+    const visitBtn = document.getElementById('modalWpVisitBtn');
+    const siteBadge = document.getElementById('modalWpSiteBadge');
+    const label = document.getElementById('btnGenerateWpPostLabel');
+
+    if (!btnGen || !pubBox) return;
+
+    if (data.wp_post_url) {
+        btnGen.classList.add('hidden');
+        pubBox.classList.remove('hidden');
+        if (visitBtn) visitBtn.href = data.wp_post_url;
+        if (siteBadge) {
+            siteBadge.innerText = data.wp_site_name || 'WordPress';
+            siteBadge.classList.remove('hidden');
+        }
+    } else {
+        pubBox.classList.add('hidden');
+        btnGen.classList.remove('hidden');
+        btnGen.disabled = data.status !== 'completed';
+        if (label) label.innerText = 'Generate Post WP';
+    }
+    if (window.lucide) lucide.createIcons();
+}
+
+async function triggerGenerateWpPost() {
+    if (!currentPromptId) return;
+    const btn = document.getElementById('btnGenerateWpPost');
+    const label = document.getElementById('btnGenerateWpPostLabel');
+    if (btn) btn.disabled = true;
+    if (label) {
+        label.innerHTML = `<span class="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin inline-block shrink-0 mr-1"></span> Publicando...`;
+    }
+
+    try {
+        const formData = new FormData();
+        formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+        const res = await fetch(`/video-prompt/generate-wp-post/${currentPromptId}/`, {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: formData
+        });
+
+        const data = await res.json();
+        if (res.ok && data.success) {
+            updateWpModalSection({
+                wp_post_url: data.wp_post_url,
+                wp_site_name: data.wp_site_name,
+                wp_article_title: data.wp_article_title,
+                status: 'completed',
+            });
+            showToast('¡Artículo publicado en WordPress con éxito!', 'success');
+        } else {
+            throw new Error(data.error || 'Error al generar artículo en WordPress');
+        }
+    } catch (err) {
+        showToast(err.message || 'Error de conexión con el servidor.', 'error');
+        if (btn) btn.disabled = false;
+        if (label) label.innerText = 'Generate Post WP';
+    } finally {
+        if (window.lucide) lucide.createIcons();
+    }
+}
+
+function copyWpPostUrl(btn) {
+    const visitBtn = document.getElementById('modalWpVisitBtn');
+    const url = visitBtn?.href;
+    if (!url || url === '#' || url.endsWith('#')) return;
+    navigator.clipboard.writeText(url).then(() => {
+        const orig = btn.innerHTML;
+        btn.innerHTML = `<i data-lucide="check" class="w-3.5 h-3.5 text-success"></i> <span>¡Copiado!</span>`;
+        if (window.lucide) lucide.createIcons();
+        setTimeout(() => { btn.innerHTML = orig; if (window.lucide) lucide.createIcons(); }, 2000);
+    });
+}
+
+function showToast(message, type = 'info') {
+    let container = document.getElementById('toastContainer');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'toastContainer';
+        container.className = 'toast toast-bottom toast-end z-50 pointer-events-none p-4';
+        document.body.appendChild(container);
+    }
+
+    const alert = document.createElement('div');
+    const alertClass = type === 'success' ? 'alert-success text-white' :
+                       type === 'error' ? 'alert-error text-white' :
+                       type === 'warning' ? 'alert-warning text-zinc-900' :
+                       'alert-info text-white';
+
+    alert.className = `alert ${alertClass} text-xs shadow-xl rounded-xl p-3 flex items-center gap-2 pointer-events-auto border border-base-300`;
+    const iconName = type === 'success' ? 'check-circle-2' : type === 'error' ? 'alert-circle' : type === 'warning' ? 'alert-triangle' : 'info';
+    alert.innerHTML = `<i data-lucide="${iconName}" class="w-4 h-4 shrink-0"></i> <span>${message}</span>`;
+    container.appendChild(alert);
+    if (window.lucide) lucide.createIcons();
+
+    setTimeout(() => {
+        alert.style.opacity = '0';
+        alert.style.transition = 'opacity 0.25s ease';
+        setTimeout(() => alert.remove(), 260);
+    }, 3500);
 }
 
 // Modal de eliminación

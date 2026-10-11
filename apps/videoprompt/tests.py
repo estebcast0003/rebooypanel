@@ -64,6 +64,10 @@ class VideoStudioViewsTests(TestCase):
         self.assertContains(response, 'id="processingBanner"')
         self.assertContains(response, 'id="myPromptsContainer"')
         self.assertContains(response, 'id="promptModal"')
+        self.assertContains(response, 'id="btnGenerateWpPost"')
+        self.assertContains(response, 'Generate Post WP')
+        self.assertContains(response, 'triggerGenerateWpPost')
+        self.assertContains(response, 'updateWpModalSection')
 
     @patch("videoprompt.views.dispatch_videoprompt_task")
     def test_generate_prompt_ajax_exceeds_quota(self, mock_dispatch):
