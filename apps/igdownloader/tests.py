@@ -472,6 +472,12 @@ class InstagramDownloaderViewsTests(TestCase):
         self.assertIn('Sin Dominio WP', content)
         self.assertIn('¡Copy generado y artículo publicado en WordPress!', content)
 
+        # Toggle Generate Post WP
+        self.assertIn('id="fbGenerateWpToggle"', content)
+        self.assertIn('Generate Post WP', content)
+        self.assertIn('initWpToggle', content)
+        self.assertIn('ig_generate_wp_post', content)
+
     def test_index_only_shows_last_24_hours(self):
         self.client.login(username="allowed_ig_user", password="password123")
         

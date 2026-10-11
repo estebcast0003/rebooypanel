@@ -508,6 +508,7 @@ def generate_facebook_copy_ajax(request, pk):
             'generated_at': result['generated_at'],
             'from_cache': result.get('from_cache', False),
             'fb_status': item.fb_status,
+            'wp_skipped': not generate_wp_post,
             'wp_post_url': result.get('wp_post_url') or item.wp_post_url or '',
             'wp_tracking_url': result.get('tracking_url') or '',
             'wp_total_clicks': result.get('total_clicks', 0),
