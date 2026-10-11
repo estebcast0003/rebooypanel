@@ -90,7 +90,3 @@ class OpenRouterConfig(models.Model):
     @classmethod
     def get_active_config(cls):
         return cls.objects.filter(is_active=True).order_by('-updated_at').first()
-
-
-# Alias semántico para legibilidad
-FanpageAIConfig = OpenRouterConfig

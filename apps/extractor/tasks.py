@@ -94,9 +94,3 @@ def dispatch_scheduled_fanpage_updates():
         f"dispatch_scheduled_fanpage_updates: Dispatched updates for {len(dispatched)} users: {dispatched}"
     )
     return {"dispatched_users_count": len(dispatched), "users": dispatched}
-
-
-@shared_task(name="extractor.scheduled_update_followers")
-def scheduled_update_followers_task():
-    """Backward-compatible alias for the periodic dispatcher."""
-    return dispatch_scheduled_fanpage_updates()

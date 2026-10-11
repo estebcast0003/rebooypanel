@@ -136,29 +136,6 @@ def validate_video(file_path, max_size_mb=50, max_duration_sec=120):
     return True
 
 
-def handle_local_upload(file_obj):
-    """
-    Guarda un archivo subido localmente, valida y transcodifica a H.264 si es necesario.
-    """
-    upload_dir = os.path.join(settings.MEDIA_ROOT, 'uploaded_videos')
-    os.makedirs(upload_dir, exist_ok=True)
-    
-    file_path = default_storage.save(os.path.join('uploaded_videos', file_obj.name), ContentFile(file_obj.read()))
-    full_path = os.path.join(settings.MEDIA_ROOT, file_path)
-    
-    try:
-        validate_video(full_path)
-        codec = get_video_codec(full_path)
-        if codec and codec != 'h264':
-            full_path = transcode_to_h264(full_path)
-    except VideoValidationError:
-        if os.path.exists(full_path):
-            os.remove(full_path)
-        raise
-        
-    return full_path
-
-
 def parse_abbreviated_number(s):
     """
     Converts abbreviated numbers like '1.2K', '3.5M', '2B' to integer.

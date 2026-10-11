@@ -147,13 +147,5 @@ class AutoRefreshScheduler:
 
         return str(job.id)
 
-    def start_background_loop(self):
-        """Deprecated: Background scheduling is handled exclusively by Celery Beat."""
-        logger.debug("start_background_loop called: In-memory threads are disabled. Celery Beat handles scheduling.")
-
-    def stop_background_loop(self):
-        """Deprecated: In-memory threads are disabled."""
-        pass
-
 
 scheduler = AutoRefreshScheduler()

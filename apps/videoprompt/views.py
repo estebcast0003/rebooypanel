@@ -288,32 +288,6 @@ def batch_status_ajax(request):
 
 @login_required
 @require_POST
-def retry_prompt_ajax(request, pk):
-    """
-    Reintentar prompt fallido.
-    """
-    if request.user.role == 'superadmin':
-        prompt_record = get_object_or_404(VideoPrompt, pk=pk)
-    else:
-        prompt_record = get_object_or_404(VideoPrompt, pk=pk, user=request.user)
-        
-    local_path = None
-    input_type = 'link' if prompt_record.video_url else 'file'
-    
-    if prompt_record.video_file:
-        local_path = os.path.join(settings.MEDIA_ROOT, prompt_record.video_file.name)
-        
-    prompt_record.status = 'pending'
-    prompt_record.error_message = ''
-    prompt_record.save(update_fields=['status', 'error_message'])
-    
-    dispatch_videoprompt_task(prompt_record.id)
-    
-    return JsonResponse({'status': 'success', 'message': 'Reintento iniciado.'})
-
-
-@login_required
-@require_POST
 def delete_prompt_ajax(request, pk):
     """
     Elimina un prompt y sus archivos asociados.
